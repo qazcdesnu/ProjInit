@@ -46,8 +46,7 @@ class Config:
 
     @property
     def template_values(self) -> dict[str, str]:
-        # @stub: M2-T5
-        raise NotImplementedError
+        return dict(self.template)
 
 
 @dataclass(frozen=True)
@@ -105,6 +104,9 @@ def load_config(root: Path) -> Config:
     for table, entries in data.items():
         if not isinstance(entries, dict):
             raise ConfigError(f"모르는 키: {table}")
+        if table == "template":
+            values["template"] = tuple((key, _checked(f"template.{key}", value, False)) for key, value in entries.items())
+            continue
         for key, value in entries.items():
             if (table, key) not in _KEYS:
                 raise ConfigError(f"모르는 키: {table}.{key}")

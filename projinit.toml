@@ -13,3 +13,7 @@ code_roots = ["src", "tests"]
 commands = ["uv run python -m unittest discover -s tests -t ."]
 # 커밋 규칙(docs/CommitRule.md 4절)의 기준 커밋. 이 저장소의 첫 커밋이다.
 commit_baseline = "18e5cf3"
+
+[template]
+# 공통 문서(PR 규칙)의 빈 자리 repository에 들어갈 원격 저장소 주소.
+repository = "git@github-qazcdesnu:qazcdesnu/ProjInit.git"

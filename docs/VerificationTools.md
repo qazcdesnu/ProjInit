@@ -146,7 +146,7 @@ commands = []            # check가 검사기 다음에 실행할 프로젝트 �
 commit_baseline = ""     # 커밋 이력 검사의 기준 커밋. 비우면 모든 커밋을 검사한다
 
 [template]
-repository = "git@github.com:me/my-project.git"   # 공통 문서의 빈 자리 {{repository}}에 들어갈 값
+repository = "git@github.com:me/my-project.git"   # 공통 문서의 빈 자리 repository에 들어갈 값
 ```
 
 - `[template]` 표의 값은 공통 규칙 문서의 빈 자리(`{{이름}}`)를 채운다. 키는 자유롭게 쓰되 값은 문자열이어야 한다.

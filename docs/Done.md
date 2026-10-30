@@ -2,6 +2,42 @@
 
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M3 갱신](Done-M3.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
+## M2-T5 템플릿 원본 만들기 (공통 문서 분리, 시스템 구조 문서, 템플릿 테스트)
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+- 근거 문서: [템플릿 구성](design/Templates.md)
+
+### 계획
+- 공통 규칙 문서에서 ProjInit 전용 내용을 떼어 내고, 이 저장소의 시스템 구조 문서(`docs/Architecture.md`)를 만든다.
+- 공통 파일과 처음 만드는 파일의 템플릿을 `src/projinit/templates/`에 두고, 빈 자리를 채우는 `template.py`와 설정의 `[template]` 표를 만든다.
+- 템플릿 테스트를 쓴다.
+
+### 진행 기록
+- 2026-10-31: PR #2가 병합되어 그 브랜치를 지우고 최신 `main`에서 `m2-t5-template-source`를 만들었다.
+- 2026-10-31: 코드 작업 규칙의 디렉터리 표(ProjInit 전용 행), 언어와 스타일(Python·uv·PEP 8), 테스트(unittest)를 시스템 구조 문서로 옮기고, 그 절에는 공통 원칙만 남겼다. 절 제목은 그대로 두었다. 문서·작업 관리 규칙의 `projinit.check_*` 명령, 포인터 규약의 제품 비전 링크, 커밋 규칙의 기준 커밋 해시와 예시, PR 규칙과 작업 관리 규칙의 예시를 공통 표현으로 바꿨다.
+- 2026-10-31: 문서를 고친 뒤 `template.py`와 `Config.template_values` 목업을 만들어 진행 중 상태를 커밋했다(b07b666, 목업 8개).
+- 2026-10-31: 검증 도구의 설정 예시에 빈 자리 글자가 그대로 있어 템플릿을 채울 때 예시까지 바뀌는 문제를 발견했다. 빈 자리 이름을 영문 소문자·숫자·`_`로 좁히고 예시에서 그 글자를 뺐다.
+- 2026-10-31: 공통 파일 8개와 처음 만드는 파일 5개의 템플릿을 만들고, `render`, 설정의 `[template]` 표, 템플릿 테스트를 구현했다. 빌드한 패키지에 템플릿 13개가 모두 들어가는 것을 확인했다.
+
+### 결정 사항
+- 공통 문서에서 시스템 구조 문서로는 링크하지 않는다. 초기화 직후에는 그 문서가 없기 때문이다. 대신 "인덱스의 제품 이해 절에 있다"고 적는다.
+- 인덱스는 처음에만 만드는 파일로 다룬다. 프로젝트 고유 문서가 생기면 프로젝트가 고치기 때문이다.
+- PR 규칙의 원격 주소는 템플릿에서 빈 자리 `{{repository}}`가 되고, 이 저장소의 값은 `projinit.toml`의 `[template]`에 둔다.
+- 템플릿 테스트가 이 저장소의 공통 파일이 템플릿과 같은지 본다. 그래서 M2-T2에서 `--refresh-common`이 생기기 전까지는 공통 규칙을 고칠 때 문서와 템플릿을 함께 고쳐야 한다.
+
+### 변경 파일
+- `docs/Architecture.md`(신규), `docs/CodeRule.md`, `docs/DocumentationRule.md`, `docs/TaskRule.md`, `docs/Traceability.md`, `docs/CommitRule.md`, `docs/PullRequestRule.md`, `docs/VerificationTools.md`, `docs/design/Templates.md`, `docs/design/Checkers.md`, `docs/design/Package.md`, `docs/index.md`, `docs/Roadmap.md`, `docs/Ongoing.md`
+- 추가: `src/projinit/template.py`(신규), `src/projinit/templates/`(신규, 13개 파일), `src/projinit/config.py`, `tests/test_template.py`(신규), `projinit.toml`, `docs/Done.md`
+
+### 결과
+- 초기화에 쓸 템플릿 원본이 패키지 안에 생겼고, 공통 문서에서 ProjInit 전용 내용이 빠졌다.
+- 템플릿을 빈 폴더에 채우면 문서 링크 검사와 작업 관리 검사를 통과하고, 공통 문서는 공통 파일로만 링크한다.
+
+### 검증
+- `uv run projinit check`: 모두 통과
+- 빌드한 wheel에 `projinit/templates/` 13개 파일이 들어 있다.
+
 ## M2-T1 템플릿 구성 상세 설계 (공통 규칙과 프로젝트 고유 문서의 경계)
 
 - 시작일: 2026-10-31
