@@ -21,6 +21,12 @@ PRE_COMMIT_HOOK = ".githooks/pre-commit"
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
 PRE_COMMIT_COMMAND = "uv run python -m tools.run_checks --hook pre-commit"
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
+# @stub: M0-T6
+COMMIT_MSG_HOOK = ".githooks/commit-msg"
+# @doc: docs/VerificationTools.md#8-강제-장치-검사기
+# @stub: M0-T6
+COMMIT_MSG_COMMAND = 'uv run python -m tools.check_commit_msg "$1"'
+# @doc: docs/VerificationTools.md#8-강제-장치-검사기
 HOOKS_PATH = ".githooks"
 
 
@@ -63,6 +69,15 @@ def check_pre_commit(root: Path) -> list[Problem]:
     if PRE_COMMIT_COMMAND not in path.read_text(encoding="utf-8"):
         problems.append(Problem(path, 1, f"pre-commit hook에 검사 명령 없음: {PRE_COMMIT_COMMAND}"))
     return problems
+
+
+def check_commit_msg_hook(root: Path) -> list[Problem]:
+    """Report a missing, non-executable or unrelated git commit-msg hook.
+
+    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    @stub: M0-T6
+    """
+    raise NotImplementedError
 
 
 def check_hooks_path(root: Path) -> list[Problem]:

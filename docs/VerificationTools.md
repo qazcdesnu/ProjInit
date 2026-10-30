@@ -10,7 +10,8 @@
 uv run python -m tools.check_docs        # 문서 링크와 고아 문서 검사
 uv run python -m tools.check_pointers    # 문서 ↔ 코드 포인터 검사
 uv run python -m tools.check_tasks       # 작업 ID 기준 작업 관리 문서 정합성 검사
-uv run python -m tools.check_hooks       # 강제 장치(Stop hook, pre-commit) 설치 검사
+uv run python -m tools.check_hooks       # 강제 장치(Stop hook, pre-commit, commit-msg) 설치 검사
+uv run python -m tools.check_commit_msg <메시지 파일>   # 커밋 메시지 형식 검사 (commit-msg hook이 실행)
 uv run python -m unittest discover -s tests -t .   # 도구 자체의 테스트
 uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실행
 ```
@@ -99,7 +100,8 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
 - [tests/test_check_docs.py](../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소, 진입 문서 형식(정상, 코드 블록, 인라인 코드, 링크 없는 목록 줄, 추가 문단, 제목 누락).
 - [tests/test_check_pointers.py](../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
 - [tests/test_code_index.py](../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
-- [tests/test_check_hooks.py](../tests/test_check_hooks.py): 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
+- [tests/test_check_hooks.py](../tests/test_check_hooks.py): 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, commit-msg 누락, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
+- [tests/test_check_commit_msg.py](../tests/test_check_commit_msg.py): 정상 제목(ID 하나, 여러 개, 진행 중), git이 만드는 제목, 주석 줄 건너뛰기, 형식 오류, 알 수 없는 ID, 빈 메시지.
 - [tests/test_run_checks.py](../tests/test_run_checks.py): 실행할 검사 목록, Stop hook 응답(통과, 첫 실패에서 막기, 이미 막힌 뒤 허용과 사용자 경고), 실패 요약의 길이 제한.
 - [tests/test_languages.py](../tests/test_languages.py): 언어마다 [포인터 규약](Traceability.md#7-언어별-심볼-규칙)의 표에 있는 정의·값·이름 붙이기·공개 규칙. `LANGUAGES`와 `LANGUAGE_SUFFIXES`의 일치.
 - [tests/test_check_tasks.py](../tests/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함), 완료 보관(정상 보관, 닫힌 마일스톤 기록이 완료 문서에 남은 경우, 닫히지 않은 마일스톤의 보관, 잘못된 보관 문서 이름, 다른 마일스톤 태스크, 중복 기록, 보관으로 옮긴 기록의 보존), 경량 이슈(정상, `[~]` 상태, 기록이 있는 경우, 완료일 누락, 빈 결과, 연결 작업), 기록 보존(그대로 옮긴 경우 통과, 옮기며 줄이 빠진 경우, 진행 중 기록의 진행 기록 줄을 지운 경우, 진행 중 기록이 사라진 경우, 완료 기록의 줄이 바뀐 경우, git 저장소가 아닌 경우).
@@ -194,14 +196,17 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
 | [STOP_HOOK_COMMAND](../tools/check_hooks.py#STOP_HOOK_COMMAND) | `cd "$CLAUDE_PROJECT_DIR" && uv run python -m tools.run_checks --hook stop` |
 | [PRE_COMMIT_HOOK](../tools/check_hooks.py#PRE_COMMIT_HOOK) | `.githooks/pre-commit` |
 | [PRE_COMMIT_COMMAND](../tools/check_hooks.py#PRE_COMMIT_COMMAND) | `uv run python -m tools.run_checks --hook pre-commit` |
+| [COMMIT_MSG_HOOK](../tools/check_hooks.py#COMMIT_MSG_HOOK) | `.githooks/commit-msg` |
+| [COMMIT_MSG_COMMAND](../tools/check_hooks.py#COMMIT_MSG_COMMAND) | `uv run python -m tools.check_commit_msg "$1"` |
 | [HOOKS_PATH](../tools/check_hooks.py#HOOKS_PATH) | `.githooks` |
 
 **함수**
 
 - [check_stop_hook](../tools/check_hooks.py#check_stop_hook): `CLAUDE_SETTINGS`가 있고 JSON으로 읽히며, `hooks.Stop` 아래에 명령이 정확히 `STOP_HOOK_COMMAND`인 command hook이 있는지 검사한다.
 - [check_pre_commit](../tools/check_hooks.py#check_pre_commit): `PRE_COMMIT_HOOK`이 있고, 실행 권한이 있으며, `PRE_COMMIT_COMMAND`를 담고 있는지 검사한다.
+- [check_commit_msg_hook](../tools/check_hooks.py#check_commit_msg_hook): `COMMIT_MSG_HOOK`에 대해 `check_pre_commit`과 같은 검사를 `COMMIT_MSG_COMMAND`로 한다.
 - [check_hooks_path](../tools/check_hooks.py#check_hooks_path): 루트가 git 저장소이고, git 설정 `core.hooksPath`가 `HOOKS_PATH`인지 검사한다. 이 설정은 저장소에 포함되지 않으므로 클론할 때마다 한 번 해 줘야 하며, 이 검사가 빠뜨린 것을 알려 준다.
-- [main](../tools/check_hooks.py#main): 세 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
+- [main](../tools/check_hooks.py#main): 네 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
 
 ## 9. 일괄 실행과 자동 실행
 
@@ -211,6 +216,7 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
 | --- | --- | --- |
 | Claude Code Stop hook | Claude가 턴을 끝내려 할 때 | 첫 시도에서는 턴 종료를 막고 실패 요약을 Claude에게 돌려준다. 이미 한 번 막힌 뒤의 종료(`stop_hook_active`)는 허용하고, 남은 실패를 사용자에게 경고로 보여 준다. |
 | git pre-commit | 사람이든 Claude든 커밋하려 할 때 | 커밋을 거부한다. |
+| git commit-msg | 커밋 메시지를 확정할 때 | [커밋 메시지 형식](TaskRule.md#67-커밋-메시지)을 어기면 커밋을 거부한다. |
 
 Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](CodeRule.md#1-문서-우선-작업-절차)이 진행 중인 작업에서 포인터 검사기가 일부러 실패하는 상태를 허용하기 때문이다. 이때 Claude는 실패를 고치거나, 남긴 이유를 사용자에게 보고해야 한다. 끝없이 막으면 작업 중에 사용자에게 질문할 수도 없게 된다.
 
@@ -218,6 +224,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 - `.claude/settings.json`에 `hooks.Stop` command hook으로 [STOP_HOOK_COMMAND](../tools/check_hooks.py#STOP_HOOK_COMMAND)를 둔다.
 - `.githooks/pre-commit`에 [PRE_COMMIT_COMMAND](../tools/check_hooks.py#PRE_COMMIT_COMMAND)를 실행하는 셸 스크립트를 두고 실행 권한을 준다.
+- `.githooks/commit-msg`에 [COMMIT_MSG_COMMAND](../tools/check_hooks.py#COMMIT_MSG_COMMAND)를 실행하는 셸 스크립트를 두고 실행 권한을 준다.
 - 클론한 뒤 한 번 `git config core.hooksPath .githooks`를 실행한다. 빠뜨리면 [강제 장치 검사기](#8-강제-장치-검사기)가 Stop hook에서 알려 준다.
 - pre-commit은 스테이징한 내용이 아니라 작업 트리를 검사한다.
 
@@ -240,4 +247,16 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 - [main](../tools/run_checks.py#main): `--root`와 `--hook`(`stop` 또는 `pre-commit`) 옵션을 받는다.
   - `--hook`이 없거나 `pre-commit`: 각 검사의 결과를 한 줄씩 출력하고, 실패가 있으면 요약을 출력한 뒤 종료 코드 1로 끝난다.
   - `--hook stop`: 표준 입력의 JSON에서 `stop_hook_active`를 읽고 `stop_hook_response`의 응답대로 출력하고 끝난다. 입력이 비었거나 JSON이 아니면 `stop_hook_active`를 거짓으로 본다.
+
+## 10. 커밋 메시지 검사기
+
+[tools/check_commit_msg.py](../tools/check_commit_msg.py)는 [커밋 메시지 형식](TaskRule.md#67-커밋-메시지)을 검사한다. git `commit-msg` hook이 메시지 파일 경로를 넘겨 실행한다.
+
+- [GIT_SUBJECT_PREFIXES](../tools/check_commit_msg.py#GIT_SUBJECT_PREFIXES): 형식 검사를 건너뛰는 git이 만든 제목의 접두어. `Merge `, `Revert `, `fixup! `, `squash! `.
+- [check_message](../tools/check_commit_msg.py#check_message): 메시지 본문과 알려진 작업 ID 집합을 받아 문제 메시지 목록을 돌려준다.
+  - `#`으로 시작하는 줄(git 주석)과 빈 줄을 건너뛴 첫 줄이 제목이다. 제목이 없으면 문제다.
+  - 제목이 `GIT_SUBJECT_PREFIXES`로 시작하면 통과한다.
+  - 제목은 `<ID 목록>[(진행 중)]: <요약>` 형식이어야 한다. ID 목록은 `, `로 나누며, 요약은 비어 있으면 안 된다.
+  - ID 목록의 각 ID가 알려진 작업 ID가 아니면 문제다.
+- [main](../tools/check_commit_msg.py#main): 메시지 파일 경로와 `--root` 옵션을 받는다. 로드맵과 이슈를 [작업 관리 검사기](#6-작업-관리-검사기)의 `parse_roadmap`, `parse_issues`로 읽어 작업 ID 집합을 만들고, 문제가 있으면 문제마다 `커밋 메시지: <메시지>`를 표준 오류로 출력하고 종료 코드 1로 끝난다.
 
