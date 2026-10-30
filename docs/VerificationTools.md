@@ -62,8 +62,12 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
   - 대상 파일이나 디렉터리가 없으면 문제다.
   - 대상이 `.md` 문서이고 앵커가 있으면, 대상 문서에 그 앵커가 있어야 한다.
 - [check_entry](../tools/check_docs.py#check_entry): `ENTRY_DOC`이 존재하고 `INDEX_DOC`으로 가는 링크를 가지는지 검사한다.
+- [check_entry_format](../tools/check_docs.py#check_entry_format): `ENTRY_DOC`이 [진입 문서 형식](DocumentationRule.md#7-진입-문서)을 지키는지 검사한다. 위반한 줄마다 문제를 보고한다.
+  - 첫 줄이 `# ` 제목이어야 한다. 그 뒤 빈 줄 다음의 연속된 줄들이 목적 문단이다.
+  - 목적 문단 뒤의 빈 줄이 아닌 줄은 `## ` 제목이거나, `- `로 시작하고 `docs/` 아래 `.md` 문서로 가는 링크를 가진 줄이어야 한다.
+  - 펜스 코드 블록은 줄 위치와 상관없이 문제이며, 인라인 코드가 있는 줄도 문제다.
 - [find_orphans](../tools/check_docs.py#find_orphans): `INDEX_DOC`에서 문서 간 링크를 따라 너비 우선 탐색을 하고, 도달하지 못한 `docs/` 아래 문서를 고아 문서로 보고한다. `INDEX_DOC`이 없으면 그 자체를 문제로 보고한다.
-- [main](../tools/check_docs.py#main): 세 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
+- [main](../tools/check_docs.py#main): 네 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
 
 ## 4. 포인터 검사기
 
@@ -91,7 +95,7 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
 
 - [tests/support.py](../tests/support.py): 테스트 공통 기반. [RepoTestCase](../tests/support.py#RepoTestCase)는 테스트마다 임시 저장소 루트(`self.root`)를 만들고 지우며, [RepoTestCase.write](../tests/support.py#RepoTestCase.write)로 그 아래에 파일을 만든다.
 - [tests/test_doclib.py](../tests/test_doclib.py): 링크 추출(코드 블록·인라인 코드·이미지 제외), 앵커 생성(한글, 중복 제목).
-- [tests/test_check_docs.py](../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소.
+- [tests/test_check_docs.py](../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소, 진입 문서 형식(정상, 코드 블록, 인라인 코드, 링크 없는 목록 줄, 추가 문단, 제목 누락).
 - [tests/test_check_pointers.py](../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락, Python 밖의 언어로 된 저장소.
 - [tests/test_code_index.py](../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
 - [tests/test_check_hooks.py](../tests/test_check_hooks.py): 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, `core.hooksPath` 미설정, git 저장소가 아닌 경우.

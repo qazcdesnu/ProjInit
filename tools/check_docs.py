@@ -19,7 +19,9 @@ from tools.doclib import (
     find_doc_files,
     heading_anchors,
     is_external,
+    iter_prose_lines,
     resolve_link,
+    strip_inline_code,
 )
 
 
@@ -63,6 +65,56 @@ def check_entry(root: Path) -> list[Problem]:
     return [Problem(entry, 1, f"진입 문서에 {INDEX_DOC} 링크 없음")]
 
 
+def check_entry_format(root: Path) -> list[Problem]:
+    """Report lines of the entry document that go beyond a title, one purpose paragraph and link lists.
+
+    @doc: docs/VerificationTools.md#3-문서-링크-검사기
+    """
+    entry = root / ENTRY_DOC
+    if not entry.is_file():
+        return []
+    text = entry.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    prose = {number for number, _ in iter_prose_lines(text)}
+    docs_dir = (root / DOCS_DIR).resolve()
+    body_start = _purpose_end(lines)
+    problems = []
+    if not lines or not lines[0].startswith("# "):
+        problems.append(Problem(entry, 1, "진입 문서는 '# ' 제목으로 시작해야 함"))
+    for number, line in enumerate(lines, start=1):
+        if number not in prose:
+            problems.append(Problem(entry, number, "진입 문서에 코드 블록을 쓸 수 없음"))
+        elif strip_inline_code(line) != line:
+            problems.append(Problem(entry, number, "진입 문서에 인라인 코드를 쓸 수 없음"))
+        elif number > body_start and line.strip() and not _is_entry_item(entry, docs_dir, line):
+            problems.append(Problem(entry, number, "진입 문서에는 '## ' 제목과 하위 문서 링크 목록 줄만 쓸 수 있음"))
+    return problems
+
+
+def _purpose_end(lines: list[str]) -> int:
+    """Return the line number of the last line of the purpose paragraph after the title."""
+    number = 1
+    while number < len(lines) and not lines[number].strip():
+        number += 1
+    while number < len(lines) and lines[number].strip():
+        number += 1
+    return number
+
+
+def _is_entry_item(entry: Path, docs_dir: Path, line: str) -> bool:
+    if line.startswith("## "):
+        return True
+    if not line.startswith("- "):
+        return False
+    for link in extract_links(entry, line):
+        if is_external(link.target):
+            continue
+        path = resolve_link(link)[0]
+        if path.suffix == ".md" and docs_dir in path.parents:
+            return True
+    return False
+
+
 def find_orphans(root: Path) -> list[Problem]:
     """Report documents under the docs directory unreachable from the index.
 
@@ -98,7 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
     root = parser.parse_args(argv).root.resolve()
-    problems = check_links(root) + check_entry(root) + find_orphans(root)
+    problems = check_links(root) + check_entry(root) + check_entry_format(root) + find_orphans(root)
     for problem in problems:
         print(problem.format(root))
     if problems:

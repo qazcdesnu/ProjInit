@@ -6,7 +6,7 @@
 import unittest
 
 from tests.support import RepoTestCase
-from tools.check_docs import check_entry, check_links, find_orphans
+from tools.check_docs import check_entry, check_entry_format, check_links, find_orphans
 
 
 class CheckDocsTest(RepoTestCase):
@@ -37,6 +37,42 @@ class CheckDocsTest(RepoTestCase):
     def test_reports_entry_without_index_link(self) -> None:
         self.write("CLAUDE.md", "# C\n")
         self.assertEqual(len(check_entry(self.root)), 1)
+
+
+class EntryFormatTest(RepoTestCase):
+    """@doc: docs/VerificationTools.md#5-테스트"""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.write("docs/index.md", "# Index\n")
+
+    def problems(self, text: str) -> list[tuple[int, str]]:
+        self.write("CLAUDE.md", text)
+        return [(problem.line, problem.message) for problem in check_entry_format(self.root)]
+
+    def test_title_purpose_and_link_lists_pass(self) -> None:
+        text = "# C\n\n이 문서는 루트다.\n여러 줄 문단.\n\n## 읽는 순서\n\n- [인덱스](docs/index.md)를 읽는다.\n"
+        self.assertEqual(self.problems(text), [])
+
+    def test_reports_code_blocks_and_inline_code(self) -> None:
+        text = "# C\n\n목적.\n\n- [인덱스](docs/index.md)와 `uv run`\n\n```sh\nuv run x\n```\n"
+        self.assertEqual(
+            self.problems(text),
+            [
+                (5, "진입 문서에 인라인 코드를 쓸 수 없음"),
+                (7, "진입 문서에 코드 블록을 쓸 수 없음"),
+                (8, "진입 문서에 코드 블록을 쓸 수 없음"),
+                (9, "진입 문서에 코드 블록을 쓸 수 없음"),
+            ],
+        )
+
+    def test_reports_items_without_doc_links_and_extra_paragraphs(self) -> None:
+        text = "# C\n\n목적.\n\n- 링크 없음\n- [밖](https://x.y)\n1. [번호](docs/index.md)\n\n둘째 문단.\n"
+        messages = self.problems(text)
+        self.assertEqual([line for line, _ in messages], [5, 6, 7, 9])
+
+    def test_reports_missing_title(self) -> None:
+        self.assertIn((1, "진입 문서는 '# ' 제목으로 시작해야 함"), self.problems("C\n\n- [i](docs/index.md)\n"))
 
 
 if __name__ == "__main__":
