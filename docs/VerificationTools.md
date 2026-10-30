@@ -97,7 +97,7 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
 - [tests/test_check_hooks.py](../tests/test_check_hooks.py): 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
 - [tests/test_run_checks.py](../tests/test_run_checks.py): 실행할 검사 목록, Stop hook 응답(통과, 첫 실패에서 막기, 이미 막힌 뒤 허용과 사용자 경고), 실패 요약의 길이 제한.
 - [tests/test_languages.py](../tests/test_languages.py): 언어마다 [포인터 규약](Traceability.md#7-언어별-심볼-규칙)의 표에 있는 정의·값·이름 붙이기·공개 규칙. `LANGUAGES`와 `LANGUAGE_SUFFIXES`의 일치.
-- [tests/test_check_tasks.py](../tests/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함), 기록 보존(그대로 옮긴 경우 통과, 옮기며 줄이 빠진 경우, 진행 중 기록의 진행 기록 줄을 지운 경우, 진행 중 기록이 사라진 경우, 완료 기록의 줄이 바뀐 경우, git 저장소가 아닌 경우).
+- [tests/test_check_tasks.py](../tests/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함), 경량 이슈(정상, `[~]` 상태, 기록이 있는 경우, 완료일 누락, 빈 결과, 연결 작업), 기록 보존(그대로 옮긴 경우 통과, 옮기며 줄이 빠진 경우, 진행 중 기록의 진행 기록 줄을 지운 경우, 진행 중 기록이 사라진 경우, 완료 기록의 줄이 바뀐 경우, git 저장소가 아닌 경우).
 
 ## 6. 작업 관리 검사기
 
@@ -114,15 +114,16 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
 
 **자료형**
 
-- [WorkItem](../tools/check_tasks.py#WorkItem): 로드맵의 태스크 또는 이슈 하나. ID, 상태 문자(` `, `~`, `x`), 출처 문서, 줄, 연결 작업 ID(없으면 `None`)를 가진다.
+- [WorkItem](../tools/check_tasks.py#WorkItem): 로드맵의 태스크 또는 이슈 하나. ID, 상태 문자(` `, `~`, `x`), 출처 문서, 줄, 연결 작업 ID, 경량 결과, 완료일(셋 다 없으면 `None`)을 가진다.
 - [Record](../tools/check_tasks.py#Record): 진행 중·완료 문서의 기록 하나. ID, 출처 문서, 줄, 필드 사전, 절 이름 집합, 본문 줄 목록을 가진다. 본문 줄은 제목 줄을 포함한 빈 줄이 아닌 줄을 (속한 절 이름, 줄 끝 공백을 뗀 줄)로 담으며, 절 앞의 줄은 절 이름이 빈 문자열이다.
 
 **함수**
 
 - [parse_roadmap](../tools/check_tasks.py#parse_roadmap): 로드맵에서 태스크를 읽는다. 형식에 맞지 않는 `- [` 줄과 `##` 제목, 마일스톤 밖이나 다른 마일스톤 아래의 태스크, 차례가 맞지 않는 마일스톤·태스크 번호를 문제로 보고한다.
-- [parse_issues](../tools/check_tasks.py#parse_issues): 이슈 문서에서 이슈와 연결 작업을 읽는다. 형식 오류와 접두어별 번호 차례를 검사한다.
+- [parse_issues](../tools/check_tasks.py#parse_issues): 이슈 문서에서 이슈와 세부 필드(연결 작업, 경량, 완료일)를 읽는다. 형식 오류와 접두어별 번호 차례를 검사한다.
 - [parse_records](../tools/check_tasks.py#parse_records): 진행 중 또는 완료 문서에서 기록을 읽는다. 문서 내용을 따로 넘기면 파일 대신 그 내용을 읽는다(`HEAD`의 내용을 읽을 때 쓴다). 작업 ID로 시작하지 않는 `##` 제목과 같은 문서 안의 중복 기록을 문제로 보고한다.
 - [check_states](../tools/check_tasks.py#check_states): 상태와 기록의 대응을 검사한다.
+  - 경량 이슈([가벼운 작업 경로](TaskRule.md#46-가벼운-작업-경로)): `[~]`가 아니어야 하고, 진행 중·완료 기록과 연결 작업이 없어야 하며, 경량 결과가 비어 있지 않아야 한다. `[x]`이면 올바른 형식의 완료일이 있어야 한다. 경량 이슈에는 아래의 일반 규칙을 적용하지 않는다.
   - 로드맵과 이슈 전체에서 ID는 하나뿐이어야 한다.
   - 연결 작업이 없는 항목: `[~]`이면 진행 중 기록만, `[x]`이면 완료 기록만 있어야 하고, `[ ]`이면 어느 기록도 없어야 한다.
   - 연결 작업이 있는 항목: 연결 작업이 존재하고 그 자신은 연결 작업이 없어야 하며, 상태가 연결 작업과 같고, 자체 기록이 없어야 한다.
