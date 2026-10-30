@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from projinit.check_tasks import ISSUE_DOC, ROADMAP_DOC, parse_issues, parse_roadmap
-from projinit.doclib import REPO_ROOT
+from projinit.config import ConfigError, load_project, report_config_error
 
 # @doc: docs/VerificationTools.md#10-커밋-메시지-검사기
 GIT_SUBJECT_PREFIXES = ("Merge ", "Revert ", "fixup! ", "squash! ")
@@ -46,13 +46,17 @@ def main(argv: list[str] | None = None) -> int:
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("message_file", type=Path)
-    parser.add_argument("--root", type=Path, default=REPO_ROOT)
+    parser.add_argument("--root", type=Path, default=Path("."))
     args = parser.parse_args(argv)
     root = args.root.resolve()
+    try:
+        project = load_project(root)
+    except ConfigError as error:
+        return report_config_error(error)
     known: set[str] = set()
     for doc, parse in ((ROADMAP_DOC, parse_roadmap), (ISSUE_DOC, parse_issues)):
-        if (root / doc).is_file():
-            known.update(item.id for item in parse(root / doc)[0])
+        if (project.docs_dir / doc).is_file():
+            known.update(item.id for item in parse(project.docs_dir / doc)[0])
     problems = check_message(args.message_file.read_text(encoding="utf-8"), known)
     for problem in problems:
         print(f"커밋 메시지: {problem}", file=sys.stderr)

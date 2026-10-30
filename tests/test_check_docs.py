@@ -7,6 +7,7 @@ import unittest
 
 from tests.support import RepoTestCase
 from projinit.check_docs import check_entry, check_entry_format, check_links, find_orphans
+from projinit.config import load_project
 
 
 class CheckDocsTest(RepoTestCase):
@@ -19,24 +20,24 @@ class CheckDocsTest(RepoTestCase):
         self.write("docs/Rule.md", "# Rule\n\n## 1. Intro\n\n[back](index.md)\n")
 
     def test_clean_repository_passes(self) -> None:
-        self.assertEqual(check_links(self.root) + check_entry(self.root) + find_orphans(self.root), [])
+        self.assertEqual(check_links(load_project(self.root)) + check_entry(load_project(self.root)) + find_orphans(load_project(self.root)), [])
 
     def test_reports_missing_file_and_anchor(self) -> None:
         self.write("docs/Rule.md", "# Rule\n\n## 1. Intro\n\n[gone](Gone.md) [bad](index.md#nope)\n")
-        messages = [problem.message for problem in check_links(self.root)]
+        messages = [problem.message for problem in check_links(load_project(self.root))]
         self.assertEqual(messages, ["링크 대상 없음: Gone.md", "앵커 없음: index.md#nope"])
 
     def test_skips_external_and_code_links(self) -> None:
         self.write("docs/Rule.md", "# Rule\n\n## 1. Intro\n\n[w](https://x.y) [c](../missing.py#f)\n")
-        self.assertEqual(check_links(self.root), [])
+        self.assertEqual(check_links(load_project(self.root)), [])
 
     def test_reports_orphan(self) -> None:
         orphan = self.write("docs/Orphan.md", "# Orphan\n\n[index](index.md)\n")
-        self.assertEqual([problem.path for problem in find_orphans(self.root)], [orphan])
+        self.assertEqual([problem.path for problem in find_orphans(load_project(self.root))], [orphan])
 
     def test_reports_entry_without_index_link(self) -> None:
         self.write("CLAUDE.md", "# C\n")
-        self.assertEqual(len(check_entry(self.root)), 1)
+        self.assertEqual(len(check_entry(load_project(self.root))), 1)
 
 
 class EntryFormatTest(RepoTestCase):
@@ -48,7 +49,7 @@ class EntryFormatTest(RepoTestCase):
 
     def problems(self, text: str) -> list[tuple[int, str]]:
         self.write("CLAUDE.md", text)
-        return [(problem.line, problem.message) for problem in check_entry_format(self.root)]
+        return [(problem.line, problem.message) for problem in check_entry_format(load_project(self.root))]
 
     def test_title_purpose_and_link_lists_pass(self) -> None:
         text = "# C\n\n이 문서는 루트다.\n여러 줄 문단.\n\n## 읽는 순서\n\n- [인덱스](docs/index.md)를 읽는다.\n"

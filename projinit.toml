@@ -1,0 +1,13 @@
+# ProjInit 검사기 설정. 형식은 docs/design/Package.md 4절에 있다.
+
+[projinit]
+# 이 저장소는 projinit 패키지 자체라서 설치된 버전이 아니라 작업 트리의 코드로 검사한다.
+command = "uv run projinit"
+
+[paths]
+docs = "docs"
+entry = "CLAUDE.md"
+code_roots = ["src", "tools", "tests"]
+
+[check]
+commands = ["uv run python -m unittest discover -s tests -t ."]

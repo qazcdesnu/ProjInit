@@ -10,7 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from projinit.doclib import REPO_ROOT, Problem
+from projinit.config import ConfigError, load_project, report_config_error
+from projinit.doclib import Problem
 
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
 CLAUDE_SETTINGS = ".claude/settings.json"
@@ -108,8 +109,12 @@ def main(argv: list[str] | None = None) -> int:
     @doc: docs/VerificationTools.md#8-강제-장치-검사기
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--root", type=Path, default=REPO_ROOT)
+    parser.add_argument("--root", type=Path, default=Path("."))
     root = parser.parse_args(argv).root.resolve()
+    try:
+        load_project(root)
+    except ConfigError as error:
+        return report_config_error(error)
     problems = check_stop_hook(root) + check_pre_commit(root) + check_commit_msg_hook(root) + check_hooks_path(root)
     for problem in problems:
         print(problem.format(root))

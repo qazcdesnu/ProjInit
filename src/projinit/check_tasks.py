@@ -11,18 +11,19 @@ from dataclasses import dataclass, field, replace
 from datetime import date
 from pathlib import Path
 
-from projinit.doclib import REPO_ROOT, Problem, iter_prose_lines, strip_inline_code
+from projinit.config import ConfigError, Project, load_project, report_config_error
+from projinit.doclib import Problem, iter_prose_lines, strip_inline_code
 
 # @doc: docs/VerificationTools.md#6-작업-관리-검사기
-ROADMAP_DOC = "docs/Roadmap.md"
+ROADMAP_DOC = "Roadmap.md"
 # @doc: docs/VerificationTools.md#6-작업-관리-검사기
-ISSUE_DOC = "docs/Issue.md"
+ISSUE_DOC = "Issue.md"
 # @doc: docs/VerificationTools.md#6-작업-관리-검사기
-ONGOING_DOC = "docs/Ongoing.md"
+ONGOING_DOC = "Ongoing.md"
 # @doc: docs/VerificationTools.md#6-작업-관리-검사기
-DONE_DOC = "docs/Done.md"
+DONE_DOC = "Done.md"
 # @doc: docs/VerificationTools.md#6-작업-관리-검사기
-DONE_ARCHIVE_GLOB = "docs/Done-M*.md"
+DONE_ARCHIVE_GLOB = "Done-M*.md"
 
 _ID = r"M\d+-T\d+|[IH]\d+"
 _ID_RE = re.compile(rf"(?:{_ID})")
@@ -324,7 +325,7 @@ def _parse_date(value: str) -> date | None:
 
 
 def check_preservation(
-    root: Path, ongoing_path: Path, done_path: Path, ongoing: list[Record], done: list[Record]
+    project: Project, ongoing_path: Path, done_path: Path, ongoing: list[Record], done: list[Record]
 ) -> list[Problem]:
     """Report lines of records in the last commit that were dropped from the current records.
 
@@ -333,9 +334,10 @@ def check_preservation(
     problems = []
     current_ongoing = {record.id: record for record in ongoing}
     current_done = {record.id: record for record in done}
+    root = project.root
     head_ongoing = _head_records(root, ongoing_path)
     head_done = _head_records(root, done_path) + [
-        record for path in _head_archive_paths(root) for record in _head_records(root, path)
+        record for path in _head_archive_paths(project) for record in _head_records(root, path)
     ]
     for old in head_ongoing:
         if old.id in current_ongoing:
@@ -367,9 +369,11 @@ def _head_records(root: Path, path: Path) -> list[Record]:
     return parse_records(path, shown.stdout)[0]
 
 
-def _head_archive_paths(root: Path) -> list[Path]:
+def _head_archive_paths(project: Project) -> list[Path]:
+    root = project.root
+    docs = project.docs_dir.relative_to(root).as_posix()
     listed = subprocess.run(
-        ["git", "-C", str(root), "ls-tree", "--name-only", "HEAD", f"{Path(DONE_ARCHIVE_GLOB).parent.as_posix()}/"],
+        ["git", "-C", str(root), "ls-tree", "--name-only", "HEAD", f"{docs}/"],
         capture_output=True,
         encoding="utf-8",
     )
@@ -386,12 +390,12 @@ def _missing_lines(old: Record, required: list[str], current: Record, label: str
     return [Problem(current.path, current.line, f"{old.id}: {label} {len(missing)}개, 예: {missing[0]}")]
 
 
-def find_done_archives(root: Path) -> list[Path]:
+def find_done_archives(project: Project) -> list[Path]:
     """Return the archive documents of closed milestones.
 
     @doc: docs/VerificationTools.md#6-작업-관리-검사기
     """
-    return sorted(root.glob(DONE_ARCHIVE_GLOB))
+    return sorted(project.docs_dir.glob(DONE_ARCHIVE_GLOB))
 
 
 def check_archives(
@@ -426,7 +430,7 @@ def check_archives(
                 Problem(
                     record.path,
                     record.line,
-                    f"{record.id}: 닫힌 마일스톤의 기록은 {DONE_ARCHIVE_GLOB.replace('*', task.group(1))}로 옮겨야 함",
+                    f"{record.id}: 닫힌 마일스톤의 기록은 {DONE_ARCHIVE_GLOB.replace('*', task.group(1))}(같은 디렉터리)로 옮겨야 함",
                 )
             )
     return problems
@@ -461,9 +465,13 @@ def main(argv: list[str] | None = None) -> int:
     @doc: docs/VerificationTools.md#6-작업-관리-검사기
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--root", type=Path, default=REPO_ROOT)
+    parser.add_argument("--root", type=Path, default=Path("."))
     root = parser.parse_args(argv).root.resolve()
-    paths = [root / doc for doc in (ROADMAP_DOC, ISSUE_DOC, ONGOING_DOC, DONE_DOC)]
+    try:
+        project = load_project(root)
+    except ConfigError as error:
+        return report_config_error(error)
+    paths = [project.docs_dir / doc for doc in (ROADMAP_DOC, ISSUE_DOC, ONGOING_DOC, DONE_DOC)]
     missing = [Problem(path, 1, "작업 관리 문서 없음") for path in paths if not path.is_file()]
     if missing:
         problems = missing
@@ -474,7 +482,7 @@ def main(argv: list[str] | None = None) -> int:
         ongoing, ongoing_problems = parse_records(ongoing_path)
         done, done_problems = parse_records(done_path)
         archives: dict[Path, list[Record]] = {}
-        for archive_path in find_done_archives(root):
+        for archive_path in find_done_archives(project):
             archives[archive_path], archive_problems = parse_records(archive_path)
             done_problems += archive_problems
         all_done = done + [record for records in archives.values() for record in records]
@@ -486,7 +494,7 @@ def main(argv: list[str] | None = None) -> int:
             + check_states(items, ongoing, all_done)
             + check_records(ongoing_path, ongoing, done)
             + check_archives(tasks, done, archives)
-            + check_preservation(root, ongoing_path, done_path, ongoing, all_done)
+            + check_preservation(project, ongoing_path, done_path, ongoing, all_done)
             + check_references(paths + list(archives), {item.id for item in items})
         )
     for problem in problems:

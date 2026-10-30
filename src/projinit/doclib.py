@@ -1,4 +1,4 @@
-"""Shared project layout constants and markdown parsing for the verification tools.
+"""Shared problem reporting, file discovery and markdown parsing for the checkers.
 
 @doc: docs/VerificationTools.md#2-공통-모듈
 """
@@ -9,16 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote
 
-# @doc: docs/VerificationTools.md#2-공통-모듈
-REPO_ROOT = Path(__file__).resolve().parents[2]
-# @doc: docs/VerificationTools.md#2-공통-모듈
-INDEX_DOC = "docs/index.md"
-# @doc: docs/VerificationTools.md#2-공통-모듈
-ENTRY_DOC = "CLAUDE.md"
-# @doc: docs/VerificationTools.md#2-공통-모듈
-DOCS_DIR = "docs"
-# @doc: docs/VerificationTools.md#2-공통-모듈
-CODE_ROOTS = ("src", "tools", "tests")
+from projinit.config import Project
+
 # @doc: docs/VerificationTools.md#2-공통-모듈
 LANGUAGE_SUFFIXES = {
     ".py": "python",
@@ -92,29 +84,27 @@ class Link:
     target: str
 
 
-def find_doc_files(root: Path) -> list[Path]:
+def find_doc_files(project: Project) -> list[Path]:
     """Return the entry document and every markdown file under the docs directory.
 
     @doc: docs/VerificationTools.md#2-공통-모듈
     """
     docs = []
-    entry = root / ENTRY_DOC
-    if entry.is_file():
-        docs.append(entry)
-    docs_dir = root / DOCS_DIR
+    if project.entry_doc.is_file():
+        docs.append(project.entry_doc)
+    docs_dir = project.docs_dir
     if docs_dir.is_dir():
         docs.extend(sorted(docs_dir.rglob("*.md")))
     return docs
 
 
-def find_code_files(root: Path) -> list[Path]:
+def find_code_files(project: Project) -> list[Path]:
     """Return every code file under the code roots, skipping missing roots.
 
     @doc: docs/VerificationTools.md#2-공통-모듈
     """
     files = []
-    for code_root in CODE_ROOTS:
-        directory = root / code_root
+    for directory in project.code_roots:
         if not directory.is_dir():
             continue
         for suffix in CODE_SUFFIXES:

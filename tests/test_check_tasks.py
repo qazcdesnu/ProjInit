@@ -183,7 +183,7 @@ class ArchiveTest(_TaskDocsTestCase):
 
     def test_reports_closed_milestone_left_in_done(self) -> None:
         self.close_m0(_DONE_HEAD + _M0_T2_DONE, _DONE_RECORDS)
-        self.assert_reports("M0-T2: 닫힌 마일스톤의 기록은 docs/Done-M0.md로 옮겨야 함")
+        self.assert_reports("docs/Done.md:5: M0-T2: 닫힌 마일스톤의 기록은 Done-M0.md(같은 디렉터리)로 옮겨야 함")
 
     def test_reports_archive_problems(self) -> None:
         self.close_m0(_DONE_HEAD + _DONE_RECORDS, _M0_T2_DONE + "\n" + _DONE_RECORDS, name="Done-Mold.md")

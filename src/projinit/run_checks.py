@@ -10,15 +10,14 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from projinit.doclib import REPO_ROOT
+from projinit.config import ConfigError, Project, load_project, report_config_error
 
 # @doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
 CHECKS = (
-    ("check_docs", ("-m", "projinit.check_docs")),
-    ("check_pointers", ("-m", "projinit.check_pointers")),
-    ("check_tasks", ("-m", "projinit.check_tasks")),
-    ("check_hooks", ("-m", "projinit.check_hooks")),
-    ("unittest", ("-m", "unittest", "discover", "-s", "tests", "-t", ".")),
+    ("check_docs", "projinit.check_docs"),
+    ("check_pointers", "projinit.check_pointers"),
+    ("check_tasks", "projinit.check_tasks"),
+    ("check_hooks", "projinit.check_hooks"),
 )
 
 _SUMMARY_LINES = 40
@@ -48,18 +47,20 @@ class HookResponse:
     stderr: str = ""
 
 
-def run_all(root: Path) -> list[CheckResult]:
-    """Run every check as a subprocess of this interpreter, continuing past failures.
+def run_all(project: Project) -> list[CheckResult]:
+    """Run every checker, then the project's own commands, continuing past failures.
 
     @doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
     """
+    root = project.root
     results = []
-    for name, args in CHECKS:
-        command = [sys.executable, *args]
-        if name != "unittest":
-            command += ["--root", str(root)]
+    for name, module in CHECKS:
+        command = [sys.executable, "-m", module, "--root", str(root)]
         completed = subprocess.run(command, cwd=root, capture_output=True, text=True)
         results.append(CheckResult(name, completed.returncode, completed.stdout + completed.stderr))
+    for command in project.config.check_commands:
+        completed = subprocess.run(command, shell=True, cwd=root, capture_output=True, text=True)
+        results.append(CheckResult(command, completed.returncode, completed.stdout + completed.stderr))
     return results
 
 
@@ -109,19 +110,23 @@ def main(argv: list[str] | None = None) -> int:
     @doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--root", type=Path, default=REPO_ROOT)
+    parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--hook", choices=("stop", "pre-commit"))
     args = parser.parse_args(argv)
     root = args.root.resolve()
+    try:
+        project = load_project(root)
+    except ConfigError as error:
+        return report_config_error(error)
     if args.hook == "stop":
         stop_hook_active = _read_stop_hook_active()
-        response = stop_hook_response(run_all(root), stop_hook_active)
+        response = stop_hook_response(run_all(project), stop_hook_active)
         if response.stdout:
             print(response.stdout)
         if response.stderr:
             print(response.stderr, file=sys.stderr)
         return response.exit_code
-    results = run_all(root)
+    results = run_all(project)
     for result in results:
         print(f"{result.name}: {'통과' if result.returncode == 0 else '실패'}")
     if any(result.returncode != 0 for result in results):

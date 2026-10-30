@@ -8,12 +8,10 @@ import sys
 from collections import deque
 from pathlib import Path
 
+from projinit.config import ConfigError, Project, load_project, report_config_error
 from projinit.doclib import (
     CODE_SUFFIXES,
-    DOCS_DIR,
-    ENTRY_DOC,
-    INDEX_DOC,
-    REPO_ROOT,
+    display_path,
     Problem,
     extract_links,
     find_doc_files,
@@ -25,14 +23,14 @@ from projinit.doclib import (
 )
 
 
-def check_links(root: Path) -> list[Problem]:
+def check_links(project: Project) -> list[Problem]:
     """Report links whose target file, directory or document anchor is missing.
 
     @doc: docs/VerificationTools.md#3-문서-링크-검사기
     """
     problems = []
     anchor_cache: dict[Path, set[str]] = {}
-    for doc in find_doc_files(root):
+    for doc in find_doc_files(project):
         for link in extract_links(doc, doc.read_text(encoding="utf-8")):
             if is_external(link.target):
                 continue
@@ -50,33 +48,33 @@ def check_links(root: Path) -> list[Problem]:
     return problems
 
 
-def check_entry(root: Path) -> list[Problem]:
+def check_entry(project: Project) -> list[Problem]:
     """Report a missing entry document or a missing link from it to the index.
 
     @doc: docs/VerificationTools.md#3-문서-링크-검사기
     """
-    entry = root / ENTRY_DOC
+    entry = project.entry_doc
     if not entry.is_file():
         return [Problem(entry, 1, "진입 문서 없음")]
-    index = (root / INDEX_DOC).resolve()
+    index = project.index_doc.resolve()
     for link in extract_links(entry, entry.read_text(encoding="utf-8")):
         if not is_external(link.target) and resolve_link(link)[0] == index:
             return []
-    return [Problem(entry, 1, f"진입 문서에 {INDEX_DOC} 링크 없음")]
+    return [Problem(entry, 1, f"진입 문서에 {display_path(index, project.root)} 링크 없음")]
 
 
-def check_entry_format(root: Path) -> list[Problem]:
+def check_entry_format(project: Project) -> list[Problem]:
     """Report lines of the entry document that go beyond a title, one purpose paragraph and link lists.
 
     @doc: docs/VerificationTools.md#3-문서-링크-검사기
     """
-    entry = root / ENTRY_DOC
+    entry = project.entry_doc
     if not entry.is_file():
         return []
     text = entry.read_text(encoding="utf-8")
     lines = text.splitlines()
     prose = {number for number, _ in iter_prose_lines(text)}
-    docs_dir = (root / DOCS_DIR).resolve()
+    docs_dir = project.docs_dir.resolve()
     body_start = _purpose_end(lines)
     problems = []
     if not lines or not lines[0].startswith("# "):
@@ -115,12 +113,12 @@ def _is_entry_item(entry: Path, docs_dir: Path, line: str) -> bool:
     return False
 
 
-def find_orphans(root: Path) -> list[Problem]:
+def find_orphans(project: Project) -> list[Problem]:
     """Report documents under the docs directory unreachable from the index.
 
     @doc: docs/VerificationTools.md#3-문서-링크-검사기
     """
-    index = (root / INDEX_DOC).resolve()
+    index = project.index_doc.resolve()
     if not index.is_file():
         return [Problem(index, 1, "인덱스 문서 없음")]
     reachable = {index}
@@ -134,10 +132,10 @@ def find_orphans(root: Path) -> list[Problem]:
             if path.suffix == ".md" and path.is_file() and path not in reachable:
                 reachable.add(path)
                 queue.append(path)
-    docs_dir = (root / DOCS_DIR).resolve()
+    docs_dir = project.docs_dir.resolve()
     return [
-        Problem(doc, 1, f"고아 문서: {INDEX_DOC}에서 도달할 수 없음")
-        for doc in find_doc_files(root)
+        Problem(doc, 1, f"고아 문서: {display_path(index, project.root)}에서 도달할 수 없음")
+        for doc in find_doc_files(project)
         if doc.resolve().is_relative_to(docs_dir) and doc.resolve() not in reachable
     ]
 
@@ -148,15 +146,19 @@ def main(argv: list[str] | None = None) -> int:
     @doc: docs/VerificationTools.md#3-문서-링크-검사기
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--root", type=Path, default=REPO_ROOT)
+    parser.add_argument("--root", type=Path, default=Path("."))
     root = parser.parse_args(argv).root.resolve()
-    problems = check_links(root) + check_entry(root) + check_entry_format(root) + find_orphans(root)
+    try:
+        project = load_project(root)
+    except ConfigError as error:
+        return report_config_error(error)
+    problems = check_links(project) + check_entry(project) + check_entry_format(project) + find_orphans(project)
     for problem in problems:
         print(problem.format(root))
     if problems:
         print(f"check_docs: 문제 {len(problems)}건")
         return 1
-    print(f"check_docs: 통과 (문서 {len(find_doc_files(root))}개)")
+    print(f"check_docs: 통과 (문서 {len(find_doc_files(project))}개)")
     return 0
 
 

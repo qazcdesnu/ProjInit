@@ -10,9 +10,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from projinit.code_index import ModuleIndex, SymbolRef, index_module
+from projinit.config import ConfigError, Project, load_project, report_config_error
 from projinit.doclib import (
     CODE_SUFFIXES,
-    REPO_ROOT,
     Problem,
     display_path,
     extract_links,
@@ -46,7 +46,7 @@ def _describe(symbol: SymbolRef, root: Path) -> str:
 
 
 def collect_code_pointers(
-    root: Path, modules: dict[Path, ModuleIndex]
+    project: Project, modules: dict[Path, ModuleIndex]
 ) -> tuple[list[CodePointer], list[Problem]]:
     """Gather pointers from documents to code and report those that do not resolve.
 
@@ -57,7 +57,8 @@ def collect_code_pointers(
     """
     pointers = []
     problems = []
-    for doc in find_doc_files(root):
+    root = project.root
+    for doc in find_doc_files(project):
         doc = doc.resolve()
         for link in extract_links(doc, doc.read_text(encoding="utf-8")):
             if is_external(link.target):
@@ -104,13 +105,13 @@ def check_doc_pointers(root: Path, modules: dict[Path, ModuleIndex]) -> list[Pro
     return problems
 
 
-def check_coverage(root: Path, modules: dict[Path, ModuleIndex]) -> list[Problem]:
+def check_coverage(project: Project, modules: dict[Path, ModuleIndex]) -> list[Problem]:
     """Report modules and public top-level symbols in the code roots lacking a document pointer.
 
     @doc: docs/VerificationTools.md#4-포인터-검사기
     """
     problems = []
-    for path in find_code_files(root):
+    for path in find_code_files(project):
         module = modules[path.resolve()]
         if not module.has_code:
             continue
@@ -172,15 +173,15 @@ def check_reciprocity(
     return problems
 
 
-def check_stubs(root: Path, modules: dict[Path, ModuleIndex]) -> list[Problem]:
+def check_stubs(project: Project, modules: dict[Path, ModuleIndex]) -> list[Problem]:
     """Report mock-up markers whose task is unknown or not in progress.
 
     @doc: docs/VerificationTools.md#4-포인터-검사기
     """
     items: dict[str, WorkItem] = {}
     for doc, parse in ((ROADMAP_DOC, parse_roadmap), (ISSUE_DOC, parse_issues)):
-        if (root / doc).is_file():
-            items.update((item.id, item) for item in parse(root / doc)[0])
+        if (project.docs_dir / doc).is_file():
+            items.update((item.id, item) for item in parse(project.docs_dir / doc)[0])
     problems = []
     for module in modules.values():
         for line, task_id in module.stubs:
@@ -200,17 +201,21 @@ def main(argv: list[str] | None = None) -> int:
     @doc: docs/VerificationTools.md#4-포인터-검사기
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--root", type=Path, default=REPO_ROOT)
+    parser.add_argument("--root", type=Path, default=Path("."))
     root = parser.parse_args(argv).root.resolve()
-    modules = {path.resolve(): index_module(path.resolve(), root) for path in find_code_files(root)}
-    code_pointers, problems = collect_code_pointers(root, modules)
+    try:
+        project = load_project(root)
+    except ConfigError as error:
+        return report_config_error(error)
+    modules = {path.resolve(): index_module(path.resolve(), root) for path in find_code_files(project)}
+    code_pointers, problems = collect_code_pointers(project, modules)
     problems = (
         [problem for module in modules.values() for problem in module.problems]
         + problems
         + check_doc_pointers(root, modules)
-        + check_coverage(root, modules)
+        + check_coverage(project, modules)
         + check_reciprocity(root, code_pointers, modules)
-        + check_stubs(root, modules)
+        + check_stubs(project, modules)
     )
     for problem in problems:
         print(problem.format(root))
