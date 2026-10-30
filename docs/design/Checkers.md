@@ -16,7 +16,7 @@ uv run python -m projinit.check_commits     # 커밋 메시지 이력 검사 (--
 uv run python -m projinit.check_pr_order --pr <번호> --open-prs <파일>   # PR 순서 검사
 ```
 
-`projinit` 명령의 하위 명령은 다섯이다. `init`은 [초기화 명령](Templates.md#9-초기화-명령)을 부른다. 나머지 넷 중 `check`는 `projinit.run_checks`, `commits`는 `projinit.check_commits`, `pr-order`는 `projinit.check_pr_order`의 `main`에 나머지 인자를 넘기고, `commit-msg <파일>`은 `projinit.check_commits`의 `main`에 `--message-file <파일>`과 나머지 인자를 넘긴다. [src/projinit/cli.py](../../src/projinit/cli.py)의 [main](../../src/projinit/cli.py#main)이 진입점이다. 검사 하나만 돌릴 때는 모듈을 직접 실행한다. 다른 프로젝트에서는 `uv run projinit` 대신 설정에서 만든 명령(`uvx --from …`)을 쓴다([설정](#11-설정)).
+`projinit` 명령의 하위 명령은 여섯이다. `init`은 [초기화 명령](Templates.md#9-초기화-명령)을, `upgrade`는 [갱신 명령](Templates.md#10-갱신-명령)을 부른다. 나머지 넷 중 `check`는 `projinit.run_checks`, `commits`는 `projinit.check_commits`, `pr-order`는 `projinit.check_pr_order`의 `main`에 나머지 인자를 넘기고, `commit-msg <파일>`은 `projinit.check_commits`의 `main`에 `--message-file <파일>`과 나머지 인자를 넘긴다. [src/projinit/cli.py](../../src/projinit/cli.py)의 [main](../../src/projinit/cli.py#main)이 진입점이다. 검사 하나만 돌릴 때는 모듈을 직접 실행한다. 다른 프로젝트에서는 `uv run projinit` 대신 설정에서 만든 명령(`uvx --from …`)을 쓴다([설정](#11-설정)).
 
 - 문제가 없으면 종료 코드 0으로 끝나고 통과 요약을 한 줄 출력한다.
 - 문제가 있으면 문제마다 `<저장소 기준 경로>:<줄>: <메시지>` 형식으로 한 줄씩 출력하고 종료 코드 1로 끝난다.

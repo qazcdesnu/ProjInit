@@ -39,3 +39,7 @@
 ## M4 첫 적용
 
 - [ ] M4-T1 AgentVis를 ProjInit으로 전환하고 문제점 반영
+
+## M5 갱신
+
+- [x] M5-T1 `projinit upgrade` 명령 (버전 기록과 공통 파일 다시 만들기를 한 번에)

@@ -2,7 +2,7 @@
 
 ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서와 코드 두 축의 규칙 체계를 깔아 주고, 그 폴더에서 Claude Code를 열어 `/start`를 입력하면 Claude가 만들 프로젝트를 물어보며 첫 작업을 시작한다. 어떤 프로젝트에서든 같은 방식으로 일하는 것이 목적이다.
 
-> 상태: 최신 릴리스는 `v0.1.2`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
+> 상태: 최신 릴리스는 `v0.1.3`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
 
 ## 무엇을 해 주나
 
@@ -26,7 +26,7 @@ ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서�
 ### 새 프로젝트 시작하기
 
 ```sh
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.2 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.3 projinit init --root ~/my-project
 cd ~/my-project
 claude
 ```
@@ -39,7 +39,13 @@ Claude Code가 열리면 `/start`를 입력한다. Claude가 어떤 걸 만들�
 
 ### 이미 초기화한 프로젝트를 새 버전으로
 
-그 프로젝트의 Claude Code에서 "ProjInit을 v<새 버전>으로 올려 줘"라고 요청한다. 버전 올리기도 그 프로젝트의 작업이라, Claude가 이슈로 등록하고 설정의 버전을 바꾼 뒤 공통 파일을 다시 만들고, 바뀐 규칙을 알려 준다(초기화된 프로젝트의 `docs/TaskRule.md` 4.9절). 터미널에서 직접 바꾸면 진행 중인 작업과 섞여 그 프로젝트의 Claude가 출처를 알 수 없는 변경으로 보게 된다.
+그 프로젝트 폴더에서 새 버전으로 갱신 명령을 실행한다.
+
+```sh
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v<새 버전> projinit upgrade
+```
+
+설정의 버전을 바꾸고 공통 규칙 문서와 자동 검사 장치를 새 버전으로 다시 만든다. 커밋하지 않은 변경이 있으면 진행 중인 작업과 섞이지 않도록 거부한다. 이 명령은 커밋하지 않으므로, 끝나면 Claude Code에서 "ProjInit 업데이트를 작업으로 등록해 커밋해 줘"라고 맡긴다. Claude가 바뀐 규칙을 알려 주고 커밋한다. Claude에게 갱신 자체를 맡겨도 된다.
 
 ### 초기화가 만드는 것
 
@@ -56,12 +62,13 @@ Claude Code가 열리면 `/start`를 입력한다. Claude가 어떤 걸 만들�
 
 ### 명령
 
-사람이 직접 쓰는 명령은 `init` 하나다. 나머지는 hook과 CI가 부른다.
+사람이 직접 쓰는 명령은 `init`과 `upgrade`다. 나머지는 hook과 CI가 부른다.
 
 | 명령 | 하는 일 |
 | --- | --- |
 | `projinit init [--root <폴더>] [--repository <주소>]` | 폴더를 초기화한다. 만들 파일이 하나라도 이미 있으면 아무것도 쓰지 않는다. |
-| `projinit init --refresh-common` | 공통 규칙 문서와 자동 검사 장치를 템플릿에서 다시 만든다. |
+| `projinit upgrade` | 이미 초기화한 프로젝트를 실행한 ProjInit 버전으로 갱신한다. |
+| `projinit init --refresh-common` | 공통 규칙 문서와 자동 검사 장치를 지금 설정 값으로 다시 만든다. |
 | `projinit check` | 모든 검사와 프로젝트 테스트를 한 번에 실행한다. 작업을 마치기 전에 직접 실행해도 된다. |
 | `projinit commit-msg`, `commits`, `pr-order` | 커밋 메시지, PR 제목·브랜치, PR 순서를 검사한다(hook과 CI용). |
 
