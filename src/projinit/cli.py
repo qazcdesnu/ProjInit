@@ -7,11 +7,13 @@ import argparse
 import sys
 from collections.abc import Callable
 
-from projinit import check_commit_msg, run_checks
+from projinit import check_commits, check_pr_order, run_checks
 
 _SUBCOMMANDS: dict[str, Callable[[list[str] | None], int]] = {
     "check": run_checks.main,
-    "commit-msg": check_commit_msg.main,
+    "commit-msg": lambda args: check_commits.main(["--message-file", *(args or [])]),
+    "commits": check_commits.main,
+    "pr-order": check_pr_order.main,
 }
 
 

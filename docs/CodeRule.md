@@ -27,7 +27,8 @@
 | `pyproject.toml`, `.python-version`, `uv.lock` | uv 프로젝트 설정. [3. 언어와 스타일](#3-언어와-스타일)을 따른다. |
 | `projinit.toml` | 검사기 설정. [검증 도구의 설정](VerificationTools.md#11-설정)에 규정된다. |
 | `.claude/` | Claude Code 프로젝트 설정(`settings.json`). 검사기를 자동 실행하는 Stop hook을 둔다. [검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)에 규정된다. |
-| `.githooks/` | 저장소에 포함하는 git hook. `pre-commit`과 `commit-msg`를 둔다. [검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)에 규정된다. |
+| `.githooks/` | 저장소에 포함하는 git hook. `pre-commit`과 `commit-msg`를 둔다. [검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)와 [커밋 규칙](CommitRule.md#5-강제)에 규정된다. |
+| `.github/` | PR 템플릿과 CI. [PR 규칙](PullRequestRule.md)과 [검증 도구의 CI](VerificationTools.md#12-ci)에 규정된다. |
 
 새로운 최상위 디렉터리가 필요하면 이 표를 먼저 수정한다.
 

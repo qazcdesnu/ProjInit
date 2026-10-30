@@ -2,6 +2,47 @@
 
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M3 갱신](Done-M3.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
+## I12 AgentVis에서 분리 후 추가된 커밋 규칙과 PR 규칙(쌓는 작업 브랜치, CI, PR 순서 검사)을 ProjInit에 반영
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+- 근거 문서: [커밋 규칙](CommitRule.md), [PR 규칙](PullRequestRule.md)
+
+### 계획
+- AgentVis(`i21-stacked-prs` 브랜치)의 커밋 규칙·PR 규칙과 바뀐 기존 문서를 ProjInit에 맞게 옮긴다.
+- 커밋 메시지 검사기를 이력·커밋 시점·PR 검사로 넓히고, PR 순서 검사기, CI 워크플로, PR 템플릿을 만든다.
+- 순서: 문서 → 검사기·테스트 → `core.hooksPath` 확인 → 검증 전체 통과 → 완료 처리.
+
+### 진행 기록
+- 2026-10-31: 사용자가 AgentVis에서 ProjInit을 분리한 뒤(AgentVis I5) 공통 규칙 체계에 추가된 커밋 규칙과 PR 규칙을 반영하라고 지시했다. 이슈로 등록하고 M0-T6과 연결하라고 했다.
+- 2026-10-31: M0-T6은 완료되어 `Done-M0.md`에 보관되어 있다. `연결 작업`으로 묶으면 이 이슈가 시작부터 `[x]`여야 하고 자기 기록을 둘 수 없으므로, 일반 이슈로 등록하고 이슈 줄에 `관련 작업: M0-T6`을 적었다. M0-T6의 보관 기록에는 이 이슈를 가리키는 줄을 덧붙였다.
+- 2026-10-31: 새 규칙을 이 작업부터 따랐다. `main`이 아닌 작업 브랜치 `i12-commit-pr-rules`에서 진행한다.
+- 2026-10-31: 지금까지의 커밋 25개에 새 메시지 규칙을 미리 적용해 보니 모두 맞았다. 사용자의 기준대로 기준 커밋을 첫 커밋 `18e5cf3`으로 정했다.
+- 2026-10-31: 문서를 고친 뒤 `check_commits`(기존 `check_commit_msg`를 넓힘), `check_pr_order`, `projinit` 하위 명령 `commits`·`pr-order`, 설정 키 `check.commit_baseline`, 테스트, CI 워크플로, PR 템플릿을 만들었다. 테스트 두 개는 기대값(제목 길이, 커밋 수)을 잘못 세어 실패했고 기대값을 고쳤다.
+- 2026-10-31: `core.hooksPath`는 이미 `.githooks`였다. 빈 커밋으로 commit-msg hook을 시험해, 마침표로 끝나는 요약과 시작하지 않은 작업 ID가 모두 거부되는 것을 확인했다.
+- 2026-10-31: 새 PR 규칙대로 작업 브랜치에 커밋해 push하고 PR을 만들었다. 병합은 사용자가 한다.
+
+### 결정 사항
+- ProjInit의 `(진행 중)` 표기(M0-T6에서 정함, 이력에 여러 번 쓰임)는 커밋 규칙에 남긴다. PR 제목에는 쓰지 않는다.
+- 검사기는 `src/projinit/`에 둔다. 기존 `check_commit_msg`를 `check_commits`로 넓히고, `projinit` 명령에 `commits`, `pr-order` 하위 명령을 더한다. commit-msg hook은 그대로 `projinit commit-msg`다.
+- 기준 커밋은 검사기 코드의 상수가 아니라 `projinit.toml`의 `check.commit_baseline`에 둔다. 검사기는 여러 프로젝트가 함께 쓰는 패키지이기 때문이다.
+- 커밋 이력 검사는 `projinit check`에 넣는다. 그래서 Stop hook, pre-commit, CI에서 함께 돈다.
+- CI의 저장소 사본에는 `core.hooksPath` 설정이 없어 강제 장치 검사기가 실패하므로, 워크플로에서 그 설정을 먼저 한다.
+- 커밋 규칙과 PR 규칙은 초기화가 만드는 템플릿에도 들어간다. 원격 저장소 주소처럼 프로젝트마다 다른 부분은 M2-T1에서 템플릿의 빈 자리로 정한다.
+
+### 변경 파일
+- `docs/CommitRule.md`(신규), `docs/PullRequestRule.md`(신규), `docs/TaskRule.md`, `docs/CodeRule.md`, `docs/VerificationTools.md`, `docs/design/Checkers.md`, `docs/ProductVision.md`, `docs/index.md`, `CLAUDE.md`, `docs/Issue.md`, `docs/Ongoing.md`, `docs/Done-M0.md`
+- 추가: `src/projinit/check_commits.py`(신규, `check_commit_msg.py`를 대신함), `src/projinit/check_pr_order.py`(신규), `src/projinit/cli.py`, `src/projinit/config.py`, `src/projinit/run_checks.py`, `tests/test_check_commits.py`(신규, `test_check_commit_msg.py`를 대신함), `tests/test_check_pr_order.py`(신규), `tests/test_cli.py`, `tests/test_config.py`, `tests/test_run_checks.py`, `projinit.toml`, `.github/workflows/verify.yml`(신규), `.github/pull_request_template.md`(신규), `docs/Done.md`
+
+### 결과
+- ProjInit이 AgentVis와 같은 커밋 규칙과 PR 규칙을 따른다. 작업은 작업 브랜치에서 하고, 커밋 즉시 push하며, PR로 `main`에 합친다.
+- 커밋 메시지는 커밋할 때(commit-msg hook), 일괄 검사 때(이력), PR 때(제목·브랜치·순서, CI) 검사된다.
+- 두 규칙은 초기화가 만드는 템플릿에도 들어간다고 제품 비전에 적었다.
+
+### 검증
+- `uv run projinit check`: 문서, 포인터, 작업 관리, 강제 장치, 커밋 이력(24개), 테스트 모두 통과
+- commit-msg hook이 규칙에 어긋난 커밋 두 개를 거부했다.
+
 ## I11 완료 기록은 고칠 수 없는데 문서 구조가 바뀌면 기록 안의 링크가 깨지는 문제
 
 - 시작일: 2026-10-31

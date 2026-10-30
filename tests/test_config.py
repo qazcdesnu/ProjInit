@@ -22,11 +22,12 @@ class ConfigTest(RepoTestCase):
         self.write(
             "projinit.toml",
             '[projinit]\nversion = "0.2.0"\n\n[paths]\ndocs = "doc"\ncode_roots = ["lib"]\n\n'
-            '[check]\ncommands = ["cargo test"]\n',
+            '[check]\ncommands = ["cargo test"]\ncommit_baseline = "abc1234"\n',
         )
         config = load_config(self.root)
         self.assertEqual((config.version, config.docs, config.entry), ("0.2.0", "doc", "CLAUDE.md"))
         self.assertEqual((config.code_roots, config.check_commands), (("lib",), ("cargo test",)))
+        self.assertEqual(config.commit_baseline, "abc1234")
 
     def test_reports_bad_settings(self) -> None:
         cases = {
