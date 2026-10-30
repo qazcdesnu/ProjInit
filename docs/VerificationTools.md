@@ -87,7 +87,7 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
   - 코드가 없는 파일(`ModuleIndex.has_code`가 거짓)은 건너뛴다.
   - 파일 자체에 포인터가 없으면 1줄에 문제를 보고한다.
   - 분류가 정의이고 최상위이며 공개인 심볼마다, 같은 한정 이름의 심볼 중 하나라도 포인터를 가져야 한다. 없으면 그 심볼의 시작 줄에 문제를 보고한다.
-- [check_reciprocity](../tools/check_pointers.py#check_reciprocity): [상호 참조 규칙](Traceability.md#5-상호-참조-규칙)을 두 방향 모두 검사한다.
+- [check_reciprocity](../tools/check_pointers.py#check_reciprocity): [상호 참조 규칙](Traceability.md#5-상호-참조-규칙)을 두 방향 모두 검사한다. 문서가 모듈이 아닌 심볼을 가리킬 때는 모듈의 포인터를 역방향 포인터로 세지 않는다.
 - [check_stubs](../tools/check_pointers.py#check_stubs): [목업 표시](Traceability.md#8-목업-표시)를 검사한다. 로드맵과 이슈를 [작업 관리 검사기](#6-작업-관리-검사기)의 `parse_roadmap`, `parse_issues`로 읽는다. 표시한 작업 ID가 없거나, 그 작업(연결 작업이 있으면 연결 작업)의 상태가 `[~]`가 아니면 문제다.
 - [main](../tools/check_pointers.py#main): `CODE_ROOTS`의 코드 파일과 문서가 가리키는 코드 파일을 모두 분석하고, 위 검사를 실행해 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다. 통과 요약에는 남은 목업 수를 함께 적는다.
 
@@ -98,7 +98,7 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
 - [tests/support.py](../tests/support.py): 테스트 공통 기반. [RepoTestCase](../tests/support.py#RepoTestCase)는 테스트마다 임시 저장소 루트(`self.root`)를 만들고 지우며, [RepoTestCase.write](../tests/support.py#RepoTestCase.write)로 그 아래에 파일을 만든다.
 - [tests/test_doclib.py](../tests/test_doclib.py): 링크 추출(코드 블록·인라인 코드·이미지 제외), 앵커 생성(한글, 중복 제목).
 - [tests/test_check_docs.py](../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소, 진입 문서 형식(정상, 코드 블록, 인라인 코드, 링크 없는 목록 줄, 추가 문단, 제목 누락).
-- [tests/test_check_pointers.py](../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
+- [tests/test_check_pointers.py](../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락, 모듈 포인터만으로는 심볼 포인터의 역방향이 되지 않음, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
 - [tests/test_code_index.py](../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
 - [tests/test_check_hooks.py](../tests/test_check_hooks.py): 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, commit-msg 누락, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
 - [tests/test_check_commit_msg.py](../tests/test_check_commit_msg.py): 정상 제목(ID 하나, 여러 개, 진행 중), git이 만드는 제목, 주석 줄 건너뛰기, 형식 오류, 알 수 없는 ID, 빈 메시지.
