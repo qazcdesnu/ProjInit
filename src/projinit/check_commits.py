@@ -159,8 +159,9 @@ def main(argv: list[str] | None = None) -> int:
         checked = 1
     else:
         baseline = project.config.commit_baseline
+        has_commits = subprocess.run(["git", "rev-parse", "--verify", "-q", "HEAD"], cwd=root, capture_output=True)
         try:
-            commits = commit_messages(root, f"{baseline}..HEAD" if baseline else "HEAD")
+            commits = commit_messages(root, f"{baseline}..HEAD" if baseline else "HEAD") if has_commits.returncode == 0 else []
         except subprocess.CalledProcessError as error:
             commits = []
             problems.append(Problem(root, 1, f"git log 실패: {error.stderr.strip()}"))

@@ -4,14 +4,15 @@
 """
 
 import io
+import os
 import subprocess
 from contextlib import redirect_stdout
 
 from tests.support import RepoTestCase
-from projinit import check_docs, check_tasks
+from projinit.run_checks import run_all
 from projinit.config import load_config, load_project
 from projinit.init import NO_REPOSITORY, init_project, main, package_version, refresh_common, repository_url
-from projinit.template import COMMON_FILES, INITIAL_FILES
+from projinit.template import COMMON_FILES, EXECUTABLE_FILES, INITIAL_FILES
 
 
 class InitTest(RepoTestCase):
@@ -30,13 +31,12 @@ class InitTest(RepoTestCase):
         self.assertTrue((target / ".git").is_dir())
         config = load_config(target)
         self.assertEqual((config.version, config.template_values), (package_version(), {"repository": "git@github.com:me/demo.git"}))
-        # The pull request template is an enforcement file that M2-T3 installs.
-        (target / ".github").mkdir()
-        (target / ".github/pull_request_template.md").write_text("")
-        for checker in (check_docs, check_tasks):
-            output = io.StringIO()
-            with redirect_stdout(output):
-                self.assertEqual(checker.main(["--root", str(target)]), 0, output.getvalue())
+        hooks_path = subprocess.run(["git", "config", "core.hooksPath"], cwd=target, capture_output=True, text=True)
+        self.assertEqual(hooks_path.stdout.strip(), ".githooks")
+        for relative in EXECUTABLE_FILES:
+            self.assertTrue(os.access(target / relative, os.X_OK), relative)
+        results = run_all(load_project(target))
+        self.assertEqual([(r.name, r.returncode) for r in results if r.returncode], [], [r.output for r in results])
 
     def test_repository_comes_from_argument_then_origin(self) -> None:
         self.assertEqual(repository_url(self.root, None), NO_REPOSITORY)

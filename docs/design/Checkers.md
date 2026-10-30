@@ -271,7 +271,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 - [check_message](../../src/projinit/check_commits.py#check_message): 메시지 하나의 문제 문장 목록을 돌려준다. 인자로 상태 사전, 시작 여부 확인(`[ ]` ID를 문제로 볼지), PR 제목인지(진행 중 표기를 문제로 볼지)를 받는다. `#` 줄을 지우고 앞뒤 빈 줄을 뗀 뒤 첫 줄을 제목으로 본다. git이 만든 제목이면 빈 목록이다.
 - [check_branch](../../src/projinit/check_commits.py#check_branch): 브랜치 이름의 형식과 작업 ID 존재를 검사해 문제 문장 목록을 돌려준다.
 - [commit_messages](../../src/projinit/check_commits.py#commit_messages): `git log --no-merges`로 주어진 범위의 (짧은 해시, 메시지) 목록을 읽는다. git 명령이 실패하면 예외를 낸다.
-- [main](../../src/projinit/check_commits.py#main): `--message-file`이 있으면 커밋 시점 검사를, `--subject`·`--branch`가 있으면 PR 검사를, 셋 다 없으면 이력 검사를 한다. 이력 범위는 설정의 `check.commit_baseline`이 있으면 `<기준>..HEAD`, 없으면 `HEAD`다. 커밋 문제의 위치는 `commit <짧은 해시>:1`, PR 문제의 위치는 `PR:1`이다. git 오류가 나면 그 자체를 문제로 보고한다.
+- [main](../../src/projinit/check_commits.py#main): `--message-file`이 있으면 커밋 시점 검사를, `--subject`·`--branch`가 있으면 PR 검사를, 셋 다 없으면 이력 검사를 한다. 이력 범위는 설정의 `check.commit_baseline`이 있으면 `<기준>..HEAD`, 없으면 `HEAD`다. 커밋이 하나도 없는 저장소(갓 초기화한 저장소)는 검사할 커밋 0개로 본다. 커밋 문제의 위치는 `commit <짧은 해시>:1`, PR 문제의 위치는 `PR:1`이다. git 오류가 나면 그 자체를 문제로 보고한다.
 
 ## 11. 설정
 

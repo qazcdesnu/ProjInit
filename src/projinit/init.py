@@ -9,8 +9,8 @@ import sys
 from importlib.metadata import version
 from pathlib import Path
 
-from projinit.config import ConfigError, Project, load_project, report_config_error
-from projinit.template import COMMON_FILES, INITIAL_FILES, TemplateError, render
+from projinit.config import Config, ConfigError, Project, load_project, report_config_error
+from projinit.template import COMMON_FILES, EXECUTABLE_FILES, INITIAL_FILES, TemplateError, render, render_values
 
 # @doc: docs/design/Templates.md#9-초기화-명령
 DEFAULT_SOURCE = "git+https://github.com/qazcdesnu/ProjInit"
@@ -61,16 +61,26 @@ def init_project(root: Path, repository: str | None) -> list[str]:
     existing = [relative for relative in targets if (root / relative).exists()]
     if existing:
         raise InitError(f"이미 있는 파일이 있어 초기화하지 않음: {', '.join(existing)}")
-    values = {"version": package_version(), "source": DEFAULT_SOURCE, "repository": repository_url(root, repository)}
+    settings = {"version": package_version(), "source": DEFAULT_SOURCE, "repository": repository_url(root, repository)}
+    config = Config(
+        version=settings["version"], source=settings["source"], template=(("repository", settings["repository"]),)
+    )
+    values = {**render_values(config), **settings}
     # Render everything first so that a template error leaves the folder untouched.
     rendered = {relative: render(relative, values) for relative in targets}
     for relative, text in rendered.items():
-        path = root / relative
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
+        _write(root / relative, text, relative in EXECUTABLE_FILES)
     if _git(root, "rev-parse", "--is-inside-work-tree").returncode != 0:
         subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "core.hooksPath", ".githooks"], cwd=root, check=True)
     return list(targets)
+
+
+def _write(path: Path, text: str, executable: bool) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    if executable:
+        path.chmod(0o755)
 
 
 def refresh_common(project: Project) -> list[str]:
@@ -78,15 +88,17 @@ def refresh_common(project: Project) -> list[str]:
 
     @doc: docs/design/Templates.md#9-초기화-명령
     """
-    values = project.config.template_values
+    values = render_values(project.config)
     rendered = {relative: render(relative, values) for relative in COMMON_FILES}
     changed = []
     for relative, text in rendered.items():
         path = project.root / relative
+        executable = relative in EXECUTABLE_FILES
         if path.is_file() and path.read_text(encoding="utf-8") == text:
+            if executable:
+                path.chmod(0o755)
             continue
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(text, encoding="utf-8")
+        _write(path, text, executable)
         changed.append(relative)
     return changed
 

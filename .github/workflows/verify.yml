@@ -1,4 +1,4 @@
-# docs/VerificationTools.md 12절의 CI. 이 저장소는 uv run projinit으로 검사기를 실행한다.
+# docs/VerificationTools.md 12절의 CI.
 name: verify
 
 on:
