@@ -18,7 +18,6 @@ ISSUE_DOC = "docs/Issue.md"
 ONGOING_DOC = "docs/Ongoing.md"
 DONE_DOC = "docs/Done.md"
 # @doc: docs/VerificationTools.md#6-작업-관리-검사기
-# @stub: M0-T5
 DONE_ARCHIVE_DIR = "docs/done"
 
 _ID = r"M\d+-T\d+|[IH]\d+"
@@ -35,6 +34,8 @@ _SECTION_RE = re.compile(r"^### (.+?)\s*$")
 _DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 _DONE_SECTIONS = ("계획", "진행 기록", "결정 사항", "변경 파일", "결과", "검증")
 _APPEND_ONLY_SECTIONS = ("진행 기록", "결정 사항")
+_ARCHIVE_NAME_RE = re.compile(r"M(\d+)\.md")
+_TASK_ID_RE = re.compile(r"M(\d+)-T\d+")
 _STATUS_LABELS = {" ": "[ ]", "~": "[~]", "x": "[x]"}
 
 
@@ -272,6 +273,17 @@ def check_records(ongoing_path: Path, ongoing: list[Record], done: list[Record])
     problems = []
     for record in ongoing:
         problems.extend(_check_record(record, ("시작일",), ("계획",)))
+    problems.extend(_check_done(done))
+    placeholders = [number for number, line in _read_lines(ongoing_path) if line.strip() == "없음"]
+    if not ongoing and not placeholders:
+        problems.append(Problem(ongoing_path, 1, "진행 중 기록이 없으면 '없음'을 적어야 함"))
+    for number in placeholders if ongoing else []:
+        problems.append(Problem(ongoing_path, number, "진행 중 기록이 있는데 '없음'이 남아 있음"))
+    return problems
+
+
+def _check_done(done: list[Record]) -> list[Problem]:
+    problems = []
     previous: date | None = None
     for record in done:
         problems.extend(_check_record(record, ("시작일", "완료일"), _DONE_SECTIONS))
@@ -281,11 +293,6 @@ def check_records(ongoing_path: Path, ongoing: list[Record], done: list[Record])
         if previous is not None and finished > previous:
             problems.append(Problem(record.path, record.line, f"{record.id}: 완료 기록은 완료일이 늦은 것부터 놓아야 함"))
         previous = finished
-    placeholders = [number for number, line in _read_lines(ongoing_path) if line.strip() == "없음"]
-    if not ongoing and not placeholders:
-        problems.append(Problem(ongoing_path, 1, "진행 중 기록이 없으면 '없음'을 적어야 함"))
-    for number in placeholders if ongoing else []:
-        problems.append(Problem(ongoing_path, number, "진행 중 기록이 있는데 '없음'이 남아 있음"))
     return problems
 
 
@@ -323,7 +330,9 @@ def check_preservation(
     current_ongoing = {record.id: record for record in ongoing}
     current_done = {record.id: record for record in done}
     head_ongoing = _head_records(root, ongoing_path)
-    head_done = _head_records(root, done_path)
+    head_done = _head_records(root, done_path) + [
+        record for path in _head_archive_paths(root) for record in _head_records(root, path)
+    ]
     for old in head_ongoing:
         if old.id in current_ongoing:
             kept = [line for section, line in old.lines if section in _APPEND_ONLY_SECTIONS]
@@ -354,6 +363,17 @@ def _head_records(root: Path, path: Path) -> list[Record]:
     return parse_records(path, shown.stdout)[0]
 
 
+def _head_archive_paths(root: Path) -> list[Path]:
+    listed = subprocess.run(
+        ["git", "-C", str(root), "ls-tree", "--name-only", "HEAD", f"{DONE_ARCHIVE_DIR}/"],
+        capture_output=True,
+        encoding="utf-8",
+    )
+    if listed.returncode != 0:
+        return []
+    return [root / name for name in listed.stdout.splitlines() if name.endswith(".md")]
+
+
 def _missing_lines(old: Record, required: list[str], current: Record, label: str) -> list[Problem]:
     present = {line for _, line in current.lines}
     missing = [line for line in required if line not in present]
@@ -366,18 +386,56 @@ def find_done_archives(root: Path) -> list[Path]:
     """Return the archive documents of closed milestones.
 
     @doc: docs/VerificationTools.md#6-작업-관리-검사기
-    @stub: M0-T5
     """
-    raise NotImplementedError
+    directory = root / DONE_ARCHIVE_DIR
+    return sorted(directory.glob("*.md")) if directory.is_dir() else []
 
 
-def check_archives(root: Path, tasks: list[WorkItem], done: list[Record]) -> list[Problem]:
+def check_archives(
+    tasks: list[WorkItem], done: list[Record], archives: dict[Path, list[Record]]
+) -> list[Problem]:
     """Report misplaced, duplicate or malformed records across the done document and its archives.
 
     @doc: docs/VerificationTools.md#6-작업-관리-검사기
-    @stub: M0-T5
     """
-    raise NotImplementedError
+    closed = _closed_milestones(tasks)
+    problems = []
+    placed = {record.id for record in done}
+    for path, records in archives.items():
+        name = _ARCHIVE_NAME_RE.fullmatch(path.name)
+        milestone = int(name.group(1)) if name else None
+        if milestone is None:
+            problems.append(Problem(path, 1, "보관 문서 이름은 'M<n>.md'여야 함"))
+        elif milestone not in closed:
+            problems.append(Problem(path, 1, f"닫히지 않은 마일스톤 M{milestone}의 보관 문서"))
+        problems.extend(_check_done(records))
+        for record in records:
+            if record.id in placed:
+                problems.append(Problem(path, record.line, f"{record.id}: 완료 기록이 두 곳 이상에 있음"))
+            placed.add(record.id)
+            task = _TASK_ID_RE.fullmatch(record.id)
+            if task and milestone is not None and int(task.group(1)) != milestone:
+                problems.append(Problem(path, record.line, f"{record.id}: M{milestone} 보관 문서에 다른 마일스톤의 태스크 기록"))
+    for record in done:
+        task = _TASK_ID_RE.fullmatch(record.id)
+        if task and int(task.group(1)) in closed:
+            problems.append(
+                Problem(
+                    record.path,
+                    record.line,
+                    f"{record.id}: 닫힌 마일스톤의 기록은 {DONE_ARCHIVE_DIR}/M{task.group(1)}.md로 옮겨야 함",
+                )
+            )
+    return problems
+
+
+def _closed_milestones(tasks: list[WorkItem]) -> set[int]:
+    statuses: dict[int, list[str]] = {}
+    for task in tasks:
+        match = _TASK_ID_RE.fullmatch(task.id)
+        if match:
+            statuses.setdefault(int(match.group(1)), []).append(task.status)
+    return {milestone for milestone, marks in statuses.items() if all(mark == "x" for mark in marks)}
 
 
 def check_references(paths: list[Path], known: set[str]) -> list[Problem]:
@@ -412,15 +470,21 @@ def main(argv: list[str] | None = None) -> int:
         issues, issue_problems = parse_issues(issue_path)
         ongoing, ongoing_problems = parse_records(ongoing_path)
         done, done_problems = parse_records(done_path)
+        archives: dict[Path, list[Record]] = {}
+        for archive_path in find_done_archives(root):
+            archives[archive_path], archive_problems = parse_records(archive_path)
+            done_problems += archive_problems
+        all_done = done + [record for records in archives.values() for record in records]
         items = tasks + issues
         problems += (
             issue_problems
             + ongoing_problems
             + done_problems
-            + check_states(items, ongoing, done)
+            + check_states(items, ongoing, all_done)
             + check_records(ongoing_path, ongoing, done)
-            + check_preservation(root, ongoing_path, done_path, ongoing, done)
-            + check_references(paths, {item.id for item in items})
+            + check_archives(tasks, done, archives)
+            + check_preservation(root, ongoing_path, done_path, ongoing, all_done)
+            + check_references(paths + list(archives), {item.id for item in items})
         )
     for problem in problems:
         print(problem.format(root))
