@@ -1,6 +1,6 @@
 """Analyse one code file into its symbols and its pointers to documents.
 
-@doc: docs/VerificationTools.md#72-파일-분석
+@doc: docs/design/Checkers.md#72-파일-분석
 """
 
 import re
@@ -21,7 +21,7 @@ _STUB_TAG_RE = re.compile(r"@stub:\s*(\S+)")
 class SymbolRef:
     """A code symbol identified by its file and qualified name; the module is the empty name.
 
-    @doc: docs/VerificationTools.md#72-파일-분석
+    @doc: docs/design/Checkers.md#72-파일-분석
     """
 
     file: Path
@@ -44,7 +44,7 @@ class SymbolRef:
 class DocPointer:
     """A pointer from a code symbol to the document it is based on.
 
-    @doc: docs/VerificationTools.md#72-파일-분석
+    @doc: docs/design/Checkers.md#72-파일-분석
     """
 
     symbol: SymbolRef
@@ -57,7 +57,7 @@ class DocPointer:
 class ModuleIndex:
     """The syntax tree analysis of one code file.
 
-    @doc: docs/VerificationTools.md#72-파일-분석
+    @doc: docs/design/Checkers.md#72-파일-분석
     """
 
     path: Path
@@ -81,7 +81,7 @@ class _Layout:
 def index_module(path: Path, root: Path) -> ModuleIndex:
     """Parse a code file into its symbols and its pointers to documents.
 
-    @doc: docs/VerificationTools.md#72-파일-분석
+    @doc: docs/design/Checkers.md#72-파일-분석
     """
     index = ModuleIndex(path)
     language = LANGUAGES[LANGUAGE_SUFFIXES[path.suffix]]

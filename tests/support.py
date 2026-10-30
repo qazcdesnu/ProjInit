@@ -1,6 +1,6 @@
 """Shared fixtures for tests that build a throwaway repository.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import tempfile
@@ -11,7 +11,7 @@ from pathlib import Path
 class RepoTestCase(unittest.TestCase):
     """A test case with a fresh temporary repository root per test.
 
-    @doc: docs/VerificationTools.md#5-테스트
+    @doc: docs/design/Checkers.md#5-테스트
     """
 
     def setUp(self) -> None:

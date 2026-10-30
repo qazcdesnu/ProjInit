@@ -1,6 +1,6 @@
 """Read the project settings file that tells the checkers where things are.
 
-@doc: docs/VerificationTools.md#11-설정
+@doc: docs/design/Checkers.md#11-설정
 """
 
 import re
@@ -8,9 +8,9 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
-# @doc: docs/VerificationTools.md#11-설정
+# @doc: docs/design/Checkers.md#11-설정
 CONFIG_FILE = "projinit.toml"
-# @doc: docs/VerificationTools.md#11-설정
+# @doc: docs/design/Checkers.md#11-설정
 INDEX_NAME = "index.md"
 
 # (table, key) in the settings file -> Config field and whether it holds a list of strings.
@@ -30,7 +30,7 @@ _TOML_LINE_RE = re.compile(r"line (\d+)")
 class Config:
     """Settings of one project, with defaults for every key.
 
-    @doc: docs/VerificationTools.md#11-설정
+    @doc: docs/design/Checkers.md#11-설정
     """
 
     version: str = ""
@@ -46,7 +46,7 @@ class Config:
 class Project:
     """A project to check: its root and settings, and the paths they define.
 
-    @doc: docs/VerificationTools.md#11-설정
+    @doc: docs/design/Checkers.md#11-설정
     """
 
     root: Path
@@ -72,7 +72,7 @@ class Project:
 class ConfigError(Exception):
     """A settings file that cannot be read or holds wrong keys or values.
 
-    @doc: docs/VerificationTools.md#11-설정
+    @doc: docs/design/Checkers.md#11-설정
     """
 
     def __init__(self, message: str, line: int = 1) -> None:
@@ -83,7 +83,7 @@ class ConfigError(Exception):
 def load_config(root: Path) -> Config:
     """Read the settings file of a project, or return the defaults when there is none.
 
-    @doc: docs/VerificationTools.md#11-설정
+    @doc: docs/design/Checkers.md#11-설정
     """
     path = root / CONFIG_FILE
     if not path.is_file():
@@ -118,7 +118,7 @@ def _checked(key: str, value: object, is_list: bool) -> object:
 def load_project(root: Path) -> Project:
     """Return the project at a root with its settings.
 
-    @doc: docs/VerificationTools.md#11-설정
+    @doc: docs/design/Checkers.md#11-설정
     """
     root = root.resolve()
     return Project(root, load_config(root))
@@ -127,7 +127,7 @@ def load_project(root: Path) -> Project:
 def report_config_error(error: ConfigError) -> int:
     """Print a settings error as a problem line and return the exit code.
 
-    @doc: docs/VerificationTools.md#11-설정
+    @doc: docs/design/Checkers.md#11-설정
     """
     print(f"{CONFIG_FILE}:{error.line}: 설정 오류: {error}")
     return 1

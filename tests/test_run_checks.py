@@ -1,6 +1,6 @@
 """Tests for running every check at once and the Stop hook response.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import json
@@ -16,7 +16,7 @@ _FAIL = CheckResult("check_pointers", 1, "".join(f"line {n}\n" for n in range(10
 
 
 class RunChecksTest(unittest.TestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_runs_every_checker_and_the_tests(self) -> None:
         self.assertEqual(
@@ -48,7 +48,7 @@ class RunChecksTest(unittest.TestCase):
 
 
 class ProjectCommandsTest(RepoTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_runs_the_configured_commands_after_the_checkers(self) -> None:
         self.write("projinit.toml", '[check]\ncommands = ["echo hi", "exit 3"]\n')

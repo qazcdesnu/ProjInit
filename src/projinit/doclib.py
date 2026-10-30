@@ -1,6 +1,6 @@
 """Shared problem reporting, file discovery and markdown parsing for the checkers.
 
-@doc: docs/VerificationTools.md#2-공통-모듈
+@doc: docs/design/Checkers.md#2-공통-모듈
 """
 
 import re
@@ -11,7 +11,7 @@ from urllib.parse import unquote
 
 from projinit.config import Project
 
-# @doc: docs/VerificationTools.md#2-공통-모듈
+# @doc: docs/design/Checkers.md#2-공통-모듈
 LANGUAGE_SUFFIXES = {
     ".py": "python",
     ".js": "javascript",
@@ -34,7 +34,7 @@ LANGUAGE_SUFFIXES = {
     ".go": "go",
     ".java": "java",
 }
-# @doc: docs/VerificationTools.md#2-공통-모듈
+# @doc: docs/design/Checkers.md#2-공통-모듈
 CODE_SUFFIXES = tuple(LANGUAGE_SUFFIXES)
 
 _EXTERNAL_PREFIXES = ("http://", "https://", "mailto:")
@@ -49,7 +49,7 @@ _HEADING_RE = re.compile(r"^\s{0,3}(#{1,6})\s+(.+?)(?:\s+#+)?\s*$")
 class Problem:
     """A single verification failure at a file location.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
 
     path: Path
@@ -63,7 +63,7 @@ class Problem:
 def display_path(path: Path, root: Path) -> str:
     """Return the path relative to the repository root when it lies inside it.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
     try:
         return str(path.relative_to(root))
@@ -75,7 +75,7 @@ def display_path(path: Path, root: Path) -> str:
 class Link:
     """A markdown link found in a document.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
 
     source: Path
@@ -87,7 +87,7 @@ class Link:
 def find_doc_files(project: Project) -> list[Path]:
     """Return the entry document and every markdown file under the docs directory.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
     docs = []
     if project.entry_doc.is_file():
@@ -101,7 +101,7 @@ def find_doc_files(project: Project) -> list[Path]:
 def find_code_files(project: Project) -> list[Path]:
     """Return every code file under the code roots, skipping missing roots.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
     files = []
     for directory in project.code_roots:
@@ -115,7 +115,7 @@ def find_code_files(project: Project) -> list[Path]:
 def iter_prose_lines(text: str) -> Iterator[tuple[int, str]]:
     """Yield (line number, line) for lines outside fenced code blocks.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
     fence = None
     for number, line in enumerate(text.splitlines(), start=1):
@@ -134,7 +134,7 @@ def iter_prose_lines(text: str) -> Iterator[tuple[int, str]]:
 def strip_inline_code(line: str) -> str:
     """Remove inline code spans from a line.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
     return _INLINE_CODE_RE.sub("", line)
 
@@ -142,7 +142,7 @@ def strip_inline_code(line: str) -> str:
 def extract_links(source: Path, text: str) -> list[Link]:
     """Return links in prose, ignoring images, fenced code blocks and inline code.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
     links = []
     for number, line in iter_prose_lines(text):
@@ -154,7 +154,7 @@ def extract_links(source: Path, text: str) -> list[Link]:
 def is_external(target: str) -> bool:
     """Return whether the link target leaves the repository.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
     return target.startswith(_EXTERNAL_PREFIXES)
 
@@ -162,7 +162,7 @@ def is_external(target: str) -> bool:
 def resolve_link(link: Link) -> tuple[Path, str]:
     """Split a link target into an absolute path and a decoded anchor.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
     path_part, _, anchor = link.target.partition("#")
     if path_part:
@@ -175,7 +175,7 @@ def resolve_link(link: Link) -> tuple[Path, str]:
 def slugify(heading: str) -> str:
     """Turn heading text into its anchor.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
     text = heading.replace("`", "")
     text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)
@@ -187,7 +187,7 @@ def slugify(heading: str) -> str:
 def heading_anchors(text: str) -> set[str]:
     """Return the anchors of every ATX heading outside code blocks.
 
-    @doc: docs/VerificationTools.md#2-공통-모듈
+    @doc: docs/design/Checkers.md#2-공통-모듈
     """
     anchors = set()
     seen: dict[str, int] = {}

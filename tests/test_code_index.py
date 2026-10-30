@@ -1,6 +1,6 @@
 """Tests for the per-file analysis of symbols and pointers to documents.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 from tests.support import RepoTestCase
@@ -8,7 +8,7 @@ from projinit.code_index import ModuleIndex, index_module
 
 
 class IndexModuleTest(RepoTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def index(self, relative: str, text: str) -> ModuleIndex:
         return index_module(self.write(relative, text), self.root)

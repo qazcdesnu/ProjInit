@@ -1,6 +1,6 @@
 """Run every check at once, directly or as the Stop and pre-commit hooks.
 
-@doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
+@doc: docs/design/Checkers.md#9-일괄-실행과-자동-실행
 """
 
 import argparse
@@ -12,7 +12,7 @@ from pathlib import Path
 
 from projinit.config import ConfigError, Project, load_project, report_config_error
 
-# @doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
+# @doc: docs/design/Checkers.md#9-일괄-실행과-자동-실행
 CHECKS = (
     ("check_docs", "projinit.check_docs"),
     ("check_pointers", "projinit.check_pointers"),
@@ -27,7 +27,7 @@ _SUMMARY_LINES = 40
 class CheckResult:
     """The outcome of one check.
 
-    @doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
+    @doc: docs/design/Checkers.md#9-일괄-실행과-자동-실행
     """
 
     name: str
@@ -39,7 +39,7 @@ class CheckResult:
 class HookResponse:
     """What a hook prints and the exit code it returns.
 
-    @doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
+    @doc: docs/design/Checkers.md#9-일괄-실행과-자동-실행
     """
 
     exit_code: int
@@ -50,7 +50,7 @@ class HookResponse:
 def run_all(project: Project) -> list[CheckResult]:
     """Run every checker, then the project's own commands, continuing past failures.
 
-    @doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
+    @doc: docs/design/Checkers.md#9-일괄-실행과-자동-실행
     """
     root = project.root
     results = []
@@ -67,7 +67,7 @@ def run_all(project: Project) -> list[CheckResult]:
 def summarize(results: list[CheckResult]) -> str:
     """Describe the failed checks with the tail of their output.
 
-    @doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
+    @doc: docs/design/Checkers.md#9-일괄-실행과-자동-실행
     """
     sections = []
     for result in results:
@@ -81,7 +81,7 @@ def summarize(results: list[CheckResult]) -> str:
 def stop_hook_response(results: list[CheckResult], stop_hook_active: bool) -> HookResponse:
     """Block the first attempt to stop on failure; let a repeated attempt through with a warning.
 
-    @doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
+    @doc: docs/design/Checkers.md#9-일괄-실행과-자동-실행
     """
     failed = [result.name for result in results if result.returncode != 0]
     if not failed:
@@ -107,7 +107,7 @@ def _read_stop_hook_active() -> bool:
 def main(argv: list[str] | None = None) -> int:
     """Run every check, then report as a plain command or answer as a hook.
 
-    @doc: docs/VerificationTools.md#9-일괄-실행과-자동-실행
+    @doc: docs/design/Checkers.md#9-일괄-실행과-자동-실행
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=Path("."))

@@ -1,6 +1,6 @@
 """The projinit command and the subcommands that the hooks of a project call.
 
-@doc: docs/VerificationTools.md#1-실행-방법
+@doc: docs/design/Checkers.md#1-실행-방법
 """
 
 import argparse
@@ -18,7 +18,7 @@ _SUBCOMMANDS: dict[str, Callable[[list[str] | None], int]] = {
 def main(argv: list[str] | None = None) -> int:
     """Hand the remaining arguments to the module behind the subcommand; return its exit code.
 
-    @doc: docs/VerificationTools.md#1-실행-방법
+    @doc: docs/design/Checkers.md#1-실행-방법
     """
     parser = argparse.ArgumentParser(prog="projinit", description=__doc__.splitlines()[0])
     parser.add_argument("subcommand", choices=sorted(_SUBCOMMANDS))

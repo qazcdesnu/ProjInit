@@ -1,6 +1,6 @@
 """Verify that the hooks which run the checks automatically are installed.
 
-@doc: docs/VerificationTools.md#8-강제-장치-검사기
+@doc: docs/design/Checkers.md#8-강제-장치-검사기
 """
 
 import argparse
@@ -14,13 +14,13 @@ from pathlib import Path
 from projinit.config import CONFIG_FILE, Config, ConfigError, Project, load_project, report_config_error
 from projinit.doclib import Problem
 
-# @doc: docs/VerificationTools.md#8-강제-장치-검사기
+# @doc: docs/design/Checkers.md#8-강제-장치-검사기
 CLAUDE_SETTINGS = ".claude/settings.json"
-# @doc: docs/VerificationTools.md#8-강제-장치-검사기
+# @doc: docs/design/Checkers.md#8-강제-장치-검사기
 PRE_COMMIT_HOOK = ".githooks/pre-commit"
-# @doc: docs/VerificationTools.md#8-강제-장치-검사기
+# @doc: docs/design/Checkers.md#8-강제-장치-검사기
 COMMIT_MSG_HOOK = ".githooks/commit-msg"
-# @doc: docs/VerificationTools.md#8-강제-장치-검사기
+# @doc: docs/design/Checkers.md#8-강제-장치-검사기
 HOOKS_PATH = ".githooks"
 
 
@@ -28,7 +28,7 @@ HOOKS_PATH = ".githooks"
 class HookCommands:
     """The commands that the Stop, pre-commit and commit-msg hooks run.
 
-    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
     """
 
     stop: str
@@ -39,7 +39,7 @@ class HookCommands:
 def projinit_command(config: Config) -> str | None:
     """Return the command that runs projinit for a project, or None when the settings cannot make one.
 
-    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
     """
     if config.command:
         return config.command
@@ -51,7 +51,7 @@ def projinit_command(config: Config) -> str | None:
 def hook_commands(config: Config) -> HookCommands | None:
     """Return the hook commands built from the settings, or None when they cannot be built.
 
-    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
     """
     command = projinit_command(config)
     if command is None:
@@ -66,7 +66,7 @@ def hook_commands(config: Config) -> HookCommands | None:
 def check_stop_hook(project: Project, expected: str) -> list[Problem]:
     """Report a missing or malformed Claude Code Stop hook that runs the checks.
 
-    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
     """
     path = project.root / CLAUDE_SETTINGS
     if not path.is_file():
@@ -91,7 +91,7 @@ def check_stop_hook(project: Project, expected: str) -> list[Problem]:
 def check_pre_commit(project: Project, expected: str) -> list[Problem]:
     """Report a missing, non-executable or unrelated git pre-commit hook.
 
-    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
     """
     return _check_git_hook(project.root, PRE_COMMIT_HOOK, expected)
 
@@ -99,7 +99,7 @@ def check_pre_commit(project: Project, expected: str) -> list[Problem]:
 def check_commit_msg_hook(project: Project, expected: str) -> list[Problem]:
     """Report a missing, non-executable or unrelated git commit-msg hook.
 
-    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
     """
     return _check_git_hook(project.root, COMMIT_MSG_HOOK, expected)
 
@@ -120,7 +120,7 @@ def _check_git_hook(root: Path, relative: str, command: str) -> list[Problem]:
 def check_hooks_path(root: Path) -> list[Problem]:
     """Report when git is not configured to use the repository's hooks directory.
 
-    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
     """
     inside = subprocess.run(
         ["git", "-C", str(root), "rev-parse", "--is-inside-work-tree"], capture_output=True, text=True
@@ -140,7 +140,7 @@ def check_hooks_path(root: Path) -> list[Problem]:
 def main(argv: list[str] | None = None) -> int:
     """Run every hook installation check and print problems; return the exit code.
 
-    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=Path("."))

@@ -1,6 +1,6 @@
 """Per-language symbol rules for the pointer checker, built on tree-sitter grammars.
 
-@doc: docs/VerificationTools.md#71-언어-모듈
+@doc: docs/design/Checkers.md#71-언어-모듈
 """
 
 from collections.abc import Callable, Iterable, Iterator
@@ -27,7 +27,7 @@ NAMESPACE = "namespace"
 class Definition:
     """A symbol found in a syntax tree.
 
-    @doc: docs/VerificationTools.md#71-언어-모듈
+    @doc: docs/design/Checkers.md#71-언어-모듈
     """
 
     qualname: str
@@ -42,7 +42,7 @@ class Definition:
 class Language:
     """A supported language: its grammar, comment node types and symbol rules.
 
-    @doc: docs/VerificationTools.md#71-언어-모듈
+    @doc: docs/design/Checkers.md#71-언어-모듈
     """
 
     name: str
@@ -55,7 +55,7 @@ class Language:
 def parse(language: Language, source: bytes) -> tree_sitter.Tree:
     """Parse source code with the grammar of the given language.
 
-    @doc: docs/VerificationTools.md#71-언어-모듈
+    @doc: docs/design/Checkers.md#71-언어-모듈
     """
     return _parser(language.name).parse(source)
 
@@ -575,7 +575,7 @@ def _java_public(item: Node) -> bool:
     return modifiers is not None and any(child.type == "public" for child in modifiers.children)
 
 
-# @doc: docs/VerificationTools.md#71-언어-모듈
+# @doc: docs/design/Checkers.md#71-언어-모듈
 LANGUAGES = {
     "python": Language("python", _PY_COMMENTS, tree_sitter_python.language, _walk_python, _python_docstring),
     "javascript": Language("javascript", _JS_COMMENTS, tree_sitter_javascript.language, _walk_js),

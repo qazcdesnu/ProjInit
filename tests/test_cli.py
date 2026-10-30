@@ -1,6 +1,6 @@
 """Tests for the projinit command.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import io
@@ -12,7 +12,7 @@ from projinit import cli
 
 
 class CliTest(unittest.TestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_subcommands_hand_arguments_to_their_module(self) -> None:
         for name, target in (("check", "run_checks"), ("commit-msg", "check_commit_msg")):

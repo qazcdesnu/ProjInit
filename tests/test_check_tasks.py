@@ -1,6 +1,6 @@
 """Tests for the task document consistency checker.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import io
@@ -104,7 +104,7 @@ class _TaskDocsTestCase(RepoTestCase):
 
 
 class CheckTasksTest(_TaskDocsTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_consistent_documents_pass(self) -> None:
         code, output = self.run_checker()
@@ -168,7 +168,7 @@ _DONE_RECORDS = _DONE[_DONE.index("## M0-T1") :]
 
 
 class ArchiveTest(_TaskDocsTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def close_m0(self, done: str, archive: str, name: str = "Done-M0.md") -> None:
         self.write("docs/Roadmap.md", _ROADMAP.replace("- [~] M0-T2", "- [x] M0-T2"))
@@ -200,7 +200,7 @@ class ArchiveTest(_TaskDocsTestCase):
 
 
 class LightIssueTest(_TaskDocsTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def add_issue(self, text: str) -> None:
         self.write("docs/Issue.md", _ISSUE + text)
@@ -230,7 +230,7 @@ class LightIssueTest(_TaskDocsTestCase):
 
 
 class PreservationTest(_TaskDocsTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def setUp(self) -> None:
         super().setUp()

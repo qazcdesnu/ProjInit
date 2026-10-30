@@ -1,6 +1,6 @@
 """Tests for the document link checker.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import unittest
@@ -11,7 +11,7 @@ from projinit.config import load_project
 
 
 class CheckDocsTest(RepoTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def setUp(self) -> None:
         super().setUp()
@@ -41,7 +41,7 @@ class CheckDocsTest(RepoTestCase):
 
 
 class EntryFormatTest(RepoTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def setUp(self) -> None:
         super().setUp()

@@ -1,6 +1,6 @@
 """Verify document links, the entry document, and that no document is orphaned.
 
-@doc: docs/VerificationTools.md#3-문서-링크-검사기
+@doc: docs/design/Checkers.md#3-문서-링크-검사기
 """
 
 import argparse
@@ -26,7 +26,7 @@ from projinit.doclib import (
 def check_links(project: Project) -> list[Problem]:
     """Report links whose target file, directory or document anchor is missing.
 
-    @doc: docs/VerificationTools.md#3-문서-링크-검사기
+    @doc: docs/design/Checkers.md#3-문서-링크-검사기
     """
     problems = []
     anchor_cache: dict[Path, set[str]] = {}
@@ -51,7 +51,7 @@ def check_links(project: Project) -> list[Problem]:
 def check_entry(project: Project) -> list[Problem]:
     """Report a missing entry document or a missing link from it to the index.
 
-    @doc: docs/VerificationTools.md#3-문서-링크-검사기
+    @doc: docs/design/Checkers.md#3-문서-링크-검사기
     """
     entry = project.entry_doc
     if not entry.is_file():
@@ -66,7 +66,7 @@ def check_entry(project: Project) -> list[Problem]:
 def check_entry_format(project: Project) -> list[Problem]:
     """Report lines of the entry document that go beyond a title, one purpose paragraph and link lists.
 
-    @doc: docs/VerificationTools.md#3-문서-링크-검사기
+    @doc: docs/design/Checkers.md#3-문서-링크-검사기
     """
     entry = project.entry_doc
     if not entry.is_file():
@@ -116,7 +116,7 @@ def _is_entry_item(entry: Path, docs_dir: Path, line: str) -> bool:
 def find_orphans(project: Project) -> list[Problem]:
     """Report documents under the docs directory unreachable from the index.
 
-    @doc: docs/VerificationTools.md#3-문서-링크-검사기
+    @doc: docs/design/Checkers.md#3-문서-링크-검사기
     """
     index = project.index_doc.resolve()
     if not index.is_file():
@@ -143,7 +143,7 @@ def find_orphans(project: Project) -> list[Problem]:
 def main(argv: list[str] | None = None) -> int:
     """Run every document check and print problems; return the exit code.
 
-    @doc: docs/VerificationTools.md#3-문서-링크-검사기
+    @doc: docs/design/Checkers.md#3-문서-링크-검사기
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=Path("."))

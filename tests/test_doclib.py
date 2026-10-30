@@ -1,6 +1,6 @@
 """Tests for markdown link extraction and heading anchors.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import unittest
@@ -10,7 +10,7 @@ from projinit.doclib import extract_links, heading_anchors, slugify
 
 
 class ExtractLinksTest(unittest.TestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_finds_prose_links_with_line_numbers(self) -> None:
         text = "# T\n\nsee [a](a.md) and [b](b.md#x)\n"
@@ -23,7 +23,7 @@ class ExtractLinksTest(unittest.TestCase):
 
 
 class HeadingAnchorsTest(unittest.TestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_slugify_keeps_korean_and_drops_punctuation(self) -> None:
         self.assertEqual(slugify("3. 링크 규칙"), "3-링크-규칙")

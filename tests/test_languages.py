@@ -1,6 +1,6 @@
 """Tests for the per-language symbol rules.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import unittest
@@ -117,7 +117,7 @@ def _definitions(language: str, source: str) -> dict[str, tuple[str, bool, bool,
 
 
 class LanguagesTest(unittest.TestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def assert_symbols(self, found: dict, expected: dict) -> None:
         for qualname, (kind, top_level, public) in expected.items():

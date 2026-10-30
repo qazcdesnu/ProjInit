@@ -1,6 +1,6 @@
 """Tests for the commit message checker.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import unittest
@@ -11,7 +11,7 @@ _KNOWN = {"M0-T6", "M0-T8", "I1", "H2"}
 
 
 class CheckMessageTest(unittest.TestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_valid_subjects_pass(self) -> None:
         for subject in ("M0-T6: 요약", "M0-T8, I1, H2: 여러 작업", "I1(진행 중): 목업", "M0-T6: 요약\n\n본문 M9-T9"):

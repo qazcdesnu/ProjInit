@@ -1,6 +1,6 @@
 """Verify that roadmap, issue, ongoing and done documents agree by work ID.
 
-@doc: docs/VerificationTools.md#6-작업-관리-검사기
+@doc: docs/design/Checkers.md#6-작업-관리-검사기
 """
 
 import argparse
@@ -14,15 +14,15 @@ from pathlib import Path
 from projinit.config import ConfigError, Project, load_project, report_config_error
 from projinit.doclib import Problem, iter_prose_lines, strip_inline_code
 
-# @doc: docs/VerificationTools.md#6-작업-관리-검사기
+# @doc: docs/design/Checkers.md#6-작업-관리-검사기
 ROADMAP_DOC = "Roadmap.md"
-# @doc: docs/VerificationTools.md#6-작업-관리-검사기
+# @doc: docs/design/Checkers.md#6-작업-관리-검사기
 ISSUE_DOC = "Issue.md"
-# @doc: docs/VerificationTools.md#6-작업-관리-검사기
+# @doc: docs/design/Checkers.md#6-작업-관리-검사기
 ONGOING_DOC = "Ongoing.md"
-# @doc: docs/VerificationTools.md#6-작업-관리-검사기
+# @doc: docs/design/Checkers.md#6-작업-관리-검사기
 DONE_DOC = "Done.md"
-# @doc: docs/VerificationTools.md#6-작업-관리-검사기
+# @doc: docs/design/Checkers.md#6-작업-관리-검사기
 DONE_ARCHIVE_GLOB = "Done-M*.md"
 
 _ID = r"M\d+-T\d+|[IH]\d+"
@@ -48,7 +48,7 @@ _STATUS_LABELS = {" ": "[ ]", "~": "[~]", "x": "[x]"}
 class WorkItem:
     """A roadmap task or an issue with its status.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
 
     id: str
@@ -64,7 +64,7 @@ class WorkItem:
 class Record:
     """An entry of the ongoing or done document.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
 
     id: str
@@ -89,7 +89,7 @@ def _expect_next(numbers: dict[str, int], key: str, actual: int, first: int) -> 
 def parse_roadmap(path: Path) -> tuple[list[WorkItem], list[Problem]]:
     """Read roadmap tasks and report format and numbering problems.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
     items, problems = [], []
     numbers: dict[str, int] = {}
@@ -126,7 +126,7 @@ def parse_roadmap(path: Path) -> tuple[list[WorkItem], list[Problem]]:
 def parse_issues(path: Path) -> tuple[list[WorkItem], list[Problem]]:
     """Read issues with their detail fields and report format and numbering problems.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
     items, problems = [], []
     numbers: dict[str, int] = {}
@@ -161,7 +161,7 @@ def parse_issues(path: Path) -> tuple[list[WorkItem], list[Problem]]:
 def parse_records(path: Path, text: str | None = None) -> tuple[list[Record], list[Problem]]:
     """Read ongoing or done records, from the given text if any, and report malformed or duplicate headings.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
     records: list[Record] = []
     problems = []
@@ -200,7 +200,7 @@ def parse_records(path: Path, text: str | None = None) -> tuple[list[Record], li
 def check_states(items: list[WorkItem], ongoing: list[Record], done: list[Record]) -> list[Problem]:
     """Report status marks that disagree with ongoing and done records.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
     problems = []
     by_id: dict[str, WorkItem] = {}
@@ -273,7 +273,7 @@ def _check_linked(item: WorkItem, by_id: dict[str, WorkItem], has_record: bool) 
 def check_records(ongoing_path: Path, ongoing: list[Record], done: list[Record]) -> list[Problem]:
     """Report missing fields and sections, bad dates, done order and the ongoing placeholder rule.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
     problems = []
     for record in ongoing:
@@ -329,7 +329,7 @@ def check_preservation(
 ) -> list[Problem]:
     """Report lines of records in the last commit that were dropped from the current records.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
     problems = []
     current_ongoing = {record.id: record for record in ongoing}
@@ -393,7 +393,7 @@ def _missing_lines(old: Record, required: list[str], current: Record, label: str
 def find_done_archives(project: Project) -> list[Path]:
     """Return the archive documents of closed milestones.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
     return sorted(project.docs_dir.glob(DONE_ARCHIVE_GLOB))
 
@@ -403,7 +403,7 @@ def check_archives(
 ) -> list[Problem]:
     """Report misplaced, duplicate or malformed records across the done document and its archives.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
     closed = _closed_milestones(tasks)
     problems = []
@@ -448,7 +448,7 @@ def _closed_milestones(tasks: list[WorkItem]) -> set[int]:
 def check_references(paths: list[Path], known: set[str]) -> list[Problem]:
     """Report work IDs mentioned in prose that are not defined in the roadmap or issues.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
     problems = []
     for path in paths:
@@ -462,7 +462,7 @@ def check_references(paths: list[Path], known: set[str]) -> list[Problem]:
 def main(argv: list[str] | None = None) -> int:
     """Run every task document check and print problems; return the exit code.
 
-    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @doc: docs/design/Checkers.md#6-작업-관리-검사기
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=Path("."))

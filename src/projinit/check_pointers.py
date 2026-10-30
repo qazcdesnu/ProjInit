@@ -1,6 +1,6 @@
 """Verify the bidirectional pointers between documents and code symbols.
 
-@doc: docs/VerificationTools.md#4-포인터-검사기
+@doc: docs/design/Checkers.md#4-포인터-검사기
 """
 
 import argparse
@@ -32,7 +32,7 @@ _LINE_ANCHOR_RE = re.compile(r"L\d+(-L?\d+)?")
 class CodePointer:
     """A pointer from a document line to a code symbol.
 
-    @doc: docs/VerificationTools.md#4-포인터-검사기
+    @doc: docs/design/Checkers.md#4-포인터-검사기
     """
 
     doc: Path
@@ -53,7 +53,7 @@ def collect_code_pointers(
     Code files referenced from documents but outside the code roots are indexed into
     ``modules`` on demand.
 
-    @doc: docs/VerificationTools.md#4-포인터-검사기
+    @doc: docs/design/Checkers.md#4-포인터-검사기
     """
     pointers = []
     problems = []
@@ -84,7 +84,7 @@ def collect_code_pointers(
 def check_doc_pointers(root: Path, modules: dict[Path, ModuleIndex]) -> list[Problem]:
     """Report pointers from code whose target document or heading anchor is missing.
 
-    @doc: docs/VerificationTools.md#4-포인터-검사기
+    @doc: docs/design/Checkers.md#4-포인터-검사기
     """
     problems = []
     anchor_cache: dict[Path, set[str]] = {}
@@ -108,7 +108,7 @@ def check_doc_pointers(root: Path, modules: dict[Path, ModuleIndex]) -> list[Pro
 def check_coverage(project: Project, modules: dict[Path, ModuleIndex]) -> list[Problem]:
     """Report modules and public top-level symbols in the code roots lacking a document pointer.
 
-    @doc: docs/VerificationTools.md#4-포인터-검사기
+    @doc: docs/design/Checkers.md#4-포인터-검사기
     """
     problems = []
     for path in find_code_files(project):
@@ -135,7 +135,7 @@ def check_reciprocity(
 ) -> list[Problem]:
     """Report pointers in either direction that have no pointer back between related symbols.
 
-    @doc: docs/VerificationTools.md#4-포인터-검사기
+    @doc: docs/design/Checkers.md#4-포인터-검사기
     """
     doc_pointers = [pointer for module in modules.values() for pointer in module.doc_pointers]
     problems = []
@@ -176,7 +176,7 @@ def check_reciprocity(
 def check_stubs(project: Project, modules: dict[Path, ModuleIndex]) -> list[Problem]:
     """Report mock-up markers whose task is unknown or not in progress.
 
-    @doc: docs/VerificationTools.md#4-포인터-검사기
+    @doc: docs/design/Checkers.md#4-포인터-검사기
     """
     items: dict[str, WorkItem] = {}
     for doc, parse in ((ROADMAP_DOC, parse_roadmap), (ISSUE_DOC, parse_issues)):
@@ -198,7 +198,7 @@ def check_stubs(project: Project, modules: dict[Path, ModuleIndex]) -> list[Prob
 def main(argv: list[str] | None = None) -> int:
     """Run every pointer check and print problems; return the exit code.
 
-    @doc: docs/VerificationTools.md#4-포인터-검사기
+    @doc: docs/design/Checkers.md#4-포인터-검사기
     """
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=Path("."))

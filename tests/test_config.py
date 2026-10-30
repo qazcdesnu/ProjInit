@@ -1,6 +1,6 @@
 """Tests for reading the project settings file.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import io
@@ -12,7 +12,7 @@ from projinit.config import Config, ConfigError, load_config, load_project
 
 
 class ConfigTest(RepoTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_defaults_without_a_settings_file(self) -> None:
         self.assertEqual(load_config(self.root), Config())

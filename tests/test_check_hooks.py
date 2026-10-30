@@ -1,6 +1,6 @@
 """Tests for the hook installation checker.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import json
@@ -23,7 +23,7 @@ _COMMANDS = hook_commands(Config(command="uv run projinit"))
 
 
 class HookCommandsTest(unittest.TestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_commands_come_from_the_settings(self) -> None:
         self.assertEqual(_COMMANDS.stop, 'cd "$CLAUDE_PROJECT_DIR" && uv run projinit check --hook stop')
@@ -40,7 +40,7 @@ class HookCommandsTest(unittest.TestCase):
 
 
 class CheckHooksTest(RepoTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def setUp(self) -> None:
         super().setUp()

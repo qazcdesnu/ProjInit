@@ -1,6 +1,6 @@
 """Tests for the document-code pointer checker.
 
-@doc: docs/VerificationTools.md#5-테스트
+@doc: docs/design/Checkers.md#5-테스트
 """
 
 import io
@@ -33,7 +33,7 @@ class Thing:
 
 
 class CheckPointersTest(RepoTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def setUp(self) -> None:
         super().setUp()
@@ -117,7 +117,7 @@ class CheckPointersTest(RepoTestCase):
 
 
 class StubTest(RepoTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def setUp(self) -> None:
         super().setUp()
@@ -145,7 +145,7 @@ class StubTest(RepoTestCase):
 
 
 class SymbolRefTest(unittest.TestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+    """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_related_means_same_ancestor_or_descendant(self) -> None:
         def ref(name: str, file: str = "a.py") -> SymbolRef:
