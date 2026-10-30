@@ -56,9 +56,9 @@
 문서 작업을 마치면 [문서 링크 검사기](VerificationTools.md#3-문서-링크-검사기)로 깨진 링크와 고아 문서가 없는지 확인한다. 코드 포인터를 추가·수정했다면 [포인터 검사기](VerificationTools.md#4-포인터-검사기)도, 작업 관리 문서를 고쳤다면 [작업 관리 검사기](VerificationTools.md#6-작업-관리-검사기)도 실행한다.
 
 ```sh
-uv run python -m tools.check_docs
-uv run python -m tools.check_pointers
-uv run python -m tools.check_tasks
+uv run python -m projinit.check_docs
+uv run python -m projinit.check_pointers
+uv run python -m projinit.check_tasks
 ```
 
 ## 7. 진입 문서

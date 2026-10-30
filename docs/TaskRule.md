@@ -208,5 +208,5 @@
 작업을 시작하거나 끝낼 때, 작업 관리 문서를 고칠 때마다 [작업 관리 검사기](VerificationTools.md#6-작업-관리-검사기)를 실행한다.
 
 ```sh
-uv run python -m tools.check_tasks
+uv run python -m projinit.check_tasks
 ```

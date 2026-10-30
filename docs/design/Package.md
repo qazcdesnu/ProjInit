@@ -57,7 +57,7 @@ src/projinit/
 ```toml
 [projinit]
 version = "0.1.0"                   # 이 프로젝트가 쓰는 ProjInit 버전 (git 태그 v0.1.0)
-source = "git+https://…/ProjInit"   # 설치 출처
+source = "git+https://github.com/qazcdesnu/ProjInit"   # 설치 출처
 command = ""                        # 비우면 version과 source로 만든다
 
 [paths]
@@ -72,7 +72,8 @@ commands = ["cargo test"]           # 검사 뒤에 이어서 실행할 프로�
 - 파일이 없거나 키가 빠지면 기본값을 쓴다. 기본값은 위 예시의 `paths` 값과 빈 `check.commands`다.
 - 작업 관리 문서(`Roadmap.md` 등)와 보관 문서의 이름, 인덱스 이름(`index.md`)은 공통 규칙이 정하는 것이므로 설정하지 않고 `paths.docs` 아래에 고정한다.
 - `check.commands`는 셸 명령으로 루트에서 차례로 실행하며, 일괄 실행의 검사 하나로 취급한다. 이것으로 개발 언어에 맞는 테스트를 돌린다.
-- 지금 코드 상수(`CODE_ROOTS` 등)는 설정을 읽는 함수로 바뀐다. 상수를 직접 쓰던 함수는 설정 객체를 인자로 받는다.
+- 설정은 `config.py`의 `Config`(파일의 값)와 `Project`(루트 경로와 `Config`, 그리고 거기서 나오는 문서 디렉터리·진입 문서·인덱스·코드 루트 경로)로 다룬다. 지금 경로 상수(`REPO_ROOT`, `INDEX_DOC`, `ENTRY_DOC`, `DOCS_DIR`, `CODE_ROOTS`)를 쓰던 함수는 루트 대신 `Project`를 받는다.
+- 설정 파일이 TOML로 읽히지 않거나, 모르는 키가 있거나, 값의 형이 틀리면 설정 오류다. 오타로 설정이 조용히 무시되지 않게 하기 위해서다. 각 검사기는 설정 오류를 `projinit.toml:<줄>: 설정 오류: …` 형식의 문제로 보고하고 종료 코드 1로 끝난다.
 
 ## 5. hook 명령
 
@@ -116,6 +117,6 @@ hook이 실행하는 명령은 설정의 `projinit.command`다. 비어 있으면
 
 M1-T2와 M1-T3 사이에는 `tools.run_checks` 등 기존 모듈 실행 경로가 한동안 남아 hook이 계속 동작하게 한다. 예를 들어 `tools/`에 `projinit`의 함수를 부르는 얇은 진입점을 두었다가 M1-T3에서 지운다.
 
-## 9. 미결정 사항
+## 9. 원격 저장소
 
-- git 원격 저장소 주소: 설정 파일의 `source`에 들어간다. 다른 프로젝트에 설치하는 M2부터 필요하다.
+ProjInit의 원격 저장소는 GitHub의 `qazcdesnu/ProjInit`이다. 설정 파일의 `source`에는 어느 컴퓨터에서나 쓸 수 있는 `git+https://github.com/qazcdesnu/ProjInit`를 쓴다. 이 저장소의 `origin`에 쓴 SSH 주소(`github-qazcdesnu`)는 개인 SSH 설정의 별칭이라 다른 컴퓨터에서 쓸 수 없다.

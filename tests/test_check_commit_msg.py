@@ -5,7 +5,7 @@
 
 import unittest
 
-from tools.check_commit_msg import check_message
+from projinit.check_commit_msg import check_message
 
 _KNOWN = {"M0-T6", "M0-T8", "I1", "H2"}
 

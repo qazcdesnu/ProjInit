@@ -9,8 +9,8 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 from tests.support import RepoTestCase
-from tools.check_pointers import main
-from tools.code_index import SymbolRef, index_module
+from projinit.check_pointers import main
+from projinit.code_index import SymbolRef, index_module
 
 _DOC = "# A\n\n## 1. Spec\n\n[run](../src/mod.py#Thing.run) [d](../src/mod.py#_decorated)\n"
 _MODULE = """'''Module.

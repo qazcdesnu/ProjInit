@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import unquote
 
 # @doc: docs/VerificationTools.md#2-공통-모듈
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 # @doc: docs/VerificationTools.md#2-공통-모듈
 INDEX_DOC = "docs/index.md"
 # @doc: docs/VerificationTools.md#2-공통-모듈

@@ -5,8 +5,8 @@
 
 import unittest
 
-from tools.doclib import LANGUAGE_SUFFIXES
-from tools.languages import DEFINITION, LANGUAGES, NAMESPACE, VALUE, parse
+from projinit.doclib import LANGUAGE_SUFFIXES
+from projinit.languages import DEFINITION, LANGUAGES, NAMESPACE, VALUE, parse
 
 _PYTHON = '''"""Module."""
 LIMIT = 3

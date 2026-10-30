@@ -7,7 +7,7 @@ import json
 import subprocess
 
 from tests.support import RepoTestCase
-from tools.check_hooks import (
+from projinit.check_hooks import (
     COMMIT_MSG_COMMAND,
     HOOKS_PATH,
     PRE_COMMIT_COMMAND,

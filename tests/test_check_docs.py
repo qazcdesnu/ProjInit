@@ -6,7 +6,7 @@
 import unittest
 
 from tests.support import RepoTestCase
-from tools.check_docs import check_entry, check_entry_format, check_links, find_orphans
+from projinit.check_docs import check_entry, check_entry_format, check_links, find_orphans
 
 
 class CheckDocsTest(RepoTestCase):

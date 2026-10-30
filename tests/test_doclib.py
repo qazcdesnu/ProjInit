@@ -6,7 +6,7 @@
 import unittest
 from pathlib import Path
 
-from tools.doclib import extract_links, heading_anchors, slugify
+from projinit.doclib import extract_links, heading_anchors, slugify
 
 
 class ExtractLinksTest(unittest.TestCase):

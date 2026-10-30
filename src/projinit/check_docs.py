@@ -8,7 +8,7 @@ import sys
 from collections import deque
 from pathlib import Path
 
-from tools.doclib import (
+from projinit.doclib import (
     CODE_SUFFIXES,
     DOCS_DIR,
     ENTRY_DOC,

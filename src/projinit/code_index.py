@@ -10,8 +10,8 @@ from urllib.parse import unquote
 
 from tree_sitter import Node
 
-from tools.doclib import LANGUAGE_SUFFIXES, Problem
-from tools.languages import LANGUAGES, Definition, parse
+from projinit.doclib import LANGUAGE_SUFFIXES, Problem
+from projinit.languages import LANGUAGES, Definition, parse
 
 _DOC_TAG_RE = re.compile(r"@doc:\s*(\S+)")
 _STUB_TAG_RE = re.compile(r"@stub:\s*(\S+)")

@@ -9,7 +9,7 @@ import unittest
 from contextlib import redirect_stdout
 
 from tests.support import RepoTestCase
-from tools.check_tasks import main
+from projinit.check_tasks import main
 
 _ROADMAP = """# 로드맵
 

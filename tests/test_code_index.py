@@ -4,7 +4,7 @@
 """
 
 from tests.support import RepoTestCase
-from tools.code_index import ModuleIndex, index_module
+from projinit.code_index import ModuleIndex, index_module
 
 
 class IndexModuleTest(RepoTestCase):

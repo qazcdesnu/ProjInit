@@ -10,7 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from tools.doclib import REPO_ROOT, Problem
+from projinit.doclib import REPO_ROOT, Problem
 
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
 CLAUDE_SETTINGS = ".claude/settings.json"

@@ -11,7 +11,7 @@ from dataclasses import dataclass, field, replace
 from datetime import date
 from pathlib import Path
 
-from tools.doclib import REPO_ROOT, Problem, iter_prose_lines, strip_inline_code
+from projinit.doclib import REPO_ROOT, Problem, iter_prose_lines, strip_inline_code
 
 # @doc: docs/VerificationTools.md#6-작업-관리-검사기
 ROADMAP_DOC = "docs/Roadmap.md"

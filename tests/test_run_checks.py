@@ -6,7 +6,7 @@
 import json
 import unittest
 
-from tools.run_checks import CHECKS, CheckResult, stop_hook_response, summarize
+from projinit.run_checks import CHECKS, CheckResult, stop_hook_response, summarize
 
 _PASS = CheckResult("check_docs", 0, "check_docs: 통과\n")
 _FAIL = CheckResult("check_pointers", 1, "".join(f"line {n}\n" for n in range(100)))

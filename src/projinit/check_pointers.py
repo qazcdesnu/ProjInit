@@ -9,8 +9,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from tools.code_index import ModuleIndex, SymbolRef, index_module
-from tools.doclib import (
+from projinit.code_index import ModuleIndex, SymbolRef, index_module
+from projinit.doclib import (
     CODE_SUFFIXES,
     REPO_ROOT,
     Problem,
@@ -22,8 +22,8 @@ from tools.doclib import (
     is_external,
     resolve_link,
 )
-from tools.check_tasks import ISSUE_DOC, ROADMAP_DOC, WorkItem, parse_issues, parse_roadmap
-from tools.languages import DEFINITION
+from projinit.check_tasks import ISSUE_DOC, ROADMAP_DOC, WorkItem, parse_issues, parse_roadmap
+from projinit.languages import DEFINITION
 
 _LINE_ANCHOR_RE = re.compile(r"L\d+(-L?\d+)?")
 
