@@ -29,6 +29,10 @@ INITIAL_FILES = (
     "projinit.toml",
 )
 
+# @doc: docs/design/Templates.md#8-구현
+# @stub: M2-T3
+EXECUTABLE_FILES = (".githooks/pre-commit", ".githooks/commit-msg")
+
 _PLACEHOLDER_RE = re.compile(r"\{\{([a-z0-9_]+)\}\}")
 
 
@@ -37,6 +41,15 @@ class TemplateError(Exception):
 
     @doc: docs/design/Templates.md#8-구현
     """
+
+
+def render_values(config: object) -> dict[str, str]:
+    """Return the placeholder values: the template table and the commands built from the settings.
+
+    @doc: docs/design/Templates.md#8-구현
+    @stub: M2-T3
+    """
+    raise NotImplementedError
 
 
 def render(relative: str, values: dict[str, str]) -> str:
