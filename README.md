@@ -2,7 +2,7 @@
 
 ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서와 코드 두 축의 규칙 체계를 깔아 주고, 그 폴더에서 Claude Code를 열어 `/start`를 입력하면 Claude가 만들 프로젝트를 물어보며 첫 작업을 시작한다. 어떤 프로젝트에서든 같은 방식으로 일하는 것이 목적이다.
 
-> 상태: 개발 중이다. 첫 릴리스 `v0.1.0`은 아직 나오지 않았다. 지금은 아래 [미리 써 보기](#미리-써-보기) 방법으로 쓸 수 있다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
+> 상태: 최신 릴리스는 `v0.1.1`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
 
 ## 무엇을 해 주나
 
@@ -25,37 +25,24 @@ ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서�
 
 ### 새 프로젝트 시작하기
 
-`v0.1.0` 릴리스 뒤에는 이렇게 시작한다.
-
 ```sh
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.0 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.1 projinit init --root ~/my-project
 cd ~/my-project
 claude
 ```
 
-Claude Code가 열리면 `/start`를 입력한다. Claude가 만들 프로젝트를 묻고, 대화로 제품 비전·시스템 구조 문서와 첫 로드맵을 쓴 뒤 첫 커밋을 한다.
+처음 실행할 때는 ProjInit과 언어별 문법 패키지를 받느라 시간이 걸린다. 그다음부터는 캐시를 쓴다.
+
+Claude Code가 열리면 `/start`를 입력한다. Claude가 어떤 걸 만들고 싶은지 묻는다. 한두 문장이나 떠오르는 생각만 말해도 되고, 모르는 것은 정하지 않아도 된다. 대화하며 제품 비전·시스템 구조 문서와 첫 로드맵을 쓴 뒤 첫 커밋을 한다.
 
 원격 저장소가 이미 있으면 `--repository <주소>`로 알려 준다. 없으면 나중에 `projinit.toml`의 `template.repository`를 고치고 `projinit init --refresh-common`을 실행한다.
 
-### 미리 써 보기
+### 이미 초기화한 프로젝트를 새 버전으로
 
-릴리스 전에는 이 저장소를 받아 그 코드로 초기화한다.
-
-```sh
-git clone https://github.com/qazcdesnu/ProjInit ~/ProjInit
-uv run --project ~/ProjInit projinit init --root ~/my-project
-cd ~/my-project
-```
-
-초기화된 프로젝트의 hook은 릴리스된 버전(`uvx … @v0.1.0`)을 부르도록 만들어지므로, 아직은 받아 둔 코드를 부르게 바꾼다. `projinit.toml`의 `[projinit]` 아래에 한 줄을 넣고 공통 파일을 다시 만든다.
-
-```toml
-command = "uv run --project /Users/<나>/ProjInit projinit"
-```
+`projinit.toml`의 `version`을 새 버전으로 바꾸고 공통 파일을 다시 만든다.
 
 ```sh
-uv run --project ~/ProjInit projinit init --refresh-common
-claude
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v<새 버전> projinit init --refresh-common
 ```
 
 ### 초기화가 만드는 것
