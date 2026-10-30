@@ -244,7 +244,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 **상수와 자료형**
 
-- [CHECKS](../../src/projinit/run_checks.py#CHECKS): 실행할 검사기의 (이름, 모듈) 목록. `check_docs`, `check_pointers`, `check_tasks`, `check_hooks`, `check_commits`(이력 검사) 순서다. 검사기는 `--root`로 루트를 넘긴다. 그 뒤에 설정의 `check.commands`를 하나씩 루트에서 셸 명령으로 실행하며, 명령 문자열을 그 검사의 이름으로 쓴다.
+- [CHECKS](../../src/projinit/run_checks.py#CHECKS): 실행할 검사기의 (이름, 모듈) 목록. `check_docs`, `check_pointers`, `check_tasks`, `check_hooks`, `check_commits`(이력 검사), `check_template` 순서다. 검사기는 `--root`로 루트를 넘긴다. 그 뒤에 설정의 `check.commands`를 하나씩 루트에서 셸 명령으로 실행하며, 명령 문자열을 그 검사의 이름으로 쓴다.
 - [CheckResult](../../src/projinit/run_checks.py#CheckResult): 검사 하나의 결과. 이름, 종료 코드, 출력(표준 출력과 표준 오류를 합친 것)을 가진다.
 - [HookResponse](../../src/projinit/run_checks.py#HookResponse): hook에 돌려줄 응답. 종료 코드, 표준 출력, 표준 오류를 가진다.
 
@@ -296,4 +296,14 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 - [missing_earlier_prs](../../src/projinit/check_pr_order.py#missing_earlier_prs): 루트, 열린 PR 목록(`number`, `headRefName`, `headRefOid`), 검사하는 번호를 받아, 번호가 더 작고 마지막 커밋이 `HEAD`의 조상이 아닌 PR들을 번호 순으로 돌려준다. 조상 여부는 `git merge-base --is-ancestor`로 판정한다.
 - [main](../../src/projinit/check_pr_order.py#main): `--root`, `--pr`, `--open-prs`를 받아 빠진 PR마다 문제를 출력한다.
+
+## 14. 템플릿 일치 검사기
+
+[src/projinit/check_template.py](../../src/projinit/check_template.py)는 [검증 도구의 템플릿 일치 검사기](../VerificationTools.md#14-템플릿-일치-검사기)를 구현한다. 템플릿과 빈 자리 값은 [템플릿 구성의 구현](Templates.md#8-구현)을 쓴다.
+
+- [check_common_files](../../src/projinit/check_template.py#check_common_files): `Project`를 받아 `COMMON_FILES`마다 `render_values`로 채운 템플릿과 파일 내용을 비교한다. 파일이 없으면 `공통 파일 없음`, 다르면 `템플릿과 다름`을 그 파일의 1줄에 보고한다. 빈 자리 값이 없으면 `TemplateError`의 메시지를 설정 파일의 문제로 보고한다.
+- [check_version](../../src/projinit/check_template.py#check_version): `Project`와 실행 중인 버전을 받아, 설정의 `projinit.command`가 비어 있고 `version`이 실행 중인 버전과 다르면 설정 파일의 문제로 보고한다.
+- [main](../../src/projinit/check_template.py#main): 두 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다. 실행 중인 버전은 [초기화 명령](Templates.md#9-초기화-명령)의 `package_version`으로 얻는다.
+
+테스트는 [tests/test_check_template.py](../../tests/test_check_template.py)다. 갓 초기화한 폴더 통과, 손으로 고친 공통 문서, 없는 공통 파일, 빈 자리 값이 없는 설정, 버전 불일치, 실행 명령이 있으면 버전 검사를 건너뜀을 검사한다.
 
