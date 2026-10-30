@@ -22,6 +22,7 @@ _KEYS = {
     ("paths", "entry"): ("entry", False),
     ("paths", "code_roots"): ("code_roots", True),
     ("check", "commands"): ("check_commands", True),
+    ("check", "commit_baseline"): ("commit_baseline", False),
 }
 _TOML_LINE_RE = re.compile(r"line (\d+)")
 
@@ -40,6 +41,7 @@ class Config:
     entry: str = "CLAUDE.md"
     code_roots: tuple[str, ...] = ("src", "tests")
     check_commands: tuple[str, ...] = ()
+    commit_baseline: str = ""
 
 
 @dataclass(frozen=True)

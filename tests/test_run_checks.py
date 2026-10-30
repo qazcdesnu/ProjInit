@@ -21,7 +21,7 @@ class RunChecksTest(unittest.TestCase):
     def test_runs_every_checker_and_the_tests(self) -> None:
         self.assertEqual(
             [name for name, _ in CHECKS],
-            ["check_docs", "check_pointers", "check_tasks", "check_hooks"],
+            ["check_docs", "check_pointers", "check_tasks", "check_hooks", "check_commits"],
         )
 
     def test_passing_checks_let_claude_stop(self) -> None:

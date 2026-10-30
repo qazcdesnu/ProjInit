@@ -11,3 +11,5 @@ code_roots = ["src", "tests"]
 
 [check]
 commands = ["uv run python -m unittest discover -s tests -t ."]
+# 커밋 규칙(docs/CommitRule.md 4절)의 기준 커밋. 이 저장소의 첫 커밋이다.
+commit_baseline = "18e5cf3"

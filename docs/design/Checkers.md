@@ -12,10 +12,11 @@ uv run python -m projinit.check_docs        # 문서 링크와 고아 문서 검
 uv run python -m projinit.check_pointers    # 문서 ↔ 코드 포인터 검사
 uv run python -m projinit.check_tasks       # 작업 ID 기준 작업 관리 문서 정합성 검사
 uv run python -m projinit.check_hooks       # 강제 장치(Stop hook, pre-commit, commit-msg) 설치 검사
-uv run python -m projinit.check_commit_msg <메시지 파일>   # 커밋 메시지 형식 검사
+uv run python -m projinit.check_commits     # 커밋 메시지 이력 검사 (--message-file, --subject·--branch로 다른 검사)
+uv run python -m projinit.check_pr_order --pr <번호> --open-prs <파일>   # PR 순서 검사
 ```
 
-`projinit` 명령의 하위 명령은 `check`와 `commit-msg` 둘이며, 각각 `projinit.run_checks`와 `projinit.check_commit_msg`의 `main`에 나머지 인자를 넘긴다. [src/projinit/cli.py](../../src/projinit/cli.py)의 [main](../../src/projinit/cli.py#main)이 진입점이다. 검사 하나만 돌릴 때는 모듈을 직접 실행한다. 다른 프로젝트에서는 `uv run projinit` 대신 설정에서 만든 명령(`uvx --from …`)을 쓴다([설정](#11-설정)).
+`projinit` 명령의 하위 명령은 넷이다. `check`는 `projinit.run_checks`, `commits`는 `projinit.check_commits`, `pr-order`는 `projinit.check_pr_order`의 `main`에 나머지 인자를 넘기고, `commit-msg <파일>`은 `projinit.check_commits`의 `main`에 `--message-file <파일>`과 나머지 인자를 넘긴다. [src/projinit/cli.py](../../src/projinit/cli.py)의 [main](../../src/projinit/cli.py#main)이 진입점이다. 검사 하나만 돌릴 때는 모듈을 직접 실행한다. 다른 프로젝트에서는 `uv run projinit` 대신 설정에서 만든 명령(`uvx --from …`)을 쓴다([설정](#11-설정)).
 
 - 문제가 없으면 종료 코드 0으로 끝나고 통과 요약을 한 줄 출력한다.
 - 문제가 있으면 문제마다 `<저장소 기준 경로>:<줄>: <메시지>` 형식으로 한 줄씩 출력하고 종료 코드 1로 끝난다.
@@ -99,9 +100,10 @@ uv run python -m projinit.check_commit_msg <메시지 파일>   # 커밋 메시�
 - [tests/test_check_docs.py](../../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소, 진입 문서 형식(정상, 코드 블록, 인라인 코드, 링크 없는 목록 줄, 추가 문단, 제목 누락).
 - [tests/test_check_pointers.py](../../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락, 모듈 포인터만으로는 심볼 포인터의 역방향이 되지 않음, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
 - [tests/test_code_index.py](../../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
-- [tests/test_cli.py](../../tests/test_cli.py): 하위 명령이 해당 모듈의 `main`에 인자를 넘기는지, 모르는 하위 명령.
+- [tests/test_cli.py](../../tests/test_cli.py): 하위 명령이 해당 모듈의 `main`에 인자를 넘기는지(`commit-msg`는 `--message-file`을 붙여서), 모르는 하위 명령.
 - [tests/test_check_hooks.py](../../tests/test_check_hooks.py): 설정에서 만든 hook 명령(직접 지정, `uvx` 조합, 만들 수 없는 경우), 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, commit-msg 누락, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
-- [tests/test_check_commit_msg.py](../../tests/test_check_commit_msg.py): 정상 제목(ID 하나, 여러 개, 진행 중), git이 만드는 제목, 주석 줄 건너뛰기, 형식 오류, 알 수 없는 ID, 빈 메시지.
+- [tests/test_check_commits.py](../../tests/test_check_commits.py): 정상 메시지(여러 ID, 진행 중, 트레일러, 주석 줄), git이 만드는 제목, 제목 형식·길이·마침표·빈 줄·중복 ID 오류, 없는 ID, 시작하지 않은 ID, PR 제목의 진행 중 표기, 브랜치 이름 형식과 없는 ID, 임시 git 저장소의 이력 검사와 기준 커밋·병합 커밋 제외, 명령의 세 가지 쓰임.
+- [tests/test_check_pr_order.py](../../tests/test_check_pr_order.py): 임시 git 저장소로 쌓인 브랜치(포함)와 `main`에서 따로 만든 브랜치(빠짐), 번호가 뒤인 PR은 무시함, 저장소에 없는 커밋.
 - [tests/test_config.py](../../tests/test_config.py): 기본 설정, 설정 파일 읽기, 설정 오류(TOML 형식, 모르는 키, 값의 형), `Project`의 경로.
 - [tests/test_run_checks.py](../../tests/test_run_checks.py): 실행할 검사 목록, 설정의 프로젝트 명령 실행, Stop hook 응답(통과, 첫 실패에서 막기, 이미 막힌 뒤 허용과 사용자 경고), 실패 요약의 길이 제한.
 - [tests/test_languages.py](../../tests/test_languages.py): 언어마다 [포인터 규약](../Traceability.md#7-언어별-심볼-규칙)의 표에 있는 정의·값·이름 붙이기·공개 규칙. `LANGUAGES`와 `LANGUAGE_SUFFIXES`의 일치.
@@ -226,7 +228,7 @@ hook이 실행할 명령은 고정하지 않고 [설정](#11-설정)에서 만�
 | --- | --- | --- |
 | Claude Code Stop hook | Claude가 턴을 끝내려 할 때 | 첫 시도에서는 턴 종료를 막고 실패 요약을 Claude에게 돌려준다. 이미 한 번 막힌 뒤의 종료(`stop_hook_active`)는 허용하고, 남은 실패를 사용자에게 경고로 보여 준다. |
 | git pre-commit | 사람이든 Claude든 커밋하려 할 때 | 커밋을 거부한다. |
-| git commit-msg | 커밋 메시지를 확정할 때 | [커밋 메시지 형식](../TaskRule.md#67-커밋-메시지)을 어기면 커밋을 거부한다. |
+| git commit-msg | 커밋 메시지를 확정할 때 | [커밋 메시지 형식](../CommitRule.md#3-메시지-형식)을 어기면 커밋을 거부한다. |
 
 Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](../CodeRule.md#1-문서-우선-작업-절차)이 진행 중인 작업에서 포인터 검사기가 일부러 실패하는 상태를 허용하기 때문이다. 이때 Claude는 실패를 고치거나, 남긴 이유를 사용자에게 보고해야 한다. 끝없이 막으면 작업 중에 사용자에게 질문할 수도 없게 된다.
 
@@ -242,7 +244,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 **상수와 자료형**
 
-- [CHECKS](../../src/projinit/run_checks.py#CHECKS): 실행할 검사기의 (이름, 모듈) 목록. `check_docs`, `check_pointers`, `check_tasks`, `check_hooks` 순서다. 검사기는 `--root`로 루트를 넘긴다. 그 뒤에 설정의 `check.commands`를 하나씩 루트에서 셸 명령으로 실행하며, 명령 문자열을 그 검사의 이름으로 쓴다.
+- [CHECKS](../../src/projinit/run_checks.py#CHECKS): 실행할 검사기의 (이름, 모듈) 목록. `check_docs`, `check_pointers`, `check_tasks`, `check_hooks`, `check_commits`(이력 검사) 순서다. 검사기는 `--root`로 루트를 넘긴다. 그 뒤에 설정의 `check.commands`를 하나씩 루트에서 셸 명령으로 실행하며, 명령 문자열을 그 검사의 이름으로 쓴다.
 - [CheckResult](../../src/projinit/run_checks.py#CheckResult): 검사 하나의 결과. 이름, 종료 코드, 출력(표준 출력과 표준 오류를 합친 것)을 가진다.
 - [HookResponse](../../src/projinit/run_checks.py#HookResponse): hook에 돌려줄 응답. 종료 코드, 표준 출력, 표준 오류를 가진다.
 
@@ -260,15 +262,16 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 ## 10. 커밋 메시지 검사기
 
-[src/projinit/check_commit_msg.py](../../src/projinit/check_commit_msg.py)는 [커밋 메시지 형식](../TaskRule.md#67-커밋-메시지)을 검사한다. git `commit-msg` hook이 메시지 파일 경로를 넘겨 실행한다.
+[src/projinit/check_commits.py](../../src/projinit/check_commits.py)는 [커밋 규칙](../CommitRule.md)의 메시지 형식과 [PR 규칙](../PullRequestRule.md)의 브랜치 이름·PR 제목을 검사한다. 세 가지 쓰임(이력, 커밋 시점, PR)은 [검증 도구](../VerificationTools.md#10-커밋-메시지-검사기)에 있다.
 
-- [GIT_SUBJECT_PREFIXES](../../src/projinit/check_commit_msg.py#GIT_SUBJECT_PREFIXES): 형식 검사를 건너뛰는 git이 만든 제목의 접두어. `Merge `, `Revert `, `fixup! `, `squash! `.
-- [check_message](../../src/projinit/check_commit_msg.py#check_message): 메시지 본문과 알려진 작업 ID 집합을 받아 문제 메시지 목록을 돌려준다.
-  - `#`으로 시작하는 줄(git 주석)과 빈 줄을 건너뛴 첫 줄이 제목이다. 제목이 없으면 문제다.
-  - 제목이 `GIT_SUBJECT_PREFIXES`로 시작하면 통과한다.
-  - 제목은 `<ID 목록>[(진행 중)]: <요약>` 형식이어야 한다. ID 목록은 `, `로 나누며, 요약은 비어 있으면 안 된다.
-  - ID 목록의 각 ID가 알려진 작업 ID가 아니면 문제다.
-- [main](../../src/projinit/check_commit_msg.py#main): 메시지 파일 경로와 `--root` 옵션을 받는다. 로드맵과 이슈를 [작업 관리 검사기](#6-작업-관리-검사기)의 `parse_roadmap`, `parse_issues`로 읽어 작업 ID 집합을 만들고, 문제가 있으면 문제마다 `커밋 메시지: <메시지>`를 표준 오류로 출력하고 종료 코드 1로 끝난다.
+- [SUBJECT_MAX_LENGTH](../../src/projinit/check_commits.py#SUBJECT_MAX_LENGTH): 72.
+- [GIT_SUBJECT_PREFIXES](../../src/projinit/check_commits.py#GIT_SUBJECT_PREFIXES): 검사를 건너뛰는 git이 만든 제목의 접두어. `Merge `, `Revert `, `fixup! `, `squash! `.
+- [work_statuses](../../src/projinit/check_commits.py#work_statuses): `Project`를 받아 로드맵 태스크와 이슈의 ID → 상태 문자 사전을 돌려준다. 문서가 없으면 그 문서의 ID는 없는 것으로 본다.
+- [parse_subject](../../src/projinit/check_commits.py#parse_subject): 제목 줄을 (작업 ID 목록, 진행 중 표기 여부, 요약)으로 나눈다. 형식이 틀리면 `None`이다.
+- [check_message](../../src/projinit/check_commits.py#check_message): 메시지 하나의 문제 문장 목록을 돌려준다. 인자로 상태 사전, 시작 여부 확인(`[ ]` ID를 문제로 볼지), PR 제목인지(진행 중 표기를 문제로 볼지)를 받는다. `#` 줄을 지우고 앞뒤 빈 줄을 뗀 뒤 첫 줄을 제목으로 본다. git이 만든 제목이면 빈 목록이다.
+- [check_branch](../../src/projinit/check_commits.py#check_branch): 브랜치 이름의 형식과 작업 ID 존재를 검사해 문제 문장 목록을 돌려준다.
+- [commit_messages](../../src/projinit/check_commits.py#commit_messages): `git log --no-merges`로 주어진 범위의 (짧은 해시, 메시지) 목록을 읽는다. git 명령이 실패하면 예외를 낸다.
+- [main](../../src/projinit/check_commits.py#main): `--message-file`이 있으면 커밋 시점 검사를, `--subject`·`--branch`가 있으면 PR 검사를, 셋 다 없으면 이력 검사를 한다. 이력 범위는 설정의 `check.commit_baseline`이 있으면 `<기준>..HEAD`, 없으면 `HEAD`다. 커밋 문제의 위치는 `commit <짧은 해시>:1`, PR 문제의 위치는 `PR:1`이다. git 오류가 나면 그 자체를 문제로 보고한다.
 
 ## 11. 설정
 
@@ -276,10 +279,21 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 - [CONFIG_FILE](../../src/projinit/config.py#CONFIG_FILE): `projinit.toml`.
 - [INDEX_NAME](../../src/projinit/config.py#INDEX_NAME): `index.md`. 문서 디렉터리 안의 인덱스 이름이다.
-- [Config](../../src/projinit/config.py#Config): 설정 값. `version`, `source`, `command`, `docs`(기본 `docs`), `entry`(기본 `CLAUDE.md`), `code_roots`(기본 `src`, `tests`), `check_commands`(기본 없음)를 가진다.
+- [Config](../../src/projinit/config.py#Config): 설정 값. `version`, `source`, `command`, `docs`(기본 `docs`), `entry`(기본 `CLAUDE.md`), `code_roots`(기본 `src`, `tests`), `check_commands`(기본 없음), `commit_baseline`(기본 빈 문자열)을 가진다.
 - [Project](../../src/projinit/config.py#Project): 검사할 프로젝트. 루트 절대 경로와 `Config`를 가지며, [Project.docs_dir](../../src/projinit/config.py#Project.docs_dir), [Project.entry_doc](../../src/projinit/config.py#Project.entry_doc), [Project.index_doc](../../src/projinit/config.py#Project.index_doc), [Project.code_roots](../../src/projinit/config.py#Project.code_roots)로 경로를 돌려준다.
 - [ConfigError](../../src/projinit/config.py#ConfigError): 설정 오류. 메시지와 줄 번호(모르면 1)를 가진다.
 - [load_config](../../src/projinit/config.py#load_config): 루트의 설정 파일을 읽어 `Config`를 돌려준다. 파일이 없으면 기본값이다. TOML 형식 오류, 모르는 표나 키, 형이 틀린 값(문자열이어야 하는 곳에 다른 값, 문자열 목록이어야 하는 곳에 다른 값)은 `ConfigError`다.
 - [load_project](../../src/projinit/config.py#load_project): 루트를 받아 `Project`를 돌려준다. 루트는 절대 경로로 바꾼다.
 - [report_config_error](../../src/projinit/config.py#report_config_error): 각 검사기의 `main`이 쓴다. `ConfigError`를 `<설정 파일>:<줄>: 설정 오류: <메시지>`로 출력하고 종료 코드 1을 돌려준다.
+
+## 12. CI
+
+[.github/workflows/verify.yml](../../.github/workflows/verify.yml)이 [검증 도구의 CI](../VerificationTools.md#12-ci)를 구현한다. 이 저장소는 `uv run projinit`으로 검사기를 실행한다. PR 본문 템플릿은 [.github/pull_request_template.md](../../.github/pull_request_template.md)다.
+
+## 13. PR 순서 검사기
+
+[src/projinit/check_pr_order.py](../../src/projinit/check_pr_order.py)는 [검증 도구의 PR 순서 검사기](../VerificationTools.md#13-pr-순서-검사기)를 구현한다.
+
+- [missing_earlier_prs](../../src/projinit/check_pr_order.py#missing_earlier_prs): 루트, 열린 PR 목록(`number`, `headRefName`, `headRefOid`), 검사하는 번호를 받아, 번호가 더 작고 마지막 커밋이 `HEAD`의 조상이 아닌 PR들을 번호 순으로 돌려준다. 조상 여부는 `git merge-base --is-ancestor`로 판정한다.
+- [main](../../src/projinit/check_pr_order.py#main): `--root`, `--pr`, `--open-prs`를 받아 빠진 PR마다 문제를 출력한다.
 

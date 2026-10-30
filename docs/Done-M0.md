@@ -54,6 +54,7 @@
 - 2026-10-31: 문서를 고친 뒤 목업 8개를 만들어 진행 중 상태를 커밋했다(61fc21a).
 - 2026-10-31: `check_commit_msg`, `check_commit_msg_hook`과 테스트를 구현하고 `.githooks/commit-msg`를 설치했다. pre-commit과 commit-msg hook 검사는 같은 내용이라 `_check_git_hook`으로 묶었다.
 - 2026-10-31: 빈 커밋으로 hook을 시험했다. 작업 ID가 없는 제목과 없는 ID(`M9-T9`)를 쓴 제목이 모두 거부되었다.
+- 2026-10-31: (I12에서 덧붙임) AgentVis에서 분리한 뒤 추가된 커밋 규칙과 PR 규칙을 I12에서 반영했다. 커밋 메시지 형식은 [커밋 규칙](CommitRule.md)으로 옮겨 갔다.
 
 ### 결정 사항
 - pre-commit은 커밋 메시지를 볼 수 없어서 git `commit-msg` hook을 쓴다.
