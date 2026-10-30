@@ -139,8 +139,11 @@ def check_reciprocity(
     doc_pointers = [pointer for module in modules.values() for pointer in module.doc_pointers]
     problems = []
     for code_pointer in code_pointers:
+        # A symbol named by a document must know that document itself; the file header does not count.
         if not any(
-            pointer.doc == code_pointer.doc and pointer.symbol.is_related(code_pointer.symbol)
+            pointer.doc == code_pointer.doc
+            and pointer.symbol.is_related(code_pointer.symbol)
+            and (pointer.symbol.qualname or not code_pointer.symbol.qualname)
             for pointer in doc_pointers
         ):
             problems.append(

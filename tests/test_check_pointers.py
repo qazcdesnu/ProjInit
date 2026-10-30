@@ -91,6 +91,16 @@ class CheckPointersTest(RepoTestCase):
         self.assertIn("docs/B.md:3: 역방향 포인터 없음: src/mod.py#Thing", output)
         self.assertIn("src/other.py:1: 역방향 포인터 없음: docs/A.md가 src/other.py", output)
 
+    def test_module_pointer_alone_does_not_back_a_symbol_pointer(self) -> None:
+        self.write("docs/B.md", "# B\n\n[run](../src/mod.py#Thing.run) [file](../src/mod.py)\n")
+        self.write("src/mod.py", _MODULE.replace("@doc: docs/A.md#1-spec", "@doc: docs/A.md#1-spec\n@doc: docs/B.md"))
+        output = self.run_checker()[1]
+        self.assertIn("docs/B.md:3: 역방향 포인터 없음: src/mod.py#Thing.run", output)
+        self.assertNotIn("src/mod.py 또는", output)
+        self.write("src/mod.py", _MODULE.replace("\'\'\'@doc: docs/A.md\'\'\'", "\'\'\'@doc: docs/A.md\n    @doc: docs/B.md\'\'\'"))
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+
     def test_non_python_repository_passes_and_reports(self) -> None:
         self.write("docs/A.md", "# A\n\n[parse](../src/lib.rs#Parser.parse) [mod](../src/lib.rs)\n")
         self.module.unlink()

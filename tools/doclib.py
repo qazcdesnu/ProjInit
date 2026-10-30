@@ -9,11 +9,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote
 
+# @doc: docs/VerificationTools.md#2-공통-모듈
 REPO_ROOT = Path(__file__).resolve().parent.parent
+# @doc: docs/VerificationTools.md#2-공통-모듈
 INDEX_DOC = "docs/index.md"
+# @doc: docs/VerificationTools.md#2-공통-모듈
 ENTRY_DOC = "CLAUDE.md"
+# @doc: docs/VerificationTools.md#2-공통-모듈
 DOCS_DIR = "docs"
+# @doc: docs/VerificationTools.md#2-공통-모듈
 CODE_ROOTS = ("src", "tools", "tests")
+# @doc: docs/VerificationTools.md#2-공통-모듈
 LANGUAGE_SUFFIXES = {
     ".py": "python",
     ".js": "javascript",
@@ -36,6 +42,7 @@ LANGUAGE_SUFFIXES = {
     ".go": "go",
     ".java": "java",
 }
+# @doc: docs/VerificationTools.md#2-공통-모듈
 CODE_SUFFIXES = tuple(LANGUAGE_SUFFIXES)
 
 _EXTERNAL_PREFIXES = ("http://", "https://", "mailto:")

@@ -163,18 +163,18 @@ class CheckTasksTest(_TaskDocsTestCase):
 _M0_T2_DONE = _M0_T2_RECORD.replace("- 시작일: 2026-10-31\n", "- 시작일: 2026-10-31\n- 완료일: 2026-10-31\n").rstrip(
     "\n"
 ) + "\n\n### 변경 파일\n- `b.py`\n\n### 결과\n- 됨.\n\n### 검증\n- 통과\n"
-_DONE_HEAD = "# 완료\n\n보관: [M0](done/M0.md)\n\n"
+_DONE_HEAD = "# 완료\n\n보관: [M0](Done-M0.md)\n\n"
 _DONE_RECORDS = _DONE[_DONE.index("## M0-T1") :]
 
 
 class ArchiveTest(_TaskDocsTestCase):
     """@doc: docs/VerificationTools.md#5-테스트"""
 
-    def close_m0(self, done: str, archive: str, name: str = "M0.md") -> None:
+    def close_m0(self, done: str, archive: str, name: str = "Done-M0.md") -> None:
         self.write("docs/Roadmap.md", _ROADMAP.replace("- [~] M0-T2", "- [x] M0-T2"))
         self.write("docs/Ongoing.md", _ONGOING.replace(_M0_T2_RECORD, ""))
         self.write("docs/Done.md", done)
-        self.write(f"docs/done/{name}", "# 완료 보관 M0 기반\n\n[완료](../Done.md)\n\n" + archive)
+        self.write(f"docs/{name}", "# 완료 보관 M0 기반\n\n[완료](Done.md)\n\n" + archive)
 
     def test_closed_milestone_archived_passes(self) -> None:
         self.close_m0(_DONE_HEAD, _M0_T2_DONE + "\n" + _DONE_RECORDS)
@@ -183,13 +183,13 @@ class ArchiveTest(_TaskDocsTestCase):
 
     def test_reports_closed_milestone_left_in_done(self) -> None:
         self.close_m0(_DONE_HEAD + _M0_T2_DONE, _DONE_RECORDS)
-        self.assert_reports("M0-T2: 닫힌 마일스톤의 기록은 docs/done/M0.md로 옮겨야 함")
+        self.assert_reports("M0-T2: 닫힌 마일스톤의 기록은 docs/Done-M0.md로 옮겨야 함")
 
     def test_reports_archive_problems(self) -> None:
-        self.close_m0(_DONE_HEAD + _DONE_RECORDS, _M0_T2_DONE + "\n" + _DONE_RECORDS, name="old.md")
-        self.write("docs/done/M1.md", "# 완료 보관 M1 다음\n\n" + _M0_T2_DONE.replace("M0-T2", "M1-T1"))
+        self.close_m0(_DONE_HEAD + _DONE_RECORDS, _M0_T2_DONE + "\n" + _DONE_RECORDS, name="Done-Mold.md")
+        self.write("docs/Done-M1.md", "# 완료 보관 M1 다음\n\n" + _M0_T2_DONE.replace("M0-T2", "M1-T1"))
         self.assert_reports(
-            "보관 문서 이름은 'M<n>.md'여야 함",
+            "보관 문서 이름은 'Done-M<n>.md'여야 함",
             "M0-T1: 완료 기록이 두 곳 이상에 있음",
             "닫히지 않은 마일스톤 M1의 보관 문서",
         )
@@ -284,10 +284,10 @@ class PreservationTest(_TaskDocsTestCase):
         self.git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "done")
         archive = _M0_T2_DONE + "\n" + _DONE_RECORDS
         self.write("docs/Done.md", _DONE_HEAD)
-        self.write("docs/done/M0.md", "# 완료 보관 M0 기반\n\n[완료](../Done.md)\n\n" + archive)
+        self.write("docs/Done-M0.md", "# 완료 보관 M0 기반\n\n[완료](Done.md)\n\n" + archive)
         code, output = self.run_checker()
         self.assertEqual(code, 0, output)
-        self.write("docs/done/M0.md", "# 완료 보관 M0 기반\n\n" + archive.replace("- 2026-10-30: 했다.\n", ""))
+        self.write("docs/Done-M0.md", "# 완료 보관 M0 기반\n\n" + archive.replace("- 2026-10-30: 했다.\n", ""))
         self.assert_reports("M0-T1: 완료 기록에서 지워진 줄 1개, 예: - 2026-10-30: 했다.")
 
     def test_reports_changed_done_line(self) -> None:

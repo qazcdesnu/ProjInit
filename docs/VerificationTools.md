@@ -118,7 +118,7 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
 | [ISSUE_DOC](../tools/check_tasks.py#ISSUE_DOC) | `docs/Issue.md` |
 | [ONGOING_DOC](../tools/check_tasks.py#ONGOING_DOC) | `docs/Ongoing.md` |
 | [DONE_DOC](../tools/check_tasks.py#DONE_DOC) | `docs/Done.md` |
-| [DONE_ARCHIVE_DIR](../tools/check_tasks.py#DONE_ARCHIVE_DIR) | `docs/done` |
+| [DONE_ARCHIVE_GLOB](../tools/check_tasks.py#DONE_ARCHIVE_GLOB) | `docs/Done-M*.md` |
 
 **자료형**
 
@@ -136,9 +136,9 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
   - 연결 작업이 없는 항목: `[~]`이면 진행 중 기록만, `[x]`이면 완료 기록만 있어야 하고, `[ ]`이면 어느 기록도 없어야 한다.
   - 연결 작업이 있는 항목: 연결 작업이 존재하고 그 자신은 연결 작업이 없어야 하며, 상태가 연결 작업과 같고, 자체 기록이 없어야 한다.
   - 로드맵·이슈에 없는 ID의 기록은 문제다.
-- [check_preservation](../tools/check_tasks.py#check_preservation): [기록 보존 검사](TaskRule.md#65-기록-보존-검사)를 한다. `git show HEAD:<문서>`로 마지막 커밋의 진행 중·완료 문서와 보관 문서(`git ls-tree`로 찾는다)를 읽고, 지금의 완료 문서와 보관 문서를 합친 기록과 비교한다. 빠진 줄은 기록마다 하나의 문제로 보고하며, 빠진 줄 수와 첫 번째 빠진 줄을 메시지에 담는다.
+- [check_preservation](../tools/check_tasks.py#check_preservation): [기록 보존 검사](TaskRule.md#65-기록-보존-검사)를 한다. `git show HEAD:<문서>`로 마지막 커밋의 진행 중·완료 문서와 보관 문서(`git ls-tree`로 `docs/`의 파일 중 `DONE_ARCHIVE_GLOB`에 맞는 것을 찾는다)를 읽고, 지금의 완료 문서와 보관 문서를 합친 기록과 비교한다. 빠진 줄은 기록마다 하나의 문제로 보고하며, 빠진 줄 수와 첫 번째 빠진 줄을 메시지에 담는다.
 - [check_records](../tools/check_tasks.py#check_records): 기록의 필수 필드·절, 날짜 형식, 완료 기록의 순서(`완료일`이 늦은 것부터), 진행 중 문서의 `없음` 규칙을 검사한다.
-- [find_done_archives](../tools/check_tasks.py#find_done_archives): `DONE_ARCHIVE_DIR` 아래의 `.md` 파일 목록. 디렉터리가 없으면 빈 목록이다.
+- [find_done_archives](../tools/check_tasks.py#find_done_archives): 루트에서 `DONE_ARCHIVE_GLOB`에 맞는 파일 목록.
 - [check_archives](../tools/check_tasks.py#check_archives): [완료 보관 형식](TaskRule.md#66-완료-보관)을 검사한다. 보관 문서마다 이름과 마일스톤, 기록의 위치, 완료 기록 규칙을 검사하고, 완료 문서와 보관 문서 사이의 중복 기록과, 닫힌 마일스톤인데 완료 문서에 남은 태스크 기록을 보고한다.
 - [check_references](../tools/check_tasks.py#check_references): 작업 관리 문서 네 개와 보관 문서의 본문(코드 블록·인라인 코드 제외)에 나온 작업 ID가 모두 존재하는지 검사한다. ID 앞뒤가 영문자·숫자·`-`가 아니면 ID로 인식하므로 `M0-T6으로`처럼 한글 조사가 붙어도 찾는다.
 - [main](../tools/check_tasks.py#main): 네 문서와 보관 문서를 읽어 기록 보존 검사를 포함한 위 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다. 문서가 없으면 그 자체를 문제로 보고한다.

@@ -13,12 +13,16 @@ from pathlib import Path
 
 from tools.doclib import REPO_ROOT, Problem, iter_prose_lines, strip_inline_code
 
+# @doc: docs/VerificationTools.md#6-작업-관리-검사기
 ROADMAP_DOC = "docs/Roadmap.md"
+# @doc: docs/VerificationTools.md#6-작업-관리-검사기
 ISSUE_DOC = "docs/Issue.md"
+# @doc: docs/VerificationTools.md#6-작업-관리-검사기
 ONGOING_DOC = "docs/Ongoing.md"
+# @doc: docs/VerificationTools.md#6-작업-관리-검사기
 DONE_DOC = "docs/Done.md"
 # @doc: docs/VerificationTools.md#6-작업-관리-검사기
-DONE_ARCHIVE_DIR = "docs/done"
+DONE_ARCHIVE_GLOB = "docs/Done-M*.md"
 
 _ID = r"M\d+-T\d+|[IH]\d+"
 _ID_RE = re.compile(rf"(?:{_ID})")
@@ -34,7 +38,7 @@ _SECTION_RE = re.compile(r"^### (.+?)\s*$")
 _DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
 _DONE_SECTIONS = ("계획", "진행 기록", "결정 사항", "변경 파일", "결과", "검증")
 _APPEND_ONLY_SECTIONS = ("진행 기록", "결정 사항")
-_ARCHIVE_NAME_RE = re.compile(r"M(\d+)\.md")
+_ARCHIVE_NAME_RE = re.compile(r"Done-M(\d+)\.md")
 _TASK_ID_RE = re.compile(r"M(\d+)-T\d+")
 _STATUS_LABELS = {" ": "[ ]", "~": "[~]", "x": "[x]"}
 
@@ -365,13 +369,13 @@ def _head_records(root: Path, path: Path) -> list[Record]:
 
 def _head_archive_paths(root: Path) -> list[Path]:
     listed = subprocess.run(
-        ["git", "-C", str(root), "ls-tree", "--name-only", "HEAD", f"{DONE_ARCHIVE_DIR}/"],
+        ["git", "-C", str(root), "ls-tree", "--name-only", "HEAD", f"{Path(DONE_ARCHIVE_GLOB).parent.as_posix()}/"],
         capture_output=True,
         encoding="utf-8",
     )
     if listed.returncode != 0:
         return []
-    return [root / name for name in listed.stdout.splitlines() if name.endswith(".md")]
+    return [root / name for name in listed.stdout.splitlines() if Path(name).match(DONE_ARCHIVE_GLOB)]
 
 
 def _missing_lines(old: Record, required: list[str], current: Record, label: str) -> list[Problem]:
@@ -387,8 +391,7 @@ def find_done_archives(root: Path) -> list[Path]:
 
     @doc: docs/VerificationTools.md#6-작업-관리-검사기
     """
-    directory = root / DONE_ARCHIVE_DIR
-    return sorted(directory.glob("*.md")) if directory.is_dir() else []
+    return sorted(root.glob(DONE_ARCHIVE_GLOB))
 
 
 def check_archives(
@@ -405,7 +408,7 @@ def check_archives(
         name = _ARCHIVE_NAME_RE.fullmatch(path.name)
         milestone = int(name.group(1)) if name else None
         if milestone is None:
-            problems.append(Problem(path, 1, "보관 문서 이름은 'M<n>.md'여야 함"))
+            problems.append(Problem(path, 1, "보관 문서 이름은 'Done-M<n>.md'여야 함"))
         elif milestone not in closed:
             problems.append(Problem(path, 1, f"닫히지 않은 마일스톤 M{milestone}의 보관 문서"))
         problems.extend(_check_done(records))
@@ -423,7 +426,7 @@ def check_archives(
                 Problem(
                     record.path,
                     record.line,
-                    f"{record.id}: 닫힌 마일스톤의 기록은 {DONE_ARCHIVE_DIR}/M{task.group(1)}.md로 옮겨야 함",
+                    f"{record.id}: 닫힌 마일스톤의 기록은 {DONE_ARCHIVE_GLOB.replace('*', task.group(1))}로 옮겨야 함",
                 )
             )
     return problems
