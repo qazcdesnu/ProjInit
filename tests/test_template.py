@@ -12,12 +12,16 @@ from tests.support import RepoTestCase
 from projinit import check_docs, check_tasks
 from projinit.config import load_config
 from projinit.doclib import extract_links, is_external, resolve_link
-from projinit.template import COMMON_FILES, INITIAL_FILES, TemplateError, render
+from projinit.template import COMMON_FILES, INITIAL_FILES, TemplateError, render, render_values
 
 _REPO = Path(__file__).resolve().parent.parent
-_VALUES = {"repository": "git@github.com:me/demo.git", "version": "0.1.0", "source": "git+https://example.com/ProjInit"}
-# Installed by the enforcement step (M2-T3), not by the document templates.
-_DEVICE_FILES = (".github/pull_request_template.md",)
+_VALUES = {
+    "repository": "git@github.com:me/demo.git",
+    "version": "0.1.0",
+    "source": "git+https://example.com/ProjInit",
+    "projinit": "uvx --from git+https://example.com/ProjInit@v0.1.0 projinit",
+}
+_DEVICE_FILES: tuple[str, ...] = ()
 
 
 class RenderTest(unittest.TestCase):
@@ -32,7 +36,7 @@ class RenderTest(unittest.TestCase):
         self.assertEqual(str(raised.exception), "docs/PullRequestRule.md: 값이 없는 빈 자리: repository")
 
     def test_this_repository_matches_its_templates(self) -> None:
-        values = load_config(_REPO).template_values
+        values = render_values(load_config(_REPO))
         for relative in COMMON_FILES:
             self.assertEqual((_REPO / relative).read_text(encoding="utf-8"), render(relative, values), relative)
 

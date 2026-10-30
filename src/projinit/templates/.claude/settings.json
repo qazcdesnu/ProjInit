@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && {{projinit}} check --hook stop",
+            "timeout": 180,
+            "statusMessage": "검증 검사 실행 중"
+          }
+        ]
+      }
+    ]
+  }
+}

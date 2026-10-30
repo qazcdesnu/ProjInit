@@ -2,6 +2,39 @@
 
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M3 갱신](Done-M3.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
+## M2-T3 초기화할 때 강제 장치 설치
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+- 근거 문서: [템플릿 구성](design/Templates.md#9-초기화-명령)
+
+### 계획
+- 강제 장치 파일 다섯 개를 템플릿으로 만들어 공통 파일에 넣고, 설정에서 만든 명령으로 빈 자리를 채운다.
+- 초기화할 때 hook 실행 권한과 `core.hooksPath`를 설정한다.
+- 갓 초기화한 저장소가 검증 전체를 통과하는지 테스트한다.
+
+### 진행 기록
+- 2026-10-31: PR #4(M2-T2) 위에 `m2-t3-install-devices`를 쌓았다.
+- 2026-10-31: 갓 초기화한 저장소에는 커밋이 없어 커밋 이력 검사의 `git log`가 실패한다는 것을 설계 중에 발견했다. 커밋이 없으면 0개로 보도록 검사기 설계를 고쳤다.
+- 2026-10-31: 설계와 목업으로 진행 중 상태를 커밋했다(0056004).
+- 2026-10-31: hook 명령 전체를 빈 자리로 두면 그 안의 큰따옴표가 `.claude/settings.json`을 깬다는 것을 알고, 실행 명령 `{{projinit}}` 하나만 빈 자리로 두도록 설계를 고쳤다.
+- 2026-10-31: 강제 장치 템플릿 다섯 개, `render_values`, 실행 권한과 `core.hooksPath` 설정, 빈 저장소의 커밋 이력 처리를 구현했다. 이 저장소에 `--refresh-common`을 실행하니 CI 파일의 주석 한 줄만 다시 쓰였다.
+- 2026-10-31: 갓 초기화한 폴더에서 `check`의 모든 검사기(문서, 포인터, 작업 관리, 강제 장치, 커밋 이력)가 통과하는 것을 테스트로 확인했다.
+
+### 결정 사항
+- 강제 장치 파일은 공통 파일로 다룬다. hook 명령이 설정의 버전에서 나오므로, 버전이 바뀌면 `--refresh-common`으로 함께 다시 써야 하기 때문이다.
+- GitHub Actions 식(`${{ … }}`)은 공백과 점이 있어 빈 자리 문법(`{{영문 소문자·숫자·_}}`)과 겹치지 않는다.
+
+### 변경 파일
+- `docs/design/Templates.md`, `docs/design/Checkers.md`, `docs/Roadmap.md`, `docs/Ongoing.md`
+- 추가: `src/projinit/templates/.claude/settings.json`·`.githooks/pre-commit`·`.githooks/commit-msg`·`.github/workflows/verify.yml`·`.github/pull_request_template.md`(신규), `src/projinit/template.py`, `src/projinit/init.py`, `src/projinit/check_commits.py`, `tests/test_init.py`, `tests/test_template.py`, `.github/workflows/verify.yml`, `docs/Done.md`
+
+### 결과
+- `projinit init`이 문서와 설정에 더해 Stop hook, pre-commit, commit-msg, CI, PR 템플릿을 설치하고 `core.hooksPath`를 설정한다. 갓 초기화한 폴더가 처음부터 검증 전체를 통과한다.
+
+### 검증
+- `uv run projinit check`: 모두 통과
+
 ## M2-T2 `projinit init` 명령
 
 - 시작일: 2026-10-31

@@ -6,6 +6,9 @@
 import re
 from pathlib import Path
 
+from projinit.check_hooks import projinit_command
+from projinit.config import Config
+
 # @doc: docs/design/Templates.md#8-구현
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 # @doc: docs/design/Templates.md#8-구현
@@ -18,6 +21,11 @@ COMMON_FILES = (
     "docs/CommitRule.md",
     "docs/PullRequestRule.md",
     "docs/VerificationTools.md",
+    ".claude/settings.json",
+    ".githooks/pre-commit",
+    ".githooks/commit-msg",
+    ".github/workflows/verify.yml",
+    ".github/pull_request_template.md",
 )
 # @doc: docs/design/Templates.md#8-구현
 INITIAL_FILES = (
@@ -30,7 +38,6 @@ INITIAL_FILES = (
 )
 
 # @doc: docs/design/Templates.md#8-구현
-# @stub: M2-T3
 EXECUTABLE_FILES = (".githooks/pre-commit", ".githooks/commit-msg")
 
 _PLACEHOLDER_RE = re.compile(r"\{\{([a-z0-9_]+)\}\}")
@@ -43,13 +50,16 @@ class TemplateError(Exception):
     """
 
 
-def render_values(config: object) -> dict[str, str]:
-    """Return the placeholder values: the template table and the commands built from the settings.
+def render_values(config: Config) -> dict[str, str]:
+    """Return the placeholder values: the template table and the run command built from the settings.
 
     @doc: docs/design/Templates.md#8-구현
-    @stub: M2-T3
     """
-    raise NotImplementedError
+    values = config.template_values
+    command = projinit_command(config)
+    if command is not None:
+        values["projinit"] = command
+    return values
 
 
 def render(relative: str, values: dict[str, str]) -> str:

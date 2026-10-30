@@ -90,7 +90,7 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 - [INITIAL_FILES](../../src/projinit/template.py#INITIAL_FILES): 처음에만 만드는 파일의 상대 경로. 인덱스, 작업 관리 문서 네 개, 설정 파일이다.
 - [TemplateError](../../src/projinit/template.py#TemplateError): 값이 없는 빈 자리가 있을 때의 오류.
 - [EXECUTABLE_FILES](../../src/projinit/template.py#EXECUTABLE_FILES): 실행 권한을 줄 파일. `.githooks/pre-commit`, `.githooks/commit-msg`.
-- [render_values](../../src/projinit/template.py#render_values): `Config`를 받아 빈 자리 값 사전을 만든다. 설정의 `[template]` 값에, 설정에서 만든 명령 `projinit`(실행 명령), `hook_stop`, `hook_pre_commit`, `hook_commit_msg`([강제 장치 검사기의 hook 명령](Checkers.md#8-강제-장치-검사기))을 더한다. 실행 명령을 만들 수 없으면 명령 값은 넣지 않는다.
+- [render_values](../../src/projinit/template.py#render_values): `Config`를 받아 빈 자리 값 사전을 만든다. 설정의 `[template]` 값에, 설정에서 만든 실행 명령 `projinit`([강제 장치 검사기의 `projinit_command`](Checkers.md#8-강제-장치-검사기))을 더한다. 실행 명령을 만들 수 없으면 넣지 않는다. 강제 장치 템플릿은 이 실행 명령 하나만 빈 자리로 두고 나머지 명령 부분(`check --hook stop` 등)은 직접 적는다. hook 명령 전체를 빈 자리로 두면 그 안의 큰따옴표가 JSON 설정 파일을 깨기 때문이다. 채운 결과가 강제 장치 검사기가 기대하는 명령과 같은지는 테스트가 확인한다.
 - [render](../../src/projinit/template.py#render): 템플릿 파일 하나의 상대 경로와 값 사전을 받아, 모든 `{{이름}}`을 값으로 바꾼 내용을 돌려준다. 값이 없는 빈 자리가 있으면 그 이름들을 담아 `TemplateError`를 낸다.
 
 테스트는 [tests/test_template.py](../../tests/test_template.py)다.
