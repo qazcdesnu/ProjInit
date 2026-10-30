@@ -26,7 +26,7 @@ ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. Claude Code로 하는
 
 이 체계는 AgentVis 프로젝트(`/Users/qazcde/Desktop/Playground/AgentVis`, Claude Code 작업 과정 시각화)에서 처음 만들어졌다. 2026-10-31에 AgentVis의 공통 규칙 문서, 검사기(`tools/`), 검사기 테스트를 이 저장소로 복사해 출발점으로 삼았다. 이 저장소는 그 규칙을 스스로 따르며 개발한다.
 
-AgentVis는 ProjInit의 첫 번째 사용 프로젝트가 된다. ProjInit이 준비되면 AgentVis의 `tools/`와 공통 규칙 문서를 ProjInit이 관리하도록 전환한다.
+AgentVis는 ProjInit으로 전환하지 않는다. 실제로 쓰이며 잘 돌아가는 프로젝트라 함부로 바꾸지 않기로 했다(I17). AgentVis의 규칙이 바뀌면, ProjInit에 필요한 것만 골라 이슈로 반영한다(예: I12의 커밋 규칙과 PR 규칙). ProjInit으로 처음부터 만든 첫 프로젝트는 `Jjabtero`다.
 
 ## 3. 핵심 요구사항
 
