@@ -102,7 +102,7 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
 - [tests/test_check_hooks.py](../tests/test_check_hooks.py): 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
 - [tests/test_run_checks.py](../tests/test_run_checks.py): 실행할 검사 목록, Stop hook 응답(통과, 첫 실패에서 막기, 이미 막힌 뒤 허용과 사용자 경고), 실패 요약의 길이 제한.
 - [tests/test_languages.py](../tests/test_languages.py): 언어마다 [포인터 규약](Traceability.md#7-언어별-심볼-규칙)의 표에 있는 정의·값·이름 붙이기·공개 규칙. `LANGUAGES`와 `LANGUAGE_SUFFIXES`의 일치.
-- [tests/test_check_tasks.py](../tests/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함), 경량 이슈(정상, `[~]` 상태, 기록이 있는 경우, 완료일 누락, 빈 결과, 연결 작업), 기록 보존(그대로 옮긴 경우 통과, 옮기며 줄이 빠진 경우, 진행 중 기록의 진행 기록 줄을 지운 경우, 진행 중 기록이 사라진 경우, 완료 기록의 줄이 바뀐 경우, git 저장소가 아닌 경우).
+- [tests/test_check_tasks.py](../tests/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함), 완료 보관(정상 보관, 닫힌 마일스톤 기록이 완료 문서에 남은 경우, 닫히지 않은 마일스톤의 보관, 잘못된 보관 문서 이름, 다른 마일스톤 태스크, 중복 기록, 보관으로 옮긴 기록의 보존), 경량 이슈(정상, `[~]` 상태, 기록이 있는 경우, 완료일 누락, 빈 결과, 연결 작업), 기록 보존(그대로 옮긴 경우 통과, 옮기며 줄이 빠진 경우, 진행 중 기록의 진행 기록 줄을 지운 경우, 진행 중 기록이 사라진 경우, 완료 기록의 줄이 바뀐 경우, git 저장소가 아닌 경우).
 
 ## 6. 작업 관리 검사기
 
@@ -116,6 +116,7 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
 | [ISSUE_DOC](../tools/check_tasks.py#ISSUE_DOC) | `docs/Issue.md` |
 | [ONGOING_DOC](../tools/check_tasks.py#ONGOING_DOC) | `docs/Ongoing.md` |
 | [DONE_DOC](../tools/check_tasks.py#DONE_DOC) | `docs/Done.md` |
+| [DONE_ARCHIVE_DIR](../tools/check_tasks.py#DONE_ARCHIVE_DIR) | `docs/done` |
 
 **자료형**
 
@@ -133,10 +134,12 @@ uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실�
   - 연결 작업이 없는 항목: `[~]`이면 진행 중 기록만, `[x]`이면 완료 기록만 있어야 하고, `[ ]`이면 어느 기록도 없어야 한다.
   - 연결 작업이 있는 항목: 연결 작업이 존재하고 그 자신은 연결 작업이 없어야 하며, 상태가 연결 작업과 같고, 자체 기록이 없어야 한다.
   - 로드맵·이슈에 없는 ID의 기록은 문제다.
-- [check_preservation](../tools/check_tasks.py#check_preservation): [기록 보존 검사](TaskRule.md#65-기록-보존-검사)를 한다. `git show HEAD:<문서>`로 마지막 커밋의 진행 중·완료 문서를 읽는다. 빠진 줄은 기록마다 하나의 문제로 보고하며, 빠진 줄 수와 첫 번째 빠진 줄을 메시지에 담는다.
+- [check_preservation](../tools/check_tasks.py#check_preservation): [기록 보존 검사](TaskRule.md#65-기록-보존-검사)를 한다. `git show HEAD:<문서>`로 마지막 커밋의 진행 중·완료 문서와 보관 문서(`git ls-tree`로 찾는다)를 읽고, 지금의 완료 문서와 보관 문서를 합친 기록과 비교한다. 빠진 줄은 기록마다 하나의 문제로 보고하며, 빠진 줄 수와 첫 번째 빠진 줄을 메시지에 담는다.
 - [check_records](../tools/check_tasks.py#check_records): 기록의 필수 필드·절, 날짜 형식, 완료 기록의 순서(`완료일`이 늦은 것부터), 진행 중 문서의 `없음` 규칙을 검사한다.
-- [check_references](../tools/check_tasks.py#check_references): 작업 관리 문서 네 개의 본문(코드 블록·인라인 코드 제외)에 나온 작업 ID가 모두 존재하는지 검사한다. ID 앞뒤가 영문자·숫자·`-`가 아니면 ID로 인식하므로 `M0-T6으로`처럼 한글 조사가 붙어도 찾는다.
-- [main](../tools/check_tasks.py#main): 네 문서를 읽어 기록 보존 검사를 포함한 위 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다. 문서가 없으면 그 자체를 문제로 보고한다.
+- [find_done_archives](../tools/check_tasks.py#find_done_archives): `DONE_ARCHIVE_DIR` 아래의 `.md` 파일 목록. 디렉터리가 없으면 빈 목록이다.
+- [check_archives](../tools/check_tasks.py#check_archives): [완료 보관 형식](TaskRule.md#66-완료-보관)을 검사한다. 보관 문서마다 이름과 마일스톤, 기록의 위치, 완료 기록 규칙을 검사하고, 완료 문서와 보관 문서 사이의 중복 기록과, 닫힌 마일스톤인데 완료 문서에 남은 태스크 기록을 보고한다.
+- [check_references](../tools/check_tasks.py#check_references): 작업 관리 문서 네 개와 보관 문서의 본문(코드 블록·인라인 코드 제외)에 나온 작업 ID가 모두 존재하는지 검사한다. ID 앞뒤가 영문자·숫자·`-`가 아니면 ID로 인식하므로 `M0-T6으로`처럼 한글 조사가 붙어도 찾는다.
+- [main](../tools/check_tasks.py#main): 네 문서와 보관 문서를 읽어 기록 보존 검사를 포함한 위 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다. 문서가 없으면 그 자체를 문제로 보고한다.
 
 ## 7. 코드 분석 모듈
 

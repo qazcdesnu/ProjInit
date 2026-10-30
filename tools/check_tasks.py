@@ -17,6 +17,9 @@ ROADMAP_DOC = "docs/Roadmap.md"
 ISSUE_DOC = "docs/Issue.md"
 ONGOING_DOC = "docs/Ongoing.md"
 DONE_DOC = "docs/Done.md"
+# @doc: docs/VerificationTools.md#6-작업-관리-검사기
+# @stub: M0-T5
+DONE_ARCHIVE_DIR = "docs/done"
 
 _ID = r"M\d+-T\d+|[IH]\d+"
 _ID_RE = re.compile(rf"(?:{_ID})")
@@ -357,6 +360,24 @@ def _missing_lines(old: Record, required: list[str], current: Record, label: str
     if not missing:
         return []
     return [Problem(current.path, current.line, f"{old.id}: {label} {len(missing)}개, 예: {missing[0]}")]
+
+
+def find_done_archives(root: Path) -> list[Path]:
+    """Return the archive documents of closed milestones.
+
+    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @stub: M0-T5
+    """
+    raise NotImplementedError
+
+
+def check_archives(root: Path, tasks: list[WorkItem], done: list[Record]) -> list[Problem]:
+    """Report misplaced, duplicate or malformed records across the done document and its archives.
+
+    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    @stub: M0-T5
+    """
+    raise NotImplementedError
 
 
 def check_references(paths: list[Path], known: set[str]) -> list[Problem]:
