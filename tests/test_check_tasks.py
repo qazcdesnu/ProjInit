@@ -4,6 +4,7 @@
 """
 
 import io
+import subprocess
 import unittest
 from contextlib import redirect_stdout
 
@@ -35,9 +36,21 @@ _ONGOING = """# 진행 중
 - 시작일: 2026-10-31
 - 관련 이슈: I2
 
+### 계획
+- 둘째 일을 한다.
+
+### 진행 기록
+- 2026-10-31: 시작했다.
+
+### 결정 사항
+- 방식 A로 한다.
+
 ## H1 급한 결함
 
 - 시작일: 2026-10-31
+
+### 계획
+- 결함을 고친다.
 """
 _DONE = """# 완료
 
@@ -45,6 +58,18 @@ _DONE = """# 완료
 
 - 시작일: 2026-10-30
 - 완료일: 2026-10-30
+
+### 계획
+- 첫 일을 한다.
+
+### 진행 기록
+- 2026-10-30: 했다.
+
+### 결정 사항
+- 없음
+
+### 변경 파일
+- `a.py`
 
 ### 결과
 - 됨. I1을 함께 처리했다.
@@ -54,9 +79,10 @@ _DONE = """# 완료
 """
 
 
-class CheckTasksTest(RepoTestCase):
-    """@doc: docs/VerificationTools.md#5-테스트"""
+_M0_T2_RECORD = _ONGOING[_ONGOING.index("## M0-T2") : _ONGOING.index("## H1")]
 
+
+class _TaskDocsTestCase(RepoTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.write("docs/Roadmap.md", _ROADMAP)
@@ -75,6 +101,10 @@ class CheckTasksTest(RepoTestCase):
         self.assertEqual(code, 1, output)
         for message in messages:
             self.assertIn(message, output)
+
+
+class CheckTasksTest(_TaskDocsTestCase):
+    """@doc: docs/VerificationTools.md#5-테스트"""
 
     def test_consistent_documents_pass(self) -> None:
         code, output = self.run_checker()
@@ -128,6 +158,56 @@ class CheckTasksTest(RepoTestCase):
         self.assertIn("알 수 없는 작업 ID 참조: M7-T2", output)
         self.assertIn("알 수 없는 작업 ID 참조: I9", output)
         self.assertNotIn("M8-T1", output)
+
+
+class PreservationTest(_TaskDocsTestCase):
+    """@doc: docs/VerificationTools.md#5-테스트"""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.git("init", "-q")
+        self.git("add", "-A")
+        self.git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "base")
+
+    def git(self, *args: str) -> None:
+        subprocess.run(["git", "-C", str(self.root), *args], check=True, capture_output=True)
+
+    def finish_m0_t2(self, record: str) -> None:
+        self.write("docs/Roadmap.md", _ROADMAP.replace("- [~] M0-T2", "- [x] M0-T2"))
+        self.write("docs/Ongoing.md", _ONGOING.replace(_M0_T2_RECORD, ""))
+        self.write("docs/Done.md", _DONE.replace("## M0-T1", record + "\n## M0-T1"))
+
+    def moved_record(self) -> str:
+        body = _M0_T2_RECORD.rstrip("\n")
+        body = body.replace("- 시작일: 2026-10-31\n", "- 시작일: 2026-10-31\n- 완료일: 2026-10-31\n")
+        return body + "\n\n### 변경 파일\n- `b.py`\n\n### 결과\n- 됨.\n\n### 검증\n- 통과\n"
+
+    def test_record_moved_intact_passes(self) -> None:
+        self.finish_m0_t2(self.moved_record())
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+
+    def test_reports_lines_dropped_while_moving(self) -> None:
+        self.finish_m0_t2(self.moved_record().replace("- 2026-10-31: 시작했다.\n", ""))
+        self.assert_reports("M0-T2: 완료로 옮기며 빠진 줄 1개, 예: - 2026-10-31: 시작했다.")
+
+    def test_reports_progress_line_removed_from_ongoing(self) -> None:
+        self.write("docs/Ongoing.md", _ONGOING.replace("- 방식 A로 한다.", "- 방식 B로 한다."))
+        self.assert_reports("M0-T2: 진행 중 기록에서 지워진 줄 1개, 예: - 방식 A로 한다.")
+
+    def test_planning_lines_may_change_in_ongoing(self) -> None:
+        self.write("docs/Ongoing.md", _ONGOING.replace("- 둘째 일을 한다.", "- 둘째 일을 다르게 한다."))
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+
+    def test_reports_ongoing_record_that_vanished(self) -> None:
+        self.write("docs/Issue.md", _ISSUE.replace("- [~] H1", "- [ ] H1"))
+        self.write("docs/Ongoing.md", _ONGOING[: _ONGOING.index("## H1")])
+        self.assert_reports("H1: 진행 중 기록이 완료로 옮겨지지 않고 사라짐")
+
+    def test_reports_changed_done_line(self) -> None:
+        self.write("docs/Done.md", _DONE.replace("- 2026-10-30: 했다.", "- 2026-10-30: 다르게 했다."))
+        self.assert_reports("M0-T1: 완료 기록에서 지워진 줄 1개, 예: - 2026-10-30: 했다.")
 
 
 if __name__ == "__main__":

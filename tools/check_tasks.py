@@ -5,6 +5,7 @@
 
 import argparse
 import re
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from datetime import date
@@ -29,6 +30,8 @@ _RECORD_RE = re.compile(rf"^## ({_ID}) \S")
 _FIELD_RE = re.compile(r"^- ([^:]+): (.*)$")
 _SECTION_RE = re.compile(r"^### (.+?)\s*$")
 _DATE_RE = re.compile(r"\d{4}-\d{2}-\d{2}")
+_DONE_SECTIONS = ("계획", "진행 기록", "결정 사항", "변경 파일", "결과", "검증")
+_APPEND_ONLY_SECTIONS = ("진행 기록", "결정 사항")
 _STATUS_LABELS = {" ": "[ ]", "~": "[~]", "x": "[x]"}
 
 
@@ -58,10 +61,11 @@ class Record:
     line: int
     fields: dict[str, str] = field(default_factory=dict)
     sections: set[str] = field(default_factory=set)
+    lines: list[tuple[str, str]] = field(default_factory=list)
 
 
-def _read_lines(path: Path) -> list[tuple[int, str]]:
-    return list(iter_prose_lines(path.read_text(encoding="utf-8")))
+def _read_lines(path: Path, text: str | None = None) -> list[tuple[int, str]]:
+    return list(iter_prose_lines(path.read_text(encoding="utf-8") if text is None else text))
 
 
 def _expect_next(numbers: dict[str, int], key: str, actual: int, first: int) -> int | None:
@@ -138,8 +142,8 @@ def parse_issues(path: Path) -> tuple[list[WorkItem], list[Problem]]:
     return items, problems
 
 
-def parse_records(path: Path) -> tuple[list[Record], list[Problem]]:
-    """Read ongoing or done records and report malformed or duplicate record headings.
+def parse_records(path: Path, text: str | None = None) -> tuple[list[Record], list[Problem]]:
+    """Read ongoing or done records, from the given text if any, and report malformed or duplicate headings.
 
     @doc: docs/VerificationTools.md#6-작업-관리-검사기
     """
@@ -147,7 +151,8 @@ def parse_records(path: Path) -> tuple[list[Record], list[Problem]]:
     problems = []
     seen: set[str] = set()
     current = None
-    for number, line in _read_lines(path):
+    section = ""
+    for number, line in _read_lines(path, text):
         if line.startswith("## "):
             match = _RECORD_RE.match(line)
             current = None
@@ -159,11 +164,16 @@ def parse_records(path: Path) -> tuple[list[Record], list[Problem]]:
                 continue
             seen.add(match.group(1))
             current = Record(match.group(1), path, number)
+            current.lines.append(("", line.rstrip()))
+            section = ""
             records.append(current)
         elif current is not None:
-            section = _SECTION_RE.match(line)
-            if section:
-                current.sections.add(section.group(1))
+            if line.strip():
+                current.lines.append((section, line.rstrip()))
+            heading = _SECTION_RE.match(line)
+            if heading:
+                section = heading.group(1)
+                current.sections.add(section)
                 continue
             field_match = _FIELD_RE.match(line)
             if field_match and not current.sections:
@@ -231,10 +241,10 @@ def check_records(ongoing_path: Path, ongoing: list[Record], done: list[Record])
     """
     problems = []
     for record in ongoing:
-        problems.extend(_check_record(record, ("시작일",), ()))
+        problems.extend(_check_record(record, ("시작일",), ("계획",)))
     previous: date | None = None
     for record in done:
-        problems.extend(_check_record(record, ("시작일", "완료일"), ("결과", "검증")))
+        problems.extend(_check_record(record, ("시작일", "완료일"), _DONE_SECTIONS))
         finished = _parse_date(record.fields.get("완료일", ""))
         if finished is None:
             continue
@@ -270,6 +280,56 @@ def _parse_date(value: str) -> date | None:
         return date.fromisoformat(value)
     except ValueError:
         return None
+
+
+def check_preservation(
+    root: Path, ongoing_path: Path, done_path: Path, ongoing: list[Record], done: list[Record]
+) -> list[Problem]:
+    """Report lines of records in the last commit that were dropped from the current records.
+
+    @doc: docs/VerificationTools.md#6-작업-관리-검사기
+    """
+    problems = []
+    current_ongoing = {record.id: record for record in ongoing}
+    current_done = {record.id: record for record in done}
+    head_ongoing = _head_records(root, ongoing_path)
+    head_done = _head_records(root, done_path)
+    for old in head_ongoing:
+        if old.id in current_ongoing:
+            kept = [line for section, line in old.lines if section in _APPEND_ONLY_SECTIONS]
+            problems += _missing_lines(old, kept, current_ongoing[old.id], "진행 중 기록에서 지워진 줄")
+        elif old.id in current_done:
+            kept = [line for _, line in old.lines]
+            problems += _missing_lines(old, kept, current_done[old.id], "완료로 옮기며 빠진 줄")
+        else:
+            problems.append(Problem(ongoing_path, 1, f"{old.id}: 진행 중 기록이 완료로 옮겨지지 않고 사라짐"))
+    for old in head_done:
+        if old.id not in current_done:
+            problems.append(Problem(done_path, 1, f"{old.id}: 완료 기록이 사라짐"))
+            continue
+        problems += _missing_lines(old, [line for _, line in old.lines], current_done[old.id], "완료 기록에서 지워진 줄")
+    return problems
+
+
+def _head_records(root: Path, path: Path) -> list[Record]:
+    try:
+        relative = path.resolve().relative_to(root).as_posix()
+    except ValueError:
+        return []
+    shown = subprocess.run(
+        ["git", "-C", str(root), "show", f"HEAD:{relative}"], capture_output=True, encoding="utf-8"
+    )
+    if shown.returncode != 0:
+        return []
+    return parse_records(path, shown.stdout)[0]
+
+
+def _missing_lines(old: Record, required: list[str], current: Record, label: str) -> list[Problem]:
+    present = {line for _, line in current.lines}
+    missing = [line for line in required if line not in present]
+    if not missing:
+        return []
+    return [Problem(current.path, current.line, f"{old.id}: {label} {len(missing)}개, 예: {missing[0]}")]
 
 
 def check_references(paths: list[Path], known: set[str]) -> list[Problem]:
@@ -311,6 +371,7 @@ def main(argv: list[str] | None = None) -> int:
             + done_problems
             + check_states(items, ongoing, done)
             + check_records(ongoing_path, ongoing, done)
+            + check_preservation(root, ongoing_path, done_path, ongoing, done)
             + check_references(paths, {item.id for item in items})
         )
     for problem in problems:
