@@ -14,6 +14,7 @@ from tools.doclib import LANGUAGE_SUFFIXES, Problem
 from tools.languages import LANGUAGES, Definition, parse
 
 _DOC_TAG_RE = re.compile(r"@doc:\s*(\S+)")
+_STUB_TAG_RE = re.compile(r"@stub:\s*(\S+)")
 
 
 @dataclass(frozen=True)
@@ -64,6 +65,7 @@ class ModuleIndex:
     doc_pointers: list[DocPointer] = field(default_factory=list)
     problems: list[Problem] = field(default_factory=list)
     has_code: bool = False
+    stubs: list[tuple[int, str]] = field(default_factory=list)
 
 
 @dataclass
@@ -102,9 +104,18 @@ def index_module(path: Path, root: Path) -> ModuleIndex:
     for qualname, docstring in docstrings:
         if docstring is not None:
             _add_docstring_pointers(index, root, qualname, docstring)
+            _add_stubs(index, *docstring)
     for comment in layout.comments:
         _add_comment_pointers(index, root, comment, layout, starts)
+        _add_stubs(index, comment.start_point.row + 1, comment.text.decode("utf-8"))
+    index.stubs.sort()
     return index
+
+
+def _add_stubs(index: ModuleIndex, start: int, text: str) -> None:
+    for offset, line in enumerate(text.splitlines()):
+        for match in _STUB_TAG_RE.finditer(line):
+            index.stubs.append((start + offset, match.group(1)))
 
 
 def _first_error(node: Node) -> Node | None:

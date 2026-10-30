@@ -22,6 +22,7 @@ from tools.doclib import (
     is_external,
     resolve_link,
 )
+from tools.check_tasks import ISSUE_DOC, ROADMAP_DOC, WorkItem, parse_issues, parse_roadmap
 from tools.languages import DEFINITION
 
 _LINE_ANCHOR_RE = re.compile(r"L\d+(-L?\d+)?")
@@ -172,9 +173,22 @@ def check_stubs(root: Path, modules: dict[Path, ModuleIndex]) -> list[Problem]:
     """Report mock-up markers whose task is unknown or not in progress.
 
     @doc: docs/VerificationTools.md#4-포인터-검사기
-    @stub: I6
     """
-    raise NotImplementedError
+    items: dict[str, WorkItem] = {}
+    for doc, parse in ((ROADMAP_DOC, parse_roadmap), (ISSUE_DOC, parse_issues)):
+        if (root / doc).is_file():
+            items.update((item.id, item) for item in parse(root / doc)[0])
+    problems = []
+    for module in modules.values():
+        for line, task_id in module.stubs:
+            item = items.get(task_id)
+            if item is None:
+                problems.append(Problem(module.path, line, f"목업의 작업 {task_id}가 로드맵·이슈에 없음"))
+                continue
+            status = items[item.link].status if item.link in items else item.status
+            if status != "~":
+                problems.append(Problem(module.path, line, f"작업 {task_id}가 진행 중([~])이 아닌데 목업이 남아 있음"))
+    return problems
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -193,6 +207,7 @@ def main(argv: list[str] | None = None) -> int:
         + check_doc_pointers(root, modules)
         + check_coverage(root, modules)
         + check_reciprocity(root, code_pointers, modules)
+        + check_stubs(root, modules)
     )
     for problem in problems:
         print(problem.format(root))
@@ -200,7 +215,11 @@ def main(argv: list[str] | None = None) -> int:
         print(f"check_pointers: 문제 {len(problems)}건")
         return 1
     doc_pointer_count = sum(len(module.doc_pointers) for module in modules.values())
-    print(f"check_pointers: 통과 (문서→코드 {len(code_pointers)}개, 코드→문서 {doc_pointer_count}개)")
+    stub_count = sum(len(module.stubs) for module in modules.values())
+    print(
+        f"check_pointers: 통과 (문서→코드 {len(code_pointers)}개, 코드→문서 {doc_pointer_count}개, "
+        f"목업 {stub_count}개)"
+    )
     return 0
 
 

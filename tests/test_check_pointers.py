@@ -106,6 +106,34 @@ class CheckPointersTest(RepoTestCase):
         self.assertNotIn("hidden", output)
 
 
+class StubTest(RepoTestCase):
+    """@doc: docs/VerificationTools.md#5-테스트"""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.write("docs/A.md", "# A\n\n[run](../src/mod.rs#run)\n")
+        self.write("docs/Roadmap.md", "# R\n\n## M0 a\n\n- [~] M0-T1 a\n- [x] M0-T2 b\n- [ ] M0-T3 c\n")
+        self.write("docs/Issue.md", "# I\n\n- [~] I1 linked\n  - 연결 작업: M0-T2\n")
+
+    def stub(self, task: str) -> str:
+        self.write("src/mod.rs", f"//! @doc: docs/A.md\n\n/// @doc: docs/A.md\n/// @stub: {task}\npub fn run() {{ todo!() }}\n")
+        output = io.StringIO()
+        with redirect_stdout(output):
+            main(["--root", str(self.root)])
+        return output.getvalue()
+
+    def test_stub_of_task_in_progress_passes(self) -> None:
+        self.assertIn("목업 1개", self.stub("M0-T1"))
+
+    def test_reports_stub_of_finished_unstarted_or_unknown_task(self) -> None:
+        self.assertIn("src/mod.rs:4: 작업 M0-T2가 진행 중([~])이 아닌데 목업이 남아 있음", self.stub("M0-T2"))
+        self.assertIn("작업 M0-T3가 진행 중([~])이 아닌데 목업이 남아 있음", self.stub("M0-T3"))
+        self.assertIn("목업의 작업 M9-T9가 로드맵·이슈에 없음", self.stub("M9-T9"))
+
+    def test_linked_issue_follows_its_linked_task(self) -> None:
+        self.assertIn("작업 I1가 진행 중([~])이 아닌데 목업이 남아 있음", self.stub("I1"))
+
+
 class SymbolRefTest(unittest.TestCase):
     """@doc: docs/VerificationTools.md#5-테스트"""
 
