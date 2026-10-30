@@ -2,6 +2,70 @@
 
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
+## I4 iCloud 동기화로 `.venv`에 남은 숨김 속성 정리
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+
+### 계획
+- `.venv`와 저장소 파일의 숨김 속성(`UF_HIDDEN`)을 확인하고, 남아 있으면 `.venv`를 다시 만든다.
+
+### 진행 기록
+- 2026-10-31: 사용자가 바탕화면의 iCloud 동기화를 껐고, AgentVis 세션이 "ProjInit의 `.venv`에도 예전에 붙은 숨김 속성이 남아 있을 수 있으니 다시 만들라"고 권고했다. AgentVis에서는 iCloud 동기화가 `.venv`에 숨김 속성을 붙였고, Python 3.12부터 숨김 `.pth` 파일을 건너뛰어 문제가 되었다.
+- 2026-10-31: 확인해 보니 `.venv` 안의 202개 항목에 숨김 속성이 있었다. `.pth` 파일은 없어서(이 프로젝트는 패키지로 설치되지 않는다) 동작에는 영향이 없었다. 저장소의 `.gitignore`, `.python-version`, `.git`에도 숨김 속성이 있었지만 원래 숨김인 점 파일이라 그대로 두었다.
+- 2026-10-31: `rm -rf .venv && uv sync`로 다시 만들었다. 직후와 시간이 지난 뒤 모두 숨김 속성이 0개였다.
+
+### 결정 사항
+- M1-T2에서 패키지로 전환하면 editable 설치가 `.pth`를 만들므로, 그 전에 정리해 둔다.
+
+### 변경 파일
+- 저장소 밖: `.venv` 재생성(저장소에 포함되지 않음)
+- 문서: `docs/Issue.md`, `docs/Done.md`
+
+### 결과
+- `.venv`에 숨김 속성이 없고, iCloud 동기화를 끈 뒤로 다시 붙지 않는다.
+
+### 검증
+- `uv run python -m tools.run_checks`: 모두 통과
+
+## M0-T3 검사기 자동 실행 규칙 (Claude Code Stop hook, git pre-commit)
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+- 근거 문서: [검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행), [제품 비전](ProductVision.md#4-구성-초안)
+
+### 계획
+- 자동 실행 규칙과 일괄 실행 명령, 강제 장치 검사기를 검증 도구에 명세한다. `CLAUDE.md`와 코드 작업 규칙의 검증 절차를 일괄 실행 명령으로 바꾼다.
+- `tools/run_checks.py`, `tools/check_hooks.py`와 테스트를 쓴다.
+- 이 저장소에 `.claude/settings.json` Stop hook, `.githooks/pre-commit`, `core.hooksPath`를 설치한다.
+
+### 진행 기록
+- 2026-10-31: M0-T2에서 정한 "둘 다" 방식을 이 저장소에 먼저 적용한다(자기 적용).
+- 2026-10-31: 코드 작업 규칙이 진행 중 작업에서 포인터 검사 실패를 허용하므로, Stop hook이 끝없이 막으면 작업 중 질문도 못 하게 된다는 충돌을 발견했다. 첫 종료만 막고 두 번째는 사용자 경고와 함께 허용하기로 했다.
+- 2026-10-31: `tools/check_hooks.py`, `tools/run_checks.py`와 테스트를 쓰고, `.claude/settings.json`, `.githooks/pre-commit`, `core.hooksPath`를 설치했다.
+- 2026-10-31: Stop hook 명령에 hook 입력을 흉내 내 넣어 확인했다. 통과는 종료 코드 0, 실패 첫 종료는 2와 실패 요약, `stop_hook_active` 종료는 0과 `systemMessage` 경고였다.
+- 2026-10-31: 사용자가 작업 관리 정합성 검사기가 있는지 물어, 복사본에 상태를 일부러 틀리게 넣어 `check_tasks`가 잡는 것을 보여 주었다.
+- 2026-10-31: 사용자가 진행 중 → 완료 이관 때 세부 내용이 소실되지 않는지 물었다. 기록이 통째로 사라지는 것은 잡지만 옮기며 일부가 빠지는 것은 못 잡는다는 것을 확인하고 I3으로 등록했다.
+
+### 결정 사항
+- Stop hook은 첫 종료 시도만 막는다(`stop_hook_active`로 구분). 남은 실패는 사용자 화면에 경고로 보인다.
+- `core.hooksPath`는 저장소에 포함되지 않는 설정이라, 빠졌는지를 강제 장치 검사기로 확인한다.
+- 검증 절차는 명령 네 개 대신 `uv run python -m tools.run_checks` 하나로 쓴다.
+
+### 변경 파일
+- 문서: `CLAUDE.md`, `docs/CodeRule.md`, `docs/VerificationTools.md`, `docs/Roadmap.md`, `docs/Issue.md`, `docs/Ongoing.md`, `docs/Done.md`
+- 신규: `tools/check_hooks.py`, `tools/run_checks.py`, `tests/test_check_hooks.py`, `tests/test_run_checks.py`, `.claude/settings.json`, `.githooks/pre-commit`
+- 저장소 밖 설정: `git config core.hooksPath .githooks`
+
+### 결과
+- Claude가 턴을 끝내려 할 때와 누가 커밋하려 할 때 모든 검사가 자동으로 실행된다.
+- 강제 장치가 빠지면(`core.hooksPath` 미설정 등) 강제 장치 검사기가 알려 준다.
+- 검증 절차가 `uv run python -m tools.run_checks` 한 명령이 되었다.
+
+### 검증
+- `uv run python -m tools.run_checks`: check_docs, check_pointers, check_tasks, check_hooks, unittest 모두 통과
+- Stop hook 수동 확인: 위 진행 기록 참조
+
 ## M0-T2 미결정 사항 결정 (대상 언어, 강제 방식, 배포 방식)
 
 - 시작일: 2026-10-31

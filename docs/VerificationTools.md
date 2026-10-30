@@ -1,6 +1,6 @@
 # 검증 도구
 
-이 문서는 문서와 코드의 규칙 준수를 자동으로 검증하는 도구를 규정한다. 도구는 `tools/` 패키지에 있으며 [코드 작업 규칙](CodeRule.md#3-언어와-스타일)이 허용한 의존성만 사용한다. 검증하는 규칙은 [문서 작업 규칙](DocumentationRule.md), [포인터 규약](Traceability.md), [작업 관리 규칙](TaskRule.md)이다. 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
+이 문서는 문서와 코드의 규칙 준수를 자동으로 검증하는 도구를 규정한다. 도구는 `tools/` 패키지에 있으며 [코드 작업 규칙](CodeRule.md#3-언어와-스타일)이 허용한 의존성만 사용한다. 검증하는 규칙은 [문서 작업 규칙](DocumentationRule.md), [포인터 규약](Traceability.md), [작업 관리 규칙](TaskRule.md)과 이 문서의 [자동 실행](#9-일괄-실행과-자동-실행) 규칙이다. 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
 ## 1. 실행 방법
 
@@ -10,7 +10,9 @@
 uv run python -m tools.check_docs        # 문서 링크와 고아 문서 검사
 uv run python -m tools.check_pointers    # 문서 ↔ 코드 포인터 검사
 uv run python -m tools.check_tasks       # 작업 ID 기준 작업 관리 문서 정합성 검사
+uv run python -m tools.check_hooks       # 강제 장치(Stop hook, pre-commit) 설치 검사
 uv run python -m unittest discover -s tests -t .   # 도구 자체의 테스트
+uv run python -m tools.run_checks        # 위 검사 전체를 한 번에 실행
 ```
 
 - 문제가 없으면 종료 코드 0으로 끝나고 통과 요약을 한 줄 출력한다.
@@ -92,6 +94,8 @@ uv run python -m unittest discover -s tests -t .   # 도구 자체의 테스트
 - [tests/test_check_docs.py](../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소.
 - [tests/test_check_pointers.py](../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락, Python 밖의 언어로 된 저장소.
 - [tests/test_code_index.py](../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
+- [tests/test_check_hooks.py](../tests/test_check_hooks.py): 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
+- [tests/test_run_checks.py](../tests/test_run_checks.py): 실행할 검사 목록, Stop hook 응답(통과, 첫 실패에서 막기, 이미 막힌 뒤 허용과 사용자 경고), 실패 요약의 길이 제한.
 - [tests/test_languages.py](../tests/test_languages.py): 언어마다 [포인터 규약](Traceability.md#7-언어별-심볼-규칙)의 표에 있는 정의·값·이름 붙이기·공개 규칙. `LANGUAGES`와 `LANGUAGE_SUFFIXES`의 일치.
 - [tests/test_check_tasks.py](../tests/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함).
 
@@ -166,3 +170,63 @@ uv run python -m unittest discover -s tests -t .   # 도구 자체의 테스트
   - 심볼: 모듈(빈 이름)과 `Language`의 함수가 찾은 `Definition`을 등록한다.
   - docstring 포인터: 모듈과 각 `Definition`의 docstring에서 `@doc:` 줄을 찾는다. 줄 번호는 docstring 시작 줄에 docstring 안의 줄 위치를 더한 값이다.
   - 주석 포인터: 구문 트리의 주석 노드에서 `@doc:`을 찾고, [포인터 규약](Traceability.md#31-주석)에 따라 소속 심볼을 정한다. 줄 번호는 태그가 있는 줄이다. 코드와 같은 줄에 있거나 소속 심볼이 없으면 문제다.
+
+## 8. 강제 장치 검사기
+
+[tools/check_hooks.py](../tools/check_hooks.py)는 [9. 일괄 실행과 자동 실행](#9-일괄-실행과-자동-실행)의 장치가 설치되어 있는지 검사한다. 장치가 빠지면 검사기가 자동으로 돌지 않는데, 그 사실을 아무도 모르게 되는 것을 막는다.
+
+**상수**
+
+| 상수 | 값 |
+| --- | --- |
+| [CLAUDE_SETTINGS](../tools/check_hooks.py#CLAUDE_SETTINGS) | `.claude/settings.json` |
+| [STOP_HOOK_COMMAND](../tools/check_hooks.py#STOP_HOOK_COMMAND) | `cd "$CLAUDE_PROJECT_DIR" && uv run python -m tools.run_checks --hook stop` |
+| [PRE_COMMIT_HOOK](../tools/check_hooks.py#PRE_COMMIT_HOOK) | `.githooks/pre-commit` |
+| [PRE_COMMIT_COMMAND](../tools/check_hooks.py#PRE_COMMIT_COMMAND) | `uv run python -m tools.run_checks --hook pre-commit` |
+| [HOOKS_PATH](../tools/check_hooks.py#HOOKS_PATH) | `.githooks` |
+
+**함수**
+
+- [check_stop_hook](../tools/check_hooks.py#check_stop_hook): `CLAUDE_SETTINGS`가 있고 JSON으로 읽히며, `hooks.Stop` 아래에 명령이 정확히 `STOP_HOOK_COMMAND`인 command hook이 있는지 검사한다.
+- [check_pre_commit](../tools/check_hooks.py#check_pre_commit): `PRE_COMMIT_HOOK`이 있고, 실행 권한이 있으며, `PRE_COMMIT_COMMAND`를 담고 있는지 검사한다.
+- [check_hooks_path](../tools/check_hooks.py#check_hooks_path): 루트가 git 저장소이고, git 설정 `core.hooksPath`가 `HOOKS_PATH`인지 검사한다. 이 설정은 저장소에 포함되지 않으므로 클론할 때마다 한 번 해 줘야 하며, 이 검사가 빠뜨린 것을 알려 준다.
+- [main](../tools/check_hooks.py#main): 세 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
+
+## 9. 일괄 실행과 자동 실행
+
+검사기를 작업자의 기억에 맡기지 않고 자동으로 실행한다([제품 비전](ProductVision.md#4-구성-초안)). 장치는 두 가지이며 서로 다른 구멍을 막는다.
+
+| 장치 | 실행 시점 | 실패하면 |
+| --- | --- | --- |
+| Claude Code Stop hook | Claude가 턴을 끝내려 할 때 | 첫 시도에서는 턴 종료를 막고 실패 요약을 Claude에게 돌려준다. 이미 한 번 막힌 뒤의 종료(`stop_hook_active`)는 허용하고, 남은 실패를 사용자에게 경고로 보여 준다. |
+| git pre-commit | 사람이든 Claude든 커밋하려 할 때 | 커밋을 거부한다. |
+
+Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](CodeRule.md#1-문서-우선-작업-절차)이 진행 중인 작업에서 포인터 검사기가 일부러 실패하는 상태를 허용하기 때문이다. 이때 Claude는 실패를 고치거나, 남긴 이유를 사용자에게 보고해야 한다. 끝없이 막으면 작업 중에 사용자에게 질문할 수도 없게 된다.
+
+**설치**
+
+- `.claude/settings.json`에 `hooks.Stop` command hook으로 [STOP_HOOK_COMMAND](../tools/check_hooks.py#STOP_HOOK_COMMAND)를 둔다.
+- `.githooks/pre-commit`에 [PRE_COMMIT_COMMAND](../tools/check_hooks.py#PRE_COMMIT_COMMAND)를 실행하는 셸 스크립트를 두고 실행 권한을 준다.
+- 클론한 뒤 한 번 `git config core.hooksPath .githooks`를 실행한다. 빠뜨리면 [강제 장치 검사기](#8-강제-장치-검사기)가 Stop hook에서 알려 준다.
+- pre-commit은 스테이징한 내용이 아니라 작업 트리를 검사한다.
+
+[tools/run_checks.py](../tools/run_checks.py)는 모든 검사를 한 번에 실행하고, hook으로 불렸을 때의 응답을 만든다.
+
+**상수와 자료형**
+
+- [CHECKS](../tools/run_checks.py#CHECKS): 실행할 검사의 (이름, 명령 인자) 목록. `check_docs`, `check_pointers`, `check_tasks`, `check_hooks`, `unittest` 순서다. 검사기는 `--root`로 루트를 넘기고, 테스트는 루트에서 `unittest discover -s tests -t .`로 실행한다.
+- [CheckResult](../tools/run_checks.py#CheckResult): 검사 하나의 결과. 이름, 종료 코드, 출력(표준 출력과 표준 오류를 합친 것)을 가진다.
+- [HookResponse](../tools/run_checks.py#HookResponse): hook에 돌려줄 응답. 종료 코드, 표준 출력, 표준 오류를 가진다.
+
+**함수**
+
+- [run_all](../tools/run_checks.py#run_all): `CHECKS`를 차례로 현재 Python 인터프리터의 하위 프로세스로 실행해 `CheckResult` 목록을 돌려준다. 하나가 실패해도 나머지를 실행한다.
+- [summarize](../tools/run_checks.py#summarize): 실패한 검사마다 이름과 출력의 마지막 40줄을 모은 요약 문자열을 만든다.
+- [stop_hook_response](../tools/run_checks.py#stop_hook_response): Stop hook 응답을 만든다.
+  - 모두 통과: 종료 코드 0, 출력 없음.
+  - 실패, `stop_hook_active`가 거짓: 종료 코드 2, 표준 오류에 요약과 "고치거나, 진행 중인 작업이라 남기는 실패면 그 이유를 사용자에게 보고하라"는 안내.
+  - 실패, `stop_hook_active`가 참: 종료 코드 0, 표준 출력에 `systemMessage`로 실패한 검사 이름을 담은 JSON.
+- [main](../tools/run_checks.py#main): `--root`와 `--hook`(`stop` 또는 `pre-commit`) 옵션을 받는다.
+  - `--hook`이 없거나 `pre-commit`: 각 검사의 결과를 한 줄씩 출력하고, 실패가 있으면 요약을 출력한 뒤 종료 코드 1로 끝난다.
+  - `--hook stop`: 표준 입력의 JSON에서 `stop_hook_active`를 읽고 `stop_hook_response`의 응답대로 출력하고 끝난다. 입력이 비었거나 JSON이 아니면 `stop_hook_active`를 거짓으로 본다.
+

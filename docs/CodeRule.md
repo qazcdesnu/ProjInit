@@ -26,6 +26,8 @@
 | `tools/` | 개발용 도구(검증 스크립트 등). [검증 도구](VerificationTools.md)에 규정된다. |
 | `tests/` | 자동 테스트. |
 | `pyproject.toml`, `.python-version`, `uv.lock` | uv 프로젝트 설정. [3. 언어와 스타일](#3-언어와-스타일)을 따른다. |
+| `.claude/` | Claude Code 프로젝트 설정(`settings.json`). 검사기를 자동 실행하는 Stop hook을 둔다. [검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)에 규정된다. |
+| `.githooks/` | 저장소에 포함하는 git hook. `pre-commit`을 둔다. [검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)에 규정된다. |
 
 새로운 최상위 디렉터리가 필요하면 이 표를 먼저 수정한다.
 
@@ -63,14 +65,13 @@
 
 ## 6. 검증과 완료 조건
 
-코드 작업은 아래 명령이 모두 성공(종료 코드 0)해야 완료로 본다. 실행 방법의 상세는 [검증 도구](VerificationTools.md#1-실행-방법)에 있다.
+코드 작업은 아래 명령이 성공(종료 코드 0)해야 완료로 본다. 이 명령은 모든 검사기와 테스트를 실행한다. 실행 방법의 상세는 [검증 도구](VerificationTools.md#1-실행-방법)에 있다.
 
 ```sh
-uv run python -m tools.check_docs
-uv run python -m tools.check_pointers
-uv run python -m tools.check_tasks
-uv run python -m unittest discover -s tests -t .
+uv run python -m tools.run_checks
 ```
+
+이 검사는 Stop hook과 pre-commit으로 자동 실행된다([검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)). 자동 실행에 기대지 않고, 작업을 끝내기 전에 직접 실행해 확인한다.
 
 검증이 실패한 상태로 작업을 끝내지 않는다. 실패를 해결할 수 없으면 실패 내용을 그대로 보고한다.
 

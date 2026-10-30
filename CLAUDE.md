@@ -21,11 +21,10 @@
 
 ## 작업 완료 전 검증
 
-작업을 마치기 전에 아래 명령을 저장소 루트에서 실행해 모두 통과시킨다. 상세는 [검증 도구](docs/VerificationTools.md)에 있다.
+작업을 마치기 전에 아래 명령을 저장소 루트에서 실행해 모두 통과시킨다. 이 명령은 문서 링크·포인터·작업 관리·강제 장치 검사와 테스트를 한 번에 실행한다. 상세는 [검증 도구](docs/VerificationTools.md)에 있다.
 
 ```sh
-uv run python -m tools.check_docs
-uv run python -m tools.check_pointers
-uv run python -m tools.check_tasks
-uv run python -m unittest discover -s tests -t .
+uv run python -m tools.run_checks
 ```
+
+같은 검사가 Claude Code Stop hook(턴을 끝낼 때)과 git pre-commit(커밋할 때)에서 자동으로 실행된다. 자동 실행이 막으면 실패를 고치고, 고칠 수 없거나 진행 중인 작업이라 일부러 남기는 실패면 그 이유를 사용자에게 보고한다. 상세는 [검증 도구의 자동 실행](docs/VerificationTools.md#9-일괄-실행과-자동-실행)에 있다.
