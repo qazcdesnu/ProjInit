@@ -15,7 +15,7 @@ from projinit.doclib import extract_links, is_external, resolve_link
 from projinit.template import COMMON_FILES, INITIAL_FILES, TemplateError, render
 
 _REPO = Path(__file__).resolve().parent.parent
-_VALUES = {"repository": "git@github.com:me/demo.git"}
+_VALUES = {"repository": "git@github.com:me/demo.git", "version": "0.1.0", "source": "git+https://example.com/ProjInit"}
 # Installed by the enforcement step (M2-T3), not by the document templates.
 _DEVICE_FILES = (".github/pull_request_template.md",)
 

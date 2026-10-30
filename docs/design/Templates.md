@@ -87,7 +87,7 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 
 - [TEMPLATE_DIR](../../src/projinit/template.py#TEMPLATE_DIR): 템플릿 디렉터리.
 - [COMMON_FILES](../../src/projinit/template.py#COMMON_FILES): 공통 파일의 상대 경로. `CLAUDE.md`와 1절의 공통 규칙 문서 일곱 개다. 이 저장소의 같은 파일은 템플릿을 채운 결과와 같아야 한다.
-- [INITIAL_FILES](../../src/projinit/template.py#INITIAL_FILES): 처음에만 만드는 파일의 상대 경로. 인덱스와 작업 관리 문서 네 개다.
+- [INITIAL_FILES](../../src/projinit/template.py#INITIAL_FILES): 처음에만 만드는 파일의 상대 경로. 인덱스, 작업 관리 문서 네 개, 설정 파일이다.
 - [TemplateError](../../src/projinit/template.py#TemplateError): 값이 없는 빈 자리가 있을 때의 오류.
 - [render](../../src/projinit/template.py#render): 템플릿 파일 하나의 상대 경로와 값 사전을 받아, 모든 `{{이름}}`을 값으로 바꾼 내용을 돌려준다. 값이 없는 빈 자리가 있으면 그 이름들을 담아 `TemplateError`를 낸다.
 
@@ -97,4 +97,26 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 - 이 저장소의 공통 파일이 템플릿을 이 저장소의 설정 값으로 채운 결과와 같다(M2-T6의 템플릿 일치 검사가 생기기 전까지 이 테스트가 그 역할을 한다).
 - 채운 공통 문서의 링크가 공통 파일과 처음 만드는 파일로만 간다(2절).
 - 공통 파일과 처음 만드는 파일을 임시 폴더에 채워 쓰면 문서 링크 검사와 작업 관리 검사를 통과한다. 강제 장치까지 포함한 검증 전체 통과는 M2-T3에서 시험한다.
+
+## 9. 초기화 명령
+
+[src/projinit/init.py](../../src/projinit/init.py)가 `projinit init`을 구현한다.
+
+```sh
+projinit init [--root <폴더>] [--repository <원격 저장소 주소>]
+projinit init --refresh-common [--root <폴더>]
+```
+
+- 설정 파일도 템플릿(`src/projinit/templates/projinit.toml`)이며 처음 만드는 파일에 들어간다. 빈 자리는 `version`(실행 중인 ProjInit 버전), `source`(설치 출처), `repository`(원격 저장소 주소)다.
+- [DEFAULT_SOURCE](../../src/projinit/init.py#DEFAULT_SOURCE): 설치 출처의 기본값 `git+https://github.com/qazcdesnu/ProjInit`.
+- [NO_REPOSITORY](../../src/projinit/init.py#NO_REPOSITORY): 원격 저장소가 아직 없을 때 쓰는 값 `아직 없음`. 원격 저장소를 만들면 설정의 `template.repository`를 고치고 `--refresh-common`으로 공통 문서를 다시 만든다.
+- [package_version](../../src/projinit/init.py#package_version): 실행 중인 `projinit` 패키지의 버전.
+- [repository_url](../../src/projinit/init.py#repository_url): 원격 저장소 주소를 정한다. 인자로 받은 값, git `origin` 주소, `NO_REPOSITORY` 순서다.
+- [init_project](../../src/projinit/init.py#init_project): 폴더와 원격 주소를 받아 공통 파일, 처음 만드는 파일(설정 파일 포함)을 채워 쓰고, 만든 파일의 상대 경로 목록을 돌려준다. 하나라도 이미 있으면 아무것도 쓰지 않고 그 목록을 담아 `InitError`를 낸다. 폴더가 git 저장소가 아니면 `git init`을 한다. 폴더가 없으면 만든다.
+- [refresh_common](../../src/projinit/init.py#refresh_common): `Project`를 받아 공통 파일을 설정의 `[template]` 값으로 다시 채워 쓰고, 내용이 바뀐 파일의 상대 경로 목록을 돌려준다. 다른 파일은 건드리지 않는다.
+- [InitError](../../src/projinit/init.py#InitError): 초기화할 수 없을 때의 오류.
+- [main](../../src/projinit/init.py#main): 위 두 동작을 실행하고, 만들거나 바꾼 파일을 한 줄씩 출력한다. 오류는 `init: <메시지>`로 출력하고 종료 코드 1로 끝난다.
+- `projinit` 명령의 하위 명령 `init`이 이 `main`을 부른다.
+
+테스트는 [tests/test_init.py](../../tests/test_init.py)다. 빈 폴더 초기화 결과의 파일 목록과 문서·작업 관리 검사 통과, git 저장소 생성, 원격 주소 결정 순서, 이미 있는 파일 때문에 실패하면 아무것도 쓰지 않음, `--refresh-common`이 고친 공통 문서를 되돌리고 다른 파일은 그대로 둠을 검사한다.
 

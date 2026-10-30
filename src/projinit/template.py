@@ -26,6 +26,7 @@ INITIAL_FILES = (
     "docs/Ongoing.md",
     "docs/Done.md",
     "docs/Issue.md",
+    "projinit.toml",
 )
 
 _PLACEHOLDER_RE = re.compile(r"\{\{([a-z0-9_]+)\}\}")
