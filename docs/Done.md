@@ -2,6 +2,39 @@
 
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M3 갱신](Done-M3.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
+## I13 README.md 작성 (사용법과 기본 정보), 루트 README를 허용하는 문서 규칙과 링크 검사
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+- 근거 문서: [문서 작업 규칙](DocumentationRule.md#2-형식)
+
+### 계획
+- 문서 작업 규칙에 루트 `README.md`를 소개·사용법 문서로 허용하는 예외를 더한다(템플릿에서 고쳐 다시 만든다).
+- 문서 링크 검사가 README의 링크도 검사하게 한다.
+- 첫 작업 절차에 README 쓰기를 넣는다.
+- ProjInit의 README를 쓴다.
+
+### 진행 기록
+- 2026-10-31: 사용자가 "말로 설명만 하지 말고 README.md를 만들어야지, 사용법과 기본 정보는 README.md에 두는 게 기본 중의 기본"이라고 지적했다. 문서 작업 규칙이 루트에 `CLAUDE.md`만 허용하고 있어 규칙부터 고쳤다.
+- 2026-10-31: PR #3~#6은 병합되었고 #7이 열려 있어 `m2-t4-start-command` 위에 `i13-readme`를 쌓았다.
+- 2026-10-31: 템플릿(문서 작업 규칙, 검증 도구, 작업 관리 규칙)을 고치고 `--refresh-common`으로 이 저장소에 반영했다. `doclib`에 `README_DOC`을 두고 `find_doc_files`가 README를 포함하게 했다.
+- 2026-10-31: README에 소개, 무엇을 해 주나, 필요한 것, 사용법(새 프로젝트, 미리 써 보기, 초기화가 만드는 것, 명령), 규칙 체계, ProjInit 개발하기를 썼다.
+
+### 결정 사항
+- README는 소개와 사용법만 담고 규칙과 설계는 `docs/`로 링크한다. 같은 내용이 두 곳에 있으면 어긋나도 알 수 없기 때문이다.
+- README는 링크 검사 대상이지만 고아 문서 판정에는 넣지 않는다. 인덱스가 아니라 저장소 첫 화면에서 읽는 문서이기 때문이다.
+- 초기화된 프로젝트도 첫 작업에서 README를 쓰게 했다. 초기화가 README를 만들지는 않는다. 내용이 전부 프로젝트 고유이기 때문이다.
+
+### 변경 파일
+- `README.md`(신규), `src/projinit/templates/docs/DocumentationRule.md`, `src/projinit/templates/docs/VerificationTools.md`, `src/projinit/templates/docs/TaskRule.md`, `docs/DocumentationRule.md`, `docs/VerificationTools.md`, `docs/TaskRule.md`, `docs/design/Checkers.md`, `src/projinit/doclib.py`, `tests/test_check_docs.py`, `docs/Issue.md`, `docs/Ongoing.md`
+
+### 결과
+- 저장소 첫 화면의 README에서 ProjInit이 무엇인지, 어떻게 설치·실행하는지(릴리스 뒤와 미리 써 보기), 초기화가 무엇을 만드는지 알 수 있다.
+- README의 링크도 검사되고, 초기화된 프로젝트도 첫 작업에서 README를 쓴다.
+
+### 검증
+- `uv run projinit check`: README 링크 포함 모두 통과
+
 ## M2-T4 첫 세션에서 만들 프로젝트를 묻고 제품 비전과 첫 로드맵을 채우는 시작 안내
 
 - 시작일: 2026-10-31

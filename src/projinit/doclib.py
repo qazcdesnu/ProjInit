@@ -12,6 +12,8 @@ from urllib.parse import unquote
 from projinit.config import Project
 
 # @doc: docs/design/Checkers.md#2-공통-모듈
+README_DOC = "README.md"
+# @doc: docs/design/Checkers.md#2-공통-모듈
 LANGUAGE_SUFFIXES = {
     ".py": "python",
     ".js": "javascript",
@@ -85,13 +87,16 @@ class Link:
 
 
 def find_doc_files(project: Project) -> list[Path]:
-    """Return the entry document and every markdown file under the docs directory.
+    """Return the entry document, the README if any, and every markdown file under the docs directory.
 
     @doc: docs/design/Checkers.md#2-공통-모듈
     """
     docs = []
     if project.entry_doc.is_file():
         docs.append(project.entry_doc)
+    readme = project.root / README_DOC
+    if readme.is_file():
+        docs.append(readme)
     docs_dir = project.docs_dir
     if docs_dir.is_dir():
         docs.extend(sorted(docs_dir.rglob("*.md")))
