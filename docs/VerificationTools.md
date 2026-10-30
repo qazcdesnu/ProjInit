@@ -1,6 +1,6 @@
 # 검증 도구
 
-이 문서는 문서와 코드의 규칙 준수를 자동으로 검증하는 도구를 규정한다. 도구는 `tools/` 패키지에 있으며 [코드 작업 규칙](CodeRule.md)에 따라 표준 라이브러리만 사용한다. 검증하는 규칙은 [문서 작업 규칙](DocumentationRule.md), [포인터 규약](Traceability.md), [작업 관리 규칙](TaskRule.md)이다. 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
+이 문서는 문서와 코드의 규칙 준수를 자동으로 검증하는 도구를 규정한다. 도구는 `tools/` 패키지에 있으며 [코드 작업 규칙](CodeRule.md#3-언어와-스타일)이 허용한 의존성만 사용한다. 검증하는 규칙은 [문서 작업 규칙](DocumentationRule.md), [포인터 규약](Traceability.md), [작업 관리 규칙](TaskRule.md)이다. 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
 ## 1. 실행 방법
 
@@ -30,7 +30,8 @@ uv run python -m unittest discover -s tests -t .   # 도구 자체의 테스트
 | [ENTRY_DOC](../tools/doclib.py#ENTRY_DOC) | `CLAUDE.md` | 작업자가 가장 먼저 읽는 진입 문서 |
 | [DOCS_DIR](../tools/doclib.py#DOCS_DIR) | `docs` | 문서 디렉터리 |
 | [CODE_ROOTS](../tools/doclib.py#CODE_ROOTS) | `src`, `tools`, `tests` | 커버리지 검사 대상 코드 디렉터리 |
-| [CODE_SUFFIXES](../tools/doclib.py#CODE_SUFFIXES) | `.py` | 코드 포인터로 취급하는 링크 대상 확장자 |
+| [LANGUAGE_SUFFIXES](../tools/doclib.py#LANGUAGE_SUFFIXES) | 확장자 → 언어 이름 (`.py` → `python` 등) | 코드 파일로 취급하는 확장자와 그 언어. 목록은 [포인터 규약](Traceability.md#7-언어별-심볼-규칙)의 언어 표와 같다. |
+| [CODE_SUFFIXES](../tools/doclib.py#CODE_SUFFIXES) | `LANGUAGE_SUFFIXES`의 키 | 코드 포인터로 취급하는 링크 대상 확장자 |
 
 **자료형**
 
@@ -68,21 +69,17 @@ uv run python -m unittest discover -s tests -t .   # 도구 자체의 테스트
 
 **자료형**
 
-- [SymbolRef](../tools/check_pointers.py#SymbolRef): 코드 심볼 하나를 (파일 절대 경로, 한정 이름)으로 나타낸다. 모듈 자체는 한정 이름이 빈 문자열이다. [SymbolRef.is_related](../tools/check_pointers.py#SymbolRef.is_related)는 [상호 참조 규칙](Traceability.md#5-상호-참조-규칙)의 "관련 있다"를 판정한다.
 - [CodePointer](../tools/check_pointers.py#CodePointer): 문서 → 코드 포인터. 출처 문서, 줄, 대상 심볼을 가진다.
-- [DocPointer](../tools/check_pointers.py#DocPointer): 코드 → 문서 포인터. 출처 심볼, 줄, 대상 문서 절대 경로, 앵커를 가진다.
-- [ModuleIndex](../tools/check_pointers.py#ModuleIndex): 코드 파일 하나를 AST로 분석한 결과. 한정 이름 → AST 노드 사전(`symbols`), 그 파일의 코드 → 문서 포인터 목록(`doc_pointers`), 분석 중 발견한 문제 목록(`problems`)을 가진다.
+- 심볼, 코드 → 문서 포인터, 파일 분석 결과는 [7. 코드 분석 모듈](#7-코드-분석-모듈)의 자료형을 쓴다.
 
 **함수**
 
-- [index_module](../tools/check_pointers.py#index_module): 코드 파일을 AST로 파싱해 `ModuleIndex`를 만든다.
-  - 심볼: 모듈의 클래스·함수를 중첩까지 모두 등록한다. 대입문은 모듈 수준과 클래스 수준의 것만 등록한다.
-  - docstring 포인터: 모듈·클래스·함수 docstring의 `@doc:` 줄을 찾는다. 줄 번호는 docstring 시작 줄에 docstring 안의 줄 위치를 더한 값이다.
-  - 주석 포인터: `tokenize`로 주석을 찾고, [포인터 규약](Traceability.md#3-코드에서-문서로-가는-포인터)에 따라 소속 심볼을 정한다. 소속 심볼이 없으면 문제다.
-  - 문법 오류로 파싱할 수 없으면 그 자체를 문제로 보고한다.
-- [collect_code_pointers](../tools/check_pointers.py#collect_code_pointers): 모든 문서에서 코드 포인터를 모으고 검사한다. 대상 파일이 없거나, 앵커가 줄 번호 형식(`L` 뒤에 숫자)이거나, AST에 해당 한정 이름이 없으면 문제다.
+- [collect_code_pointers](../tools/check_pointers.py#collect_code_pointers): 모든 문서에서 코드 포인터를 모으고 검사한다. 대상 파일이 없거나, 앵커가 줄 번호 형식(`L` 뒤에 숫자)이거나, 구문 트리에 해당 한정 이름이 없으면 문제다. 코드 루트 밖의 코드 파일은 가리키는 문서가 있을 때 분석한다.
 - [check_doc_pointers](../tools/check_pointers.py#check_doc_pointers): 코드 → 문서 포인터의 대상 문서와 앵커가 존재하는지 검사한다.
 - [check_coverage](../tools/check_pointers.py#check_coverage): [커버리지 규칙](Traceability.md#4-커버리지-규칙)을 검사한다.
+  - 코드가 없는 파일(`ModuleIndex.has_code`가 거짓)은 건너뛴다.
+  - 파일 자체에 포인터가 없으면 1줄에 문제를 보고한다.
+  - 분류가 정의이고 최상위이며 공개인 심볼마다, 같은 한정 이름의 심볼 중 하나라도 포인터를 가져야 한다. 없으면 그 심볼의 시작 줄에 문제를 보고한다.
 - [check_reciprocity](../tools/check_pointers.py#check_reciprocity): [상호 참조 규칙](Traceability.md#5-상호-참조-규칙)을 두 방향 모두 검사한다.
 - [main](../tools/check_pointers.py#main): `CODE_ROOTS`의 코드 파일과 문서가 가리키는 코드 파일을 모두 분석하고, 위 검사를 실행해 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
 
@@ -93,7 +90,9 @@ uv run python -m unittest discover -s tests -t .   # 도구 자체의 테스트
 - [tests/support.py](../tests/support.py): 테스트 공통 기반. [RepoTestCase](../tests/support.py#RepoTestCase)는 테스트마다 임시 저장소 루트(`self.root`)를 만들고 지우며, [RepoTestCase.write](../tests/support.py#RepoTestCase.write)로 그 아래에 파일을 만든다.
 - [tests/test_doclib.py](../tests/test_doclib.py): 링크 추출(코드 블록·인라인 코드·이미지 제외), 앵커 생성(한글, 중복 제목).
 - [tests/test_check_docs.py](../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소.
-- [tests/test_check_pointers.py](../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락.
+- [tests/test_check_pointers.py](../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락, Python 밖의 언어로 된 저장소.
+- [tests/test_code_index.py](../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
+- [tests/test_languages.py](../tests/test_languages.py): 언어마다 [포인터 규약](Traceability.md#7-언어별-심볼-규칙)의 표에 있는 정의·값·이름 붙이기·공개 규칙. `LANGUAGES`와 `LANGUAGE_SUFFIXES`의 일치.
 - [tests/test_check_tasks.py](../tests/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함).
 
 ## 6. 작업 관리 검사기
@@ -127,3 +126,43 @@ uv run python -m unittest discover -s tests -t .   # 도구 자체의 테스트
 - [check_records](../tools/check_tasks.py#check_records): 기록의 필수 필드·절, 날짜 형식, 완료 기록의 순서(`완료일`이 늦은 것부터), 진행 중 문서의 `없음` 규칙을 검사한다.
 - [check_references](../tools/check_tasks.py#check_references): 작업 관리 문서 네 개의 본문(코드 블록·인라인 코드 제외)에 나온 작업 ID가 모두 존재하는지 검사한다. ID 앞뒤가 영문자·숫자·`-`가 아니면 ID로 인식하므로 `M0-T6으로`처럼 한글 조사가 붙어도 찾는다.
 - [main](../tools/check_tasks.py#main): 네 문서를 읽어 위 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다. 문서가 없으면 그 자체를 문제로 보고한다.
+
+## 7. 코드 분석 모듈
+
+코드 파일을 [tree-sitter](https://tree-sitter.github.io/)로 파싱해 심볼과 코드 → 문서 포인터를 찾는다. [포인터 검사기](#4-포인터-검사기)가 쓴다.
+
+### 7.1 언어 모듈
+
+[tools/languages.py](../tools/languages.py)는 [포인터 규약의 언어별 심볼 규칙](Traceability.md#7-언어별-심볼-규칙)을 구현한다. 언어마다 문법 패키지(`tree-sitter-python`, `tree-sitter-rust` 등)를 쓴다.
+
+**자료형**
+
+- [Definition](../tools/languages.py#Definition): 구문 트리에서 찾은 심볼 하나. 한정 이름, 시작 줄(데코레이터·어트리뷰트 등 포함), 분류(`definition`, `value`, `namespace` 중 하나), 최상위 여부, 공개 여부, docstring(시작 줄과 원문, 없으면 `None`)을 가진다. 최상위와 공개의 뜻은 [커버리지 규칙](Traceability.md#4-커버리지-규칙)에 있다.
+- [Language](../tools/languages.py#Language): 언어 하나. 이름, 주석 노드 종류, 문법, 구문 트리에서 `Definition` 목록을 만드는 함수, 모듈 docstring을 찾는 함수(Python만, 다른 언어는 `None`)를 가진다.
+
+**상수**
+
+- [LANGUAGES](../tools/languages.py#LANGUAGES): 언어 이름 → `Language`. 키는 [LANGUAGE_SUFFIXES](../tools/doclib.py#LANGUAGE_SUFFIXES)의 값과 같아야 한다.
+
+**함수**
+
+- [parse](../tools/languages.py#parse): 소스를 그 언어로 파싱해 구문 트리를 돌려준다. 언어별 파서는 한 번만 만든다.
+
+### 7.2 파일 분석
+
+[tools/code_index.py](../tools/code_index.py)는 코드 파일 하나를 분석한다.
+
+**자료형**
+
+- [SymbolRef](../tools/code_index.py#SymbolRef): 코드 심볼 하나를 (파일 절대 경로, 한정 이름)으로 나타낸다. 모듈 자체는 한정 이름이 빈 문자열이다. [SymbolRef.is_related](../tools/code_index.py#SymbolRef.is_related)는 [상호 참조 규칙](Traceability.md#5-상호-참조-규칙)의 "관련 있다"를 판정한다.
+- [DocPointer](../tools/code_index.py#DocPointer): 코드 → 문서 포인터. 출처 심볼, 줄, 대상 문서 절대 경로, 앵커를 가진다.
+- [ModuleIndex](../tools/code_index.py#ModuleIndex): 코드 파일 하나의 분석 결과. 한정 이름 → `Definition` 목록 사전(`symbols`, 모듈은 빈 이름), 코드 → 문서 포인터 목록(`doc_pointers`), 분석 중 발견한 문제 목록(`problems`), 주석 말고 코드가 있는지(`has_code`)를 가진다.
+
+**함수**
+
+- [index_module](../tools/code_index.py#index_module): 코드 파일을 분석해 `ModuleIndex`를 만든다.
+  - 언어는 확장자로 정한다.
+  - 구문 트리에 오류 노드가 있으면 첫 오류 위치에 `파싱 실패` 문제를 보고하고, 심볼 없이 돌려준다.
+  - 심볼: 모듈(빈 이름)과 `Language`의 함수가 찾은 `Definition`을 등록한다.
+  - docstring 포인터: 모듈과 각 `Definition`의 docstring에서 `@doc:` 줄을 찾는다. 줄 번호는 docstring 시작 줄에 docstring 안의 줄 위치를 더한 값이다.
+  - 주석 포인터: 구문 트리의 주석 노드에서 `@doc:`을 찾고, [포인터 규약](Traceability.md#31-주석)에 따라 소속 심볼을 정한다. 줄 번호는 태그가 있는 줄이다. 코드와 같은 줄에 있거나 소속 심볼이 없으면 문제다.

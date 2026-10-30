@@ -14,7 +14,29 @@ INDEX_DOC = "docs/index.md"
 ENTRY_DOC = "CLAUDE.md"
 DOCS_DIR = "docs"
 CODE_ROOTS = ("src", "tools", "tests")
-CODE_SUFFIXES = (".py",)
+LANGUAGE_SUFFIXES = {
+    ".py": "python",
+    ".js": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
+    ".jsx": "javascript",
+    ".ts": "typescript",
+    ".mts": "typescript",
+    ".cts": "typescript",
+    ".tsx": "tsx",
+    ".rs": "rust",
+    ".c": "c",
+    ".cpp": "cpp",
+    ".cc": "cpp",
+    ".cxx": "cpp",
+    ".h": "cpp",
+    ".hpp": "cpp",
+    ".hh": "cpp",
+    ".hxx": "cpp",
+    ".go": "go",
+    ".java": "java",
+}
+CODE_SUFFIXES = tuple(LANGUAGE_SUFFIXES)
 
 _EXTERNAL_PREFIXES = ("http://", "https://", "mailto:")
 _FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")

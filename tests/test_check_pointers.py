@@ -9,7 +9,8 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 from tests.support import RepoTestCase
-from tools.check_pointers import SymbolRef, index_module, main
+from tools.check_pointers import main
+from tools.code_index import SymbolRef, index_module
 
 _DOC = "# A\n\n## 1. Spec\n\n[run](../src/mod.py#Thing.run) [d](../src/mod.py#_decorated)\n"
 _MODULE = """'''Module.
@@ -59,7 +60,7 @@ class CheckPointersTest(RepoTestCase):
         self.write("docs/A.md", _DOC.replace("Thing.run", "Thing.gone"))
         code, output = self.run_checker()
         self.assertEqual(code, 1)
-        self.assertIn("AST에 심볼 없음: ../src/mod.py#Thing.gone", output)
+        self.assertIn("구문 트리에 심볼 없음: ../src/mod.py#Thing.gone", output)
 
     def test_reports_line_number_pointer(self) -> None:
         self.write("docs/A.md", _DOC.replace("#Thing.run", "#L3"))
@@ -68,7 +69,7 @@ class CheckPointersTest(RepoTestCase):
     def test_reports_unattached_comment_pointers(self) -> None:
         self.write("src/mod.py", _MODULE + "\nLIMIT = 3  # @doc: docs/A.md\n# @doc: docs/A.md\n")
         output = self.run_checker()[1]
-        self.assertIn("코드 줄 끝의 @doc 주석은 허용되지 않음", output)
+        self.assertIn("코드와 같은 줄의 @doc 주석은 허용되지 않음", output)
         self.assertIn("@doc 주석 아래에 심볼 정의가 없음", output)
 
     def test_reports_missing_document_and_anchor(self) -> None:
@@ -80,7 +81,7 @@ class CheckPointersTest(RepoTestCase):
     def test_reports_missing_coverage(self) -> None:
         self.write("src/bare.py", "def helper():\n    pass\n")
         output = self.run_checker()[1]
-        self.assertIn("src/bare.py:1: 모듈 docstring에 @doc 포인터 없음", output)
+        self.assertIn("src/bare.py:1: 파일에 @doc 포인터 없음", output)
         self.assertIn("공개 심볼 helper에 @doc 포인터 없음", output)
 
     def test_reports_missing_back_pointers(self) -> None:
@@ -89,6 +90,20 @@ class CheckPointersTest(RepoTestCase):
         output = self.run_checker()[1]
         self.assertIn("docs/B.md:3: 역방향 포인터 없음: src/mod.py#Thing", output)
         self.assertIn("src/other.py:1: 역방향 포인터 없음: docs/A.md가 src/other.py", output)
+
+    def test_non_python_repository_passes_and_reports(self) -> None:
+        self.write("docs/A.md", "# A\n\n[parse](../src/lib.rs#Parser.parse) [mod](../src/lib.rs)\n")
+        self.module.unlink()
+        self.write(
+            "src/lib.rs",
+            "//! @doc: docs/A.md\n\n/// @doc: docs/A.md\npub struct Parser;\n\nimpl Parser {\n    fn parse() {}\n}\n",
+        )
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+        self.write("src/util.ts", "// @doc: docs/A.md\n\nexport function helper() {}\nfunction hidden() {}\n")
+        output = self.run_checker()[1]
+        self.assertIn("src/util.ts:3: 공개 심볼 helper에 @doc 포인터 없음", output)
+        self.assertNotIn("hidden", output)
 
 
 class SymbolRefTest(unittest.TestCase):
