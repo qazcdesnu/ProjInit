@@ -42,4 +42,4 @@
 
 ## M5 갱신
 
-- [~] M5-T1 `projinit upgrade` 명령 (버전 기록과 공통 파일 다시 만들기를 한 번에)
+- [x] M5-T1 `projinit upgrade` 명령 (버전 기록과 공통 파일 다시 만들기를 한 번에)
