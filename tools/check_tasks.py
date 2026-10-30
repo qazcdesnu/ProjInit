@@ -7,7 +7,7 @@ import argparse
 import re
 import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from pathlib import Path
 
@@ -25,7 +25,7 @@ _ID_REF_RE = re.compile(rf"(?<![0-9A-Za-z-])({_ID})(?![0-9A-Za-z-])")
 _MILESTONE_RE = re.compile(r"^## M(\d+) \S")
 _TASK_RE = re.compile(r"^- \[([ ~x])\] (M(\d+)-T(\d+)) \S")
 _ISSUE_RE = re.compile(r"^- \[([ ~x])\] (([IH])(\d+)) \S")
-_LINK_FIELD_RE = re.compile(r"^\s+- 연결 작업: (\S+)")
+_DETAIL_RE = re.compile(r"^\s+- ([^:]+):\s*(.*)$")
 _RECORD_RE = re.compile(rf"^## ({_ID}) \S")
 _FIELD_RE = re.compile(r"^- ([^:]+): (.*)$")
 _SECTION_RE = re.compile(r"^### (.+?)\s*$")
@@ -47,6 +47,8 @@ class WorkItem:
     path: Path
     line: int
     link: str | None = None
+    light: str | None = None
+    finished: str | None = None
 
 
 @dataclass
@@ -113,7 +115,7 @@ def parse_roadmap(path: Path) -> tuple[list[WorkItem], list[Problem]]:
 
 
 def parse_issues(path: Path) -> tuple[list[WorkItem], list[Problem]]:
-    """Read issues with their linked work and report format and numbering problems.
+    """Read issues with their detail fields and report format and numbering problems.
 
     @doc: docs/VerificationTools.md#6-작업-관리-검사기
     """
@@ -131,14 +133,19 @@ def parse_issues(path: Path) -> tuple[list[WorkItem], list[Problem]]:
             if expected is not None:
                 problems.append(Problem(path, number, f"이슈 번호 차례 오류: {prefix}{expected}이어야 함"))
             continue
-        match = _LINK_FIELD_RE.match(line)
-        if match and items:
-            target = match.group(1)
-            if not _ID_RE.fullmatch(target):
-                problems.append(Problem(path, number, f"연결 작업이 작업 ID가 아님: {target}"))
+        match = _DETAIL_RE.match(line)
+        if not match or not items:
+            continue
+        name, value = match.group(1).strip(), match.group(2).strip()
+        if name == "연결 작업":
+            if not _ID_RE.fullmatch(value):
+                problems.append(Problem(path, number, f"연결 작업이 작업 ID가 아님: {value}"))
                 continue
-            last = items[-1]
-            items[-1] = WorkItem(last.id, last.status, last.path, last.line, target)
+            items[-1] = replace(items[-1], link=value)
+        elif name == "경량":
+            items[-1] = replace(items[-1], light=value)
+        elif name == "완료일":
+            items[-1] = replace(items[-1], finished=value)
     return items, problems
 
 
@@ -197,6 +204,9 @@ def check_states(items: list[WorkItem], ongoing: list[Record], done: list[Record
     done_ids = {record.id for record in done}
     for item in by_id.values():
         has_ongoing, has_done = item.id in ongoing_ids, item.id in done_ids
+        if item.light is not None:
+            problems.extend(_check_light(item, has_ongoing or has_done))
+            continue
         if item.link is not None:
             problems.extend(_check_linked(item, by_id, has_ongoing or has_done))
             continue
@@ -210,6 +220,23 @@ def check_states(items: list[WorkItem], ongoing: list[Record], done: list[Record
     for record in ongoing + done:
         if record.id not in by_id:
             problems.append(Problem(record.path, record.line, f"로드맵·이슈에 없는 작업의 기록: {record.id}"))
+    return problems
+
+
+def _check_light(item: WorkItem, has_record: bool) -> list[Problem]:
+    problems = []
+    if not item.light:
+        problems.append(Problem(item.path, item.line, f"{item.id}: 경량 결과가 비어 있음"))
+    if item.status == "~":
+        problems.append(Problem(item.path, item.line, f"{item.id}: 경량 이슈는 [~] 상태를 쓰지 않음"))
+    if has_record:
+        problems.append(Problem(item.path, item.line, f"{item.id}: 경량 이슈는 진행 중·완료 기록을 두지 않음"))
+    if item.link is not None:
+        problems.append(Problem(item.path, item.line, f"{item.id}: 경량 이슈는 연결 작업을 두지 않음"))
+    if item.status == "x" and item.finished is None:
+        problems.append(Problem(item.path, item.line, f"{item.id}: 완료한 경량 이슈에 '완료일' 없음"))
+    elif item.finished is not None and _parse_date(item.finished) is None:
+        problems.append(Problem(item.path, item.line, f"{item.id}: '완료일' 날짜 형식 오류: {item.finished}"))
     return problems
 
 

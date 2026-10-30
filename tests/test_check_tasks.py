@@ -160,6 +160,36 @@ class CheckTasksTest(_TaskDocsTestCase):
         self.assertNotIn("M8-T1", output)
 
 
+class LightIssueTest(_TaskDocsTestCase):
+    """@doc: docs/VerificationTools.md#5-테스트"""
+
+    def add_issue(self, text: str) -> None:
+        self.write("docs/Issue.md", _ISSUE + text)
+
+    def test_light_issue_without_records_passes(self) -> None:
+        self.add_issue(
+            "- [x] I3 오타\n  - 등록일: 2026-10-31\n  - 경량: 오타를 고쳤다.\n  - 완료일: 2026-10-31\n"
+            "- [ ] I4 다음 오타\n  - 경량: 고칠 것\n"
+        )
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+
+    def test_reports_light_issue_misuse(self) -> None:
+        self.add_issue("- [~] I3 진행 중\n  - 경량: 고치는 중\n- [x] I4 완료일 없음\n  - 경량: 고쳤다.\n")
+        self.assert_reports("I3: 경량 이슈는 [~] 상태를 쓰지 않음", "I4: 완료한 경량 이슈에 '완료일' 없음")
+
+    def test_reports_light_issue_with_record_link_or_empty_result(self) -> None:
+        light_h1 = "- [x] H1 급한 결함\n  - 경량:\n  - 완료일: 2026-10-31"
+        self.write("docs/Issue.md", _ISSUE.replace("- [~] H1 급한 결함", light_h1)
+                   + "- [x] I3 연결\n  - 경량: 했다.\n  - 연결 작업: M0-T1\n  - 완료일: 2026-13-01\n")
+        self.assert_reports(
+            "H1: 경량 결과가 비어 있음",
+            "H1: 경량 이슈는 진행 중·완료 기록을 두지 않음",
+            "I3: 경량 이슈는 연결 작업을 두지 않음",
+            "I3: '완료일' 날짜 형식 오류: 2026-13-01",
+        )
+
+
 class PreservationTest(_TaskDocsTestCase):
     """@doc: docs/VerificationTools.md#5-테스트"""
 
