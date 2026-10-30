@@ -2,7 +2,7 @@
 
 ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서와 코드 두 축의 규칙 체계를 깔아 주고, 그 폴더에서 Claude Code를 열어 `/start`를 입력하면 Claude가 만들 프로젝트를 물어보며 첫 작업을 시작한다. 어떤 프로젝트에서든 같은 방식으로 일하는 것이 목적이다.
 
-> 상태: 최신 릴리스는 `v0.1.1`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
+> 상태: 최신 릴리스는 `v0.1.2`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
 
 ## 무엇을 해 주나
 
@@ -26,7 +26,7 @@ ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서�
 ### 새 프로젝트 시작하기
 
 ```sh
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.1 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.2 projinit init --root ~/my-project
 cd ~/my-project
 claude
 ```
@@ -39,11 +39,7 @@ Claude Code가 열리면 `/start`를 입력한다. Claude가 어떤 걸 만들�
 
 ### 이미 초기화한 프로젝트를 새 버전으로
 
-`projinit.toml`의 `version`을 새 버전으로 바꾸고 공통 파일을 다시 만든다.
-
-```sh
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v<새 버전> projinit init --refresh-common
-```
+그 프로젝트의 Claude Code에서 "ProjInit을 v<새 버전>으로 올려 줘"라고 요청한다. 버전 올리기도 그 프로젝트의 작업이라, Claude가 이슈로 등록하고 설정의 버전을 바꾼 뒤 공통 파일을 다시 만들고, 바뀐 규칙을 알려 준다(초기화된 프로젝트의 `docs/TaskRule.md` 4.9절). 터미널에서 직접 바꾸면 진행 중인 작업과 섞여 그 프로젝트의 Claude가 출처를 알 수 없는 변경으로 보게 된다.
 
 ### 초기화가 만드는 것
 
