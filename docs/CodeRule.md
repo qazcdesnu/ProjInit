@@ -23,7 +23,6 @@
 | --- | --- |
 | `docs/` | 모든 문서. 코드 작업의 규칙이다. |
 | `src/` | 제품 코드. `src/projinit/`이 `projinit` 패키지다. 패키지 구성과 기술 스택은 [제품 비전](ProductVision.md)과 [패키지 구성 설계](design/Package.md)를 따른다. |
-| `tools/` | 이 저장소만의 개발용 도구. 지금은 `projinit` 명령이 생기기 전까지 hook이 쓰는 임시 진입점만 있다. [검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)에 규정된다. |
 | `tests/` | 자동 테스트. |
 | `pyproject.toml`, `.python-version`, `uv.lock` | uv 프로젝트 설정. [3. 언어와 스타일](#3-언어와-스타일)을 따른다. |
 | `projinit.toml` | 검사기 설정. [검증 도구의 설정](VerificationTools.md#11-설정)에 규정된다. |
@@ -39,7 +38,7 @@
   - Python 버전은 uv가 관리하며 `.python-version`(현재 `3.12`)과 `pyproject.toml`의 `requires-python`으로 고정한다.
   - 모든 Python 실행은 `uv run`을 거친다. 시스템 Python(`python3`)이나 직접 만든 가상 환경을 쓰지 않는다.
   - 의존성은 `uv add`(개발용은 `uv add --dev`)로만 추가·제거한다. `pip`를 직접 쓰지 않는다. `uv.lock`은 저장소에 포함한다.
-- `src/projinit/`과 `tools/`의 코드는 표준 라이브러리와, 여러 언어의 코드를 파싱하기 위한 `tree-sitter` 및 언어별 문법 패키지(`tree-sitter-<언어>`)만 사용한다. 문법은 실행할 때 내려받지 않고 패키지에 포함된 것을 쓰며, 버전은 `uv.lock`으로 고정한다.
+- `src/projinit/`의 코드는 표준 라이브러리와, 여러 언어의 코드를 파싱하기 위한 `tree-sitter` 및 언어별 문법 패키지(`tree-sitter-<언어>`)만 사용한다. 문법은 실행할 때 내려받지 않고 패키지에 포함된 것을 쓰며, 버전은 `uv.lock`으로 고정한다.
 - 스타일은 PEP 8을 따른다.
   - 모듈·함수·변수 이름은 `snake_case`, 클래스는 `PascalCase`, 상수는 `UPPER_SNAKE_CASE`.
   - 모듈 내부 전용 심볼은 이름 앞에 `_`를 붙인다.
@@ -69,7 +68,7 @@
 코드 작업은 아래 명령이 성공(종료 코드 0)해야 완료로 본다. 이 명령은 모든 검사기와 테스트를 실행한다. 실행 방법의 상세는 [검증 도구](VerificationTools.md#1-실행-방법)에 있다.
 
 ```sh
-uv run python -m projinit.run_checks
+uv run projinit check
 ```
 
 이 검사는 Stop hook과 pre-commit으로 자동 실행된다([검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)). 자동 실행에 기대지 않고, 작업을 끝내기 전에 직접 실행해 확인한다.

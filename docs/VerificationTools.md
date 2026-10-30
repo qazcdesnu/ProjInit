@@ -7,13 +7,15 @@
 모든 명령은 저장소 루트에서 uv 환경으로 실행한다([코드 작업 규칙](CodeRule.md#3-언어와-스타일)).
 
 ```sh
+uv run projinit check                       # 아래 검사 전체와 설정의 프로젝트 명령(테스트 등)을 한 번에 실행
 uv run python -m projinit.check_docs        # 문서 링크와 고아 문서 검사
 uv run python -m projinit.check_pointers    # 문서 ↔ 코드 포인터 검사
 uv run python -m projinit.check_tasks       # 작업 ID 기준 작업 관리 문서 정합성 검사
 uv run python -m projinit.check_hooks       # 강제 장치(Stop hook, pre-commit, commit-msg) 설치 검사
-uv run python -m projinit.check_commit_msg <메시지 파일>   # 커밋 메시지 형식 검사 (commit-msg hook이 실행)
-uv run python -m projinit.run_checks        # 위 검사 전체와 설정의 프로젝트 명령(테스트 등)을 한 번에 실행
+uv run python -m projinit.check_commit_msg <메시지 파일>   # 커밋 메시지 형식 검사
 ```
+
+`projinit` 명령의 하위 명령은 `check`와 `commit-msg` 둘이며, 각각 `projinit.run_checks`와 `projinit.check_commit_msg`의 `main`에 나머지 인자를 넘긴다. [src/projinit/cli.py](../src/projinit/cli.py)의 [main](../src/projinit/cli.py#main)이 진입점이다. 검사 하나만 돌릴 때는 모듈을 직접 실행한다. 다른 프로젝트에서는 `uv run projinit` 대신 설정에서 만든 명령(`uvx --from …`)을 쓴다([설정](#11-설정)).
 
 - 문제가 없으면 종료 코드 0으로 끝나고 통과 요약을 한 줄 출력한다.
 - 문제가 있으면 문제마다 `<저장소 기준 경로>:<줄>: <메시지>` 형식으로 한 줄씩 출력하고 종료 코드 1로 끝난다.
@@ -97,7 +99,8 @@ uv run python -m projinit.run_checks        # 위 검사 전체와 설정의 프
 - [tests/test_check_docs.py](../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소, 진입 문서 형식(정상, 코드 블록, 인라인 코드, 링크 없는 목록 줄, 추가 문단, 제목 누락).
 - [tests/test_check_pointers.py](../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락, 모듈 포인터만으로는 심볼 포인터의 역방향이 되지 않음, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
 - [tests/test_code_index.py](../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
-- [tests/test_check_hooks.py](../tests/test_check_hooks.py): 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, commit-msg 누락, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
+- [tests/test_cli.py](../tests/test_cli.py): 하위 명령이 해당 모듈의 `main`에 인자를 넘기는지, 모르는 하위 명령.
+- [tests/test_check_hooks.py](../tests/test_check_hooks.py): 설정에서 만든 hook 명령(직접 지정, `uvx` 조합, 만들 수 없는 경우), 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, commit-msg 누락, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
 - [tests/test_check_commit_msg.py](../tests/test_check_commit_msg.py): 정상 제목(ID 하나, 여러 개, 진행 중), git이 만드는 제목, 주석 줄 건너뛰기, 형식 오류, 알 수 없는 ID, 빈 메시지.
 - [tests/test_config.py](../tests/test_config.py): 기본 설정, 설정 파일 읽기, 설정 오류(TOML 형식, 모르는 키, 값의 형), `Project`의 경로.
 - [tests/test_run_checks.py](../tests/test_run_checks.py): 실행할 검사 목록, 설정의 프로젝트 명령 실행, Stop hook 응답(통과, 첫 실패에서 막기, 이미 막힌 뒤 허용과 사용자 경고), 실패 요약의 길이 제한.
@@ -193,18 +196,25 @@ uv run python -m projinit.run_checks        # 위 검사 전체와 설정의 프
 | 상수 | 값 |
 | --- | --- |
 | [CLAUDE_SETTINGS](../src/projinit/check_hooks.py#CLAUDE_SETTINGS) | `.claude/settings.json` |
-| [STOP_HOOK_COMMAND](../src/projinit/check_hooks.py#STOP_HOOK_COMMAND) | `cd "$CLAUDE_PROJECT_DIR" && uv run python -m tools.run_checks --hook stop` |
 | [PRE_COMMIT_HOOK](../src/projinit/check_hooks.py#PRE_COMMIT_HOOK) | `.githooks/pre-commit` |
-| [PRE_COMMIT_COMMAND](../src/projinit/check_hooks.py#PRE_COMMIT_COMMAND) | `uv run python -m tools.run_checks --hook pre-commit` |
 | [COMMIT_MSG_HOOK](../src/projinit/check_hooks.py#COMMIT_MSG_HOOK) | `.githooks/commit-msg` |
-| [COMMIT_MSG_COMMAND](../src/projinit/check_hooks.py#COMMIT_MSG_COMMAND) | `uv run python -m tools.check_commit_msg "$1"` |
 | [HOOKS_PATH](../src/projinit/check_hooks.py#HOOKS_PATH) | `.githooks` |
+
+**hook 명령**
+
+hook이 실행할 명령은 고정하지 않고 [설정](#11-설정)에서 만든다([패키지 구성 설계](design/Package.md#5-hook-명령)).
+
+- [HookCommands](../src/projinit/check_hooks.py#HookCommands): 세 hook의 명령. `stop`, `pre_commit`, `commit_msg`를 가진다.
+- [projinit_command](../src/projinit/check_hooks.py#projinit_command): 설정의 `projinit.command`를 돌려준다. 비어 있으면 `uvx --from <source>@v<version> projinit`을 만든다. 이때 `source`나 `version`이 비어 있으면 `None`이다.
+- [hook_commands](../src/projinit/check_hooks.py#hook_commands): `projinit_command`의 결과 `<command>`로 `HookCommands`를 만든다. `stop`은 `cd "$CLAUDE_PROJECT_DIR" && <command> check --hook stop`, `pre_commit`은 `<command> check --hook pre-commit`, `commit_msg`는 `<command> commit-msg "$1"`이다. `projinit_command`가 `None`이면 `None`이다.
 
 **함수**
 
-- [check_stop_hook](../src/projinit/check_hooks.py#check_stop_hook): `CLAUDE_SETTINGS`가 있고 JSON으로 읽히며, `hooks.Stop` 아래에 명령이 정확히 `STOP_HOOK_COMMAND`인 command hook이 있는지 검사한다.
-- [check_pre_commit](../src/projinit/check_hooks.py#check_pre_commit): `PRE_COMMIT_HOOK`이 있고, 실행 권한이 있으며, `PRE_COMMIT_COMMAND`를 담고 있는지 검사한다.
-- [check_commit_msg_hook](../src/projinit/check_hooks.py#check_commit_msg_hook): `COMMIT_MSG_HOOK`에 대해 `check_pre_commit`과 같은 검사를 `COMMIT_MSG_COMMAND`로 한다.
+세 검사는 `Project`와 기대하는 명령을 받는다. `main`은 `hook_commands`가 `None`이면 "설정에 `projinit.command`도, `source`와 `version`도 없어 hook 명령을 만들 수 없음"을 설정 파일의 문제로 보고하고, 나머지 장치 검사는 건너뛴다.
+
+- [check_stop_hook](../src/projinit/check_hooks.py#check_stop_hook): `CLAUDE_SETTINGS`가 있고 JSON으로 읽히며, `hooks.Stop` 아래에 명령이 정확히 기대하는 Stop 명령인 command hook이 있는지 검사한다.
+- [check_pre_commit](../src/projinit/check_hooks.py#check_pre_commit): `PRE_COMMIT_HOOK`이 있고, 실행 권한이 있으며, 기대하는 pre-commit 명령을 담고 있는지 검사한다.
+- [check_commit_msg_hook](../src/projinit/check_hooks.py#check_commit_msg_hook): `COMMIT_MSG_HOOK`에 대해 `check_pre_commit`과 같은 검사를 기대하는 commit-msg 명령으로 한다.
 - [check_hooks_path](../src/projinit/check_hooks.py#check_hooks_path): 루트가 git 저장소이고, git 설정 `core.hooksPath`가 `HOOKS_PATH`인지 검사한다. 이 설정은 저장소에 포함되지 않으므로 클론할 때마다 한 번 해 줘야 하며, 이 검사가 빠뜨린 것을 알려 준다.
 - [main](../src/projinit/check_hooks.py#main): 네 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
 
@@ -222,15 +232,13 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 **설치**
 
-- `.claude/settings.json`에 `hooks.Stop` command hook으로 [STOP_HOOK_COMMAND](../src/projinit/check_hooks.py#STOP_HOOK_COMMAND)를 둔다.
-- `.githooks/pre-commit`에 [PRE_COMMIT_COMMAND](../src/projinit/check_hooks.py#PRE_COMMIT_COMMAND)를 실행하는 셸 스크립트를 두고 실행 권한을 준다.
-- `.githooks/commit-msg`에 [COMMIT_MSG_COMMAND](../src/projinit/check_hooks.py#COMMIT_MSG_COMMAND)를 실행하는 셸 스크립트를 두고 실행 권한을 준다.
+- `.claude/settings.json`에 `hooks.Stop` command hook으로 [hook_commands](../src/projinit/check_hooks.py#hook_commands)의 Stop 명령을 둔다.
+- `.githooks/pre-commit`에 pre-commit 명령을, `.githooks/commit-msg`에 commit-msg 명령을 실행하는 셸 스크립트를 두고 실행 권한을 준다.
+- 이 저장소는 설정의 `projinit.command`가 `uv run projinit`이므로 Stop 명령은 `cd "$CLAUDE_PROJECT_DIR" && uv run projinit check --hook stop`이다.
 - 클론한 뒤 한 번 `git config core.hooksPath .githooks`를 실행한다. 빠뜨리면 [강제 장치 검사기](#8-강제-장치-검사기)가 Stop hook에서 알려 준다.
 - pre-commit은 스테이징한 내용이 아니라 작업 트리를 검사한다.
 
 [src/projinit/run_checks.py](../src/projinit/run_checks.py)는 모든 검사를 한 번에 실행하고, hook으로 불렸을 때의 응답을 만든다.
-
-M1-T3에서 `projinit` 명령이 생기기 전까지, hook은 [tools/run_checks.py](../tools/run_checks.py)와 [tools/check_commit_msg.py](../tools/check_commit_msg.py)를 실행한다. 이 둘은 `projinit` 패키지의 `main`을 부르기만 하는 임시 진입점이다.
 
 **상수와 자료형**
 

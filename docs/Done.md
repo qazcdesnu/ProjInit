@@ -2,6 +2,38 @@
 
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M3 갱신](Done-M3.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
+## M1-T3 hook이 부르는 `projinit` 실행 진입점 (`check`, `commit-msg`)
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+- 근거 문서: [패키지 구성](design/Package.md#3-명령), [검증 도구](VerificationTools.md#8-강제-장치-검사기)
+
+### 계획
+- `projinit` 명령(`cli.py`)과 하위 명령 `check`, `commit-msg`를 만든다.
+- 강제 장치 검사기가 기대하는 hook 명령을 설정에서 만들게 한다.
+- 이 저장소의 hook을 `uv run projinit …`으로 바꾸고, `tools/`의 임시 진입점과 디렉터리를 지운다.
+
+### 진행 기록
+- 2026-10-31: 문서를 고쳤다. 검증 도구의 hook 명령 상수 셋을 `HookCommands`, `projinit_command`, `hook_commands`로 바꾸고, 코드 작업 규칙에서 `tools/` 행을 지웠다.
+- 2026-10-31: 목업을 두고 진행 중 커밋을 하려 했으나, pre-commit이 아직 `tools/`의 임시 진입점을 부르는데 문서에서는 그 진입점을 이미 빼서, 진입점을 지우면 hook이 깨지고 남기면 역방향 포인터 검사에 걸렸다. 작은 태스크라 진행 중 커밋 없이 구현까지 한 번에 했다.
+- 2026-10-31: `cli.py`, `HookCommands`·`projinit_command`·`hook_commands`를 구현하고, 이 저장소의 Stop·pre-commit·commit-msg hook을 `uv run projinit …`으로 바꿨다. `tools/`를 지우고 설정의 코드 루트에서도 뺐다.
+- 2026-10-31: 작업 중 사용자가 문서 버전 관리와 버전 호환 기능이 있는지 물었다. 이 태스크를 마친 뒤 답하기로 했다.
+
+### 결정 사항
+- 하위 명령은 해당 모듈의 `main`에 나머지 인자를 그대로 넘긴다. 인자 해석을 두 곳에 두지 않기 위해서다.
+- hook 명령을 만들 수 없는 설정(`command`도 `source`·`version`도 없음)은 강제 장치 검사기가 설정 파일의 문제로 보고한다.
+
+### 변경 파일
+- `docs/VerificationTools.md`, `docs/CodeRule.md`, `docs/design/Package.md`, `docs/Roadmap.md`, `docs/Ongoing.md`
+- 추가: `src/projinit/cli.py`(신규), `src/projinit/check_hooks.py`, `tests/test_cli.py`(신규), `tests/test_check_hooks.py`, `pyproject.toml`, `uv.lock`, `projinit.toml`, `.claude/settings.json`, `.githooks/pre-commit`, `.githooks/commit-msg`, `tools/`(삭제), `docs/Done.md`
+
+### 결과
+- `projinit check`, `projinit commit-msg` 명령이 생겼고, 이 저장소의 hook이 이 명령을 쓴다.
+- 강제 장치 검사기는 설정에서 만든 hook 명령과 비교하므로, 다른 프로젝트에서는 `uvx --from <source>@v<version> projinit …` 명령을 검사한다.
+
+### 검증
+- `uv run projinit check`: 검사기 4개와 테스트 모두 통과
+
 ## M1-T2 검사기를 설치 가능한 패키지로 전환
 
 - 시작일: 2026-10-31

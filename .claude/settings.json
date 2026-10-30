@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && uv run python -m tools.run_checks --hook stop",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && uv run projinit check --hook stop",
             "timeout": 180,
             "statusMessage": "검증 검사 실행 중"
           }

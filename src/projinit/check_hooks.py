@@ -8,33 +8,67 @@ import json
 import os
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
-from projinit.config import ConfigError, load_project, report_config_error
+from projinit.config import CONFIG_FILE, Config, ConfigError, Project, load_project, report_config_error
 from projinit.doclib import Problem
 
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
 CLAUDE_SETTINGS = ".claude/settings.json"
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
-STOP_HOOK_COMMAND = 'cd "$CLAUDE_PROJECT_DIR" && uv run python -m tools.run_checks --hook stop'
-# @doc: docs/VerificationTools.md#8-강제-장치-검사기
 PRE_COMMIT_HOOK = ".githooks/pre-commit"
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
-PRE_COMMIT_COMMAND = "uv run python -m tools.run_checks --hook pre-commit"
-# @doc: docs/VerificationTools.md#8-강제-장치-검사기
 COMMIT_MSG_HOOK = ".githooks/commit-msg"
-# @doc: docs/VerificationTools.md#8-강제-장치-검사기
-COMMIT_MSG_COMMAND = 'uv run python -m tools.check_commit_msg "$1"'
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
 HOOKS_PATH = ".githooks"
 
 
-def check_stop_hook(root: Path) -> list[Problem]:
+@dataclass(frozen=True)
+class HookCommands:
+    """The commands that the Stop, pre-commit and commit-msg hooks run.
+
+    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    """
+
+    stop: str
+    pre_commit: str
+    commit_msg: str
+
+
+def projinit_command(config: Config) -> str | None:
+    """Return the command that runs projinit for a project, or None when the settings cannot make one.
+
+    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    """
+    if config.command:
+        return config.command
+    if not config.source or not config.version:
+        return None
+    return f"uvx --from {config.source}@v{config.version} projinit"
+
+
+def hook_commands(config: Config) -> HookCommands | None:
+    """Return the hook commands built from the settings, or None when they cannot be built.
+
+    @doc: docs/VerificationTools.md#8-강제-장치-검사기
+    """
+    command = projinit_command(config)
+    if command is None:
+        return None
+    return HookCommands(
+        stop=f'cd "$CLAUDE_PROJECT_DIR" && {command} check --hook stop',
+        pre_commit=f"{command} check --hook pre-commit",
+        commit_msg=f'{command} commit-msg "$1"',
+    )
+
+
+def check_stop_hook(project: Project, expected: str) -> list[Problem]:
     """Report a missing or malformed Claude Code Stop hook that runs the checks.
 
     @doc: docs/VerificationTools.md#8-강제-장치-검사기
     """
-    path = root / CLAUDE_SETTINGS
+    path = project.root / CLAUDE_SETTINGS
     if not path.is_file():
         return [Problem(path, 1, f"Claude Code 설정 없음: {CLAUDE_SETTINGS}")]
     try:
@@ -49,25 +83,25 @@ def check_stop_hook(root: Path) -> list[Problem]:
         for hook in group.get("hooks", [])
         if isinstance(hook, dict) and hook.get("type") == "command"
     ]
-    if STOP_HOOK_COMMAND not in commands:
-        return [Problem(path, 1, f"Stop hook에 검사 명령 없음: {STOP_HOOK_COMMAND}")]
+    if expected not in commands:
+        return [Problem(path, 1, f"Stop hook에 검사 명령 없음: {expected}")]
     return []
 
 
-def check_pre_commit(root: Path) -> list[Problem]:
+def check_pre_commit(project: Project, expected: str) -> list[Problem]:
     """Report a missing, non-executable or unrelated git pre-commit hook.
 
     @doc: docs/VerificationTools.md#8-강제-장치-검사기
     """
-    return _check_git_hook(root, PRE_COMMIT_HOOK, PRE_COMMIT_COMMAND)
+    return _check_git_hook(project.root, PRE_COMMIT_HOOK, expected)
 
 
-def check_commit_msg_hook(root: Path) -> list[Problem]:
+def check_commit_msg_hook(project: Project, expected: str) -> list[Problem]:
     """Report a missing, non-executable or unrelated git commit-msg hook.
 
     @doc: docs/VerificationTools.md#8-강제-장치-검사기
     """
-    return _check_git_hook(root, COMMIT_MSG_HOOK, COMMIT_MSG_COMMAND)
+    return _check_git_hook(project.root, COMMIT_MSG_HOOK, expected)
 
 
 def _check_git_hook(root: Path, relative: str, command: str) -> list[Problem]:
@@ -112,10 +146,25 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=Path("."))
     root = parser.parse_args(argv).root.resolve()
     try:
-        load_project(root)
+        project = load_project(root)
     except ConfigError as error:
         return report_config_error(error)
-    problems = check_stop_hook(root) + check_pre_commit(root) + check_commit_msg_hook(root) + check_hooks_path(root)
+    commands = hook_commands(project.config)
+    if commands is None:
+        problems = [
+            Problem(
+                root / CONFIG_FILE,
+                1,
+                "설정에 projinit.command도, source와 version도 없어 hook 명령을 만들 수 없음",
+            )
+        ]
+    else:
+        problems = (
+            check_stop_hook(project, commands.stop)
+            + check_pre_commit(project, commands.pre_commit)
+            + check_commit_msg_hook(project, commands.commit_msg)
+        )
+    problems += check_hooks_path(root)
     for problem in problems:
         print(problem.format(root))
     if problems:

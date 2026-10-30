@@ -7,7 +7,7 @@ command = "uv run projinit"
 [paths]
 docs = "docs"
 entry = "CLAUDE.md"
-code_roots = ["src", "tools", "tests"]
+code_roots = ["src", "tests"]
 
 [check]
 commands = ["uv run python -m unittest discover -s tests -t ."]

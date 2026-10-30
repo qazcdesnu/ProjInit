@@ -1,3 +1,3 @@
 #!/bin/sh
 # 커밋 전에 모든 검사를 실행한다. docs/VerificationTools.md 9절 참조.
-exec uv run python -m tools.run_checks --hook pre-commit
+exec uv run projinit check --hook pre-commit
