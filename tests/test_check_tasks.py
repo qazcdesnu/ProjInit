@@ -290,6 +290,17 @@ class PreservationTest(_TaskDocsTestCase):
         self.write("docs/Done-M0.md", "# 완료 보관 M0 기반\n\n" + archive.replace("- 2026-10-30: 했다.\n", ""))
         self.assert_reports("M0-T1: 완료 기록에서 지워진 줄 1개, 예: - 2026-10-30: 했다.")
 
+    def test_link_targets_may_change_but_not_their_text(self) -> None:
+        linked = _DONE.replace("- 2026-10-30: 했다.", "- 2026-10-30: [규칙](A.md#1)대로 했다.")
+        self.write("docs/Done.md", linked)
+        self.git("add", "-A")
+        self.git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "link")
+        self.write("docs/Done.md", linked.replace("(A.md#1)", "(B.md#2)"))
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+        self.write("docs/Done.md", linked.replace("[규칙](A.md#1)", "[다른 규칙](A.md#1)"))
+        self.assert_reports("M0-T1: 완료 기록에서 지워진 줄 1개, 예: - 2026-10-30: [규칙](A.md#1)대로 했다.")
+
     def test_reports_changed_done_line(self) -> None:
         self.write("docs/Done.md", _DONE.replace("- 2026-10-30: 했다.", "- 2026-10-30: 다르게 했다."))
         self.assert_reports("M0-T1: 완료 기록에서 지워진 줄 1개, 예: - 2026-10-30: 했다.")

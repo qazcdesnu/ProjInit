@@ -105,7 +105,7 @@ uv run python -m projinit.check_commit_msg <메시지 파일>   # 커밋 메시�
 - [tests/test_config.py](../../tests/test_config.py): 기본 설정, 설정 파일 읽기, 설정 오류(TOML 형식, 모르는 키, 값의 형), `Project`의 경로.
 - [tests/test_run_checks.py](../../tests/test_run_checks.py): 실행할 검사 목록, 설정의 프로젝트 명령 실행, Stop hook 응답(통과, 첫 실패에서 막기, 이미 막힌 뒤 허용과 사용자 경고), 실패 요약의 길이 제한.
 - [tests/test_languages.py](../../tests/test_languages.py): 언어마다 [포인터 규약](../Traceability.md#7-언어별-심볼-규칙)의 표에 있는 정의·값·이름 붙이기·공개 규칙. `LANGUAGES`와 `LANGUAGE_SUFFIXES`의 일치.
-- [tests/test_check_tasks.py](../../tests/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함), 완료 보관(정상 보관, 닫힌 마일스톤 기록이 완료 문서에 남은 경우, 닫히지 않은 마일스톤의 보관, 잘못된 보관 문서 이름, 다른 마일스톤 태스크, 중복 기록, 보관으로 옮긴 기록의 보존), 경량 이슈(정상, `[~]` 상태, 기록이 있는 경우, 완료일 누락, 빈 결과, 연결 작업), 기록 보존(그대로 옮긴 경우 통과, 옮기며 줄이 빠진 경우, 진행 중 기록의 진행 기록 줄을 지운 경우, 진행 중 기록이 사라진 경우, 완료 기록의 줄이 바뀐 경우, git 저장소가 아닌 경우).
+- [tests/test_check_tasks.py](../../tests/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함), 완료 보관(정상 보관, 닫힌 마일스톤 기록이 완료 문서에 남은 경우, 닫히지 않은 마일스톤의 보관, 잘못된 보관 문서 이름, 다른 마일스톤 태스크, 중복 기록, 보관으로 옮긴 기록의 보존), 경량 이슈(정상, `[~]` 상태, 기록이 있는 경우, 완료일 누락, 빈 결과, 연결 작업), 기록 보존(그대로 옮긴 경우 통과, 옮기며 줄이 빠진 경우, 진행 중 기록의 진행 기록 줄을 지운 경우, 진행 중 기록이 사라진 경우, 완료 기록의 줄이 바뀐 경우, 링크 대상만 바꾼 경우 통과, 링크 표시 이름을 바꾼 경우, git 저장소가 아닌 경우).
 
 ## 6. 작업 관리 검사기
 
@@ -139,7 +139,7 @@ uv run python -m projinit.check_commit_msg <메시지 파일>   # 커밋 메시�
   - 연결 작업이 없는 항목: `[~]`이면 진행 중 기록만, `[x]`이면 완료 기록만 있어야 하고, `[ ]`이면 어느 기록도 없어야 한다.
   - 연결 작업이 있는 항목: 연결 작업이 존재하고 그 자신은 연결 작업이 없어야 하며, 상태가 연결 작업과 같고, 자체 기록이 없어야 한다.
   - 로드맵·이슈에 없는 ID의 기록은 문제다.
-- [check_preservation](../../src/projinit/check_tasks.py#check_preservation): [기록 보존 검사](../TaskRule.md#65-기록-보존-검사)를 한다. `git show HEAD:<문서>`로 마지막 커밋의 진행 중·완료 문서와 보관 문서(`git ls-tree`로 문서 디렉터리의 파일 중 `DONE_ARCHIVE_GLOB`에 맞는 것을 찾는다)를 읽고, 지금의 완료 문서와 보관 문서를 합친 기록과 비교한다. 빠진 줄은 기록마다 하나의 문제로 보고하며, 빠진 줄 수와 첫 번째 빠진 줄을 메시지에 담는다.
+- [check_preservation](../../src/projinit/check_tasks.py#check_preservation): [기록 보존 검사](../TaskRule.md#65-기록-보존-검사)를 한다. `git show HEAD:<문서>`로 마지막 커밋의 진행 중·완료 문서와 보관 문서(`git ls-tree`로 문서 디렉터리의 파일 중 `DONE_ARCHIVE_GLOB`에 맞는 것을 찾는다)를 읽고, 지금의 완료 문서와 보관 문서를 합친 기록과 비교한다. 비교할 때는 양쪽 줄에서 링크 대상을 지운다(이미지 링크는 그대로 둔다). 빠진 줄은 기록마다 하나의 문제로 보고하며, 빠진 줄 수와 첫 번째 빠진 줄을 메시지에 담는다.
 - [check_records](../../src/projinit/check_tasks.py#check_records): 기록의 필수 필드·절, 날짜 형식, 완료 기록의 순서(`완료일`이 늦은 것부터), 진행 중 문서의 `없음` 규칙을 검사한다.
 - [find_done_archives](../../src/projinit/check_tasks.py#find_done_archives): 문서 디렉터리에서 `DONE_ARCHIVE_GLOB`에 맞는 파일 목록.
 - [check_archives](../../src/projinit/check_tasks.py#check_archives): [완료 보관 형식](../TaskRule.md#66-완료-보관)을 검사한다. 보관 문서마다 이름과 마일스톤, 기록의 위치, 완료 기록 규칙을 검사하고, 완료 문서와 보관 문서 사이의 중복 기록과, 닫힌 마일스톤인데 완료 문서에 남은 태스크 기록을 보고한다.

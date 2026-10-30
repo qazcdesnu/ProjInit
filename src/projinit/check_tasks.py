@@ -41,6 +41,8 @@ _DONE_SECTIONS = ("계획", "진행 기록", "결정 사항", "변경 파일", "
 _APPEND_ONLY_SECTIONS = ("진행 기록", "결정 사항")
 _ARCHIVE_NAME_RE = re.compile(r"Done-M(\d+)\.md")
 _TASK_ID_RE = re.compile(r"M(\d+)-T\d+")
+# Link targets may follow a reorganized document; the text around them is what a record preserves.
+_LINK_TARGET_RE = re.compile(r"(?<!!)(\[[^\]]*\])\([^)\s]+(?:\s+\"[^\"]*\")?\)")
 _STATUS_LABELS = {" ": "[ ]", "~": "[~]", "x": "[x]"}
 
 
@@ -369,6 +371,10 @@ def _head_records(root: Path, path: Path) -> list[Record]:
     return parse_records(path, shown.stdout)[0]
 
 
+def _without_link_targets(line: str) -> str:
+    return _LINK_TARGET_RE.sub(r"\1", line)
+
+
 def _head_archive_paths(project: Project) -> list[Path]:
     root = project.root
     docs = project.docs_dir.relative_to(root).as_posix()
@@ -383,8 +389,8 @@ def _head_archive_paths(project: Project) -> list[Path]:
 
 
 def _missing_lines(old: Record, required: list[str], current: Record, label: str) -> list[Problem]:
-    present = {line for _, line in current.lines}
-    missing = [line for line in required if line not in present]
+    present = {_without_link_targets(line) for _, line in current.lines}
+    missing = [line for line in required if _without_link_targets(line) not in present]
     if not missing:
         return []
     return [Problem(current.path, current.line, f"{old.id}: {label} {len(missing)}개, 예: {missing[0]}")]
