@@ -38,7 +38,7 @@
 
 ## M4 첫 적용
 
-- [ ] M4-T1 AgentVis를 ProjInit으로 전환하고 문제점 반영
+- [x] M4-T1 AgentVis를 ProjInit으로 전환하고 문제점 반영 (취소)
 
 ## M5 갱신
 
