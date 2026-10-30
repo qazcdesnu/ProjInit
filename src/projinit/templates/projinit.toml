@@ -1,0 +1,17 @@
+# ProjInit 검사기 설정. 형식은 docs/VerificationTools.md 11절에 있다.
+
+[projinit]
+version = "{{version}}"
+source = "{{source}}"
+
+[paths]
+docs = "docs"
+entry = "CLAUDE.md"
+code_roots = ["src", "tests"]
+
+[check]
+# 프로젝트의 테스트 명령을 적는다(예: "cargo test"). 시스템 구조 문서에서 정한다.
+commands = []
+
+[template]
+repository = "{{repository}}"

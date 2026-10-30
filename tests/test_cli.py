@@ -15,7 +15,7 @@ class CliTest(unittest.TestCase):
     """@doc: docs/design/Checkers.md#5-테스트"""
 
     def test_subcommands_hand_arguments_to_their_module(self) -> None:
-        for name in ("check", "commits", "pr-order"):
+        for name in ("check", "commits", "pr-order", "init"):
             with mock.patch.dict(cli._SUBCOMMANDS, {name: mock.Mock(return_value=7)}):
                 self.assertEqual(cli.main([name, "--root", "x", "y"]), 7, name)
                 cli._SUBCOMMANDS[name].assert_called_once_with(["--root", "x", "y"])

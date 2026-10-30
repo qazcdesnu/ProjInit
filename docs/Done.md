@@ -2,6 +2,40 @@
 
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M3 갱신](Done-M3.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
+## M2-T2 `projinit init` 명령
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+- 근거 문서: [템플릿 구성](design/Templates.md#9-초기화-명령)
+
+### 계획
+- `projinit init`(공통·처음 파일과 설정 파일 만들기, `git init`)과 `--refresh-common`을 만든다.
+- 설정 파일을 템플릿으로 옮긴다.
+- 이 저장소의 공통 문서를 `--refresh-common`으로 다시 만들어 템플릿과 같은지 확인한다.
+
+### 진행 기록
+- 2026-10-31: PR #3(M2-T5)이 아직 병합되지 않아, PR 규칙대로 그 브랜치 위에 `m2-t2-init-command`를 쌓았다.
+- 2026-10-31: 설계를 쓰고 목업을 만들어 진행 중 상태를 커밋했다(314b420).
+- 2026-10-31: 설정 파일 템플릿, `init.py`, `projinit init` 하위 명령, 테스트를 구현했다. 이 저장소에 `--refresh-common`을 실행하니 다시 쓴 공통 문서가 0개라 템플릿과 같음을 확인했다.
+- 2026-10-31: 초기화 결과의 문서 링크 검사에서 PR 규칙이 링크하는 `.github/pull_request_template.md`가 없어 실패했다. 그 파일은 M2-T3이 설치하므로, 그 전까지 테스트에서 빈 파일로 둔다.
+- 2026-10-31: 임시 폴더에서 `projinit init`을 실행해 파일 14개와 git 저장소가 만들어지는 것을 확인했다.
+
+### 결정 사항
+- 원격 주소는 인자, git `origin`, "아직 없음" 순서로 정한다. 새 프로젝트에는 원격 저장소가 아직 없는 경우가 많기 때문이다.
+- 초기화는 커밋하지 않는다(템플릿 구성 설계 1절). hook과 CI 설치는 M2-T3이 맡는다.
+
+### 변경 파일
+- `docs/design/Templates.md`, `docs/design/Checkers.md`, `docs/Roadmap.md`, `docs/Ongoing.md`
+- 추가: `src/projinit/init.py`(신규), `src/projinit/templates/projinit.toml`(신규), `src/projinit/template.py`, `src/projinit/cli.py`, `tests/test_init.py`(신규), `tests/test_template.py`, `tests/test_cli.py`, `docs/Done.md`
+
+### 결과
+- `projinit init`으로 빈 폴더에 공통 규칙 문서, 처음 작업 관리 문서, 설정 파일을 만들고 git 저장소를 연다.
+- `projinit init --refresh-common`으로 공통 문서를 템플릿에서 다시 만든다. 이제 공통 규칙은 템플릿을 고친 뒤 이 명령으로 이 저장소에 반영한다.
+
+### 검증
+- `uv run projinit check`: 모두 통과
+- 임시 폴더 초기화: 파일 14개, `.git` 생성
+
 ## M2-T5 템플릿 원본 만들기 (공통 문서 분리, 시스템 구조 문서, 템플릿 테스트)
 
 - 시작일: 2026-10-31
