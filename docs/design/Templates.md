@@ -14,7 +14,7 @@
 | 작업 관리 문서 | `docs/Roadmap.md`, `docs/Ongoing.md`, `docs/Done.md`, `docs/Issue.md` | 처음에만 만든다. 로드맵에는 첫 세션이 할 태스크 하나(`M0-T1 제품 비전과 첫 로드맵 작성`)만 있다. |
 | 설정 | `projinit.toml` | ProjInit 버전과 출처, 빈 프로젝트 명령, 템플릿 값 |
 | 강제 장치 | `.claude/settings.json`, `.githooks/pre-commit`, `.githooks/commit-msg`, `.github/workflows/verify.yml`, `.github/pull_request_template.md` | 공통. 설정에서 만든 명령을 빈 자리에 넣는다. 버전이 바뀌면 명령도 바뀌므로 공통 문서와 함께 다시 만든다. |
-| 첫 세션 안내 | `.claude/settings.json`의 SessionStart hook 등 | M2-T4에서 정한다. |
+| 첫 세션 안내 | `.claude/commands/start.md` | 공통. `/start` 명령으로, 작업 관리 규칙의 [첫 작업](../TaskRule.md#48-첫-작업) 절차를 따르라고만 적는다. 절차 자체는 규칙 문서에 둔다. |
 
 - 프로젝트 고유 문서(제품 비전, 시스템 구조, 상세 설계)는 만들지 않는다. 인덱스에 자리만 두고, 첫 세션이 사용자와 대화해 만든다(M2-T4).
 - 폴더가 git 저장소가 아니면 `git init`을 하고, `core.hooksPath`를 `.githooks`로 설정한다. 커밋은 하지 않는다. 첫 커밋은 첫 세션이 커밋 규칙대로 한다.
@@ -86,7 +86,7 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 [src/projinit/template.py](../../src/projinit/template.py)가 템플릿을 읽고 빈 자리를 채운다. 템플릿 파일은 `src/projinit/templates/` 아래에 초기화한 프로젝트와 같은 상대 경로로 둔다.
 
 - [TEMPLATE_DIR](../../src/projinit/template.py#TEMPLATE_DIR): 템플릿 디렉터리.
-- [COMMON_FILES](../../src/projinit/template.py#COMMON_FILES): 공통 파일의 상대 경로. `CLAUDE.md`, 1절의 공통 규칙 문서 일곱 개, 강제 장치 파일 다섯 개다. 이 저장소의 같은 파일은 템플릿을 채운 결과와 같아야 한다.
+- [COMMON_FILES](../../src/projinit/template.py#COMMON_FILES): 공통 파일의 상대 경로. `CLAUDE.md`, 1절의 공통 규칙 문서 일곱 개, 강제 장치 파일 다섯 개, 첫 세션 안내 명령 파일이다. 이 저장소의 같은 파일은 템플릿을 채운 결과와 같아야 한다.
 - [INITIAL_FILES](../../src/projinit/template.py#INITIAL_FILES): 처음에만 만드는 파일의 상대 경로. 인덱스, 작업 관리 문서 네 개, 설정 파일이다.
 - [TemplateError](../../src/projinit/template.py#TemplateError): 값이 없는 빈 자리가 있을 때의 오류.
 - [EXECUTABLE_FILES](../../src/projinit/template.py#EXECUTABLE_FILES): 실행 권한을 줄 파일. `.githooks/pre-commit`, `.githooks/commit-msg`.
@@ -116,7 +116,8 @@ projinit init --refresh-common [--root <폴더>]
 - [init_project](../../src/projinit/init.py#init_project): 폴더와 원격 주소를 받아 공통 파일, 처음 만드는 파일(설정 파일 포함)을 채워 쓰고, 만든 파일의 상대 경로 목록을 돌려준다. 하나라도 이미 있으면 아무것도 쓰지 않고 그 목록을 담아 `InitError`를 낸다. 폴더가 git 저장소가 아니면 `git init`을 하고, `core.hooksPath`를 `.githooks`로 설정한다. `EXECUTABLE_FILES`에는 실행 권한을 준다. 폴더가 없으면 만든다.
 - [refresh_common](../../src/projinit/init.py#refresh_common): `Project`를 받아 공통 파일을 `render_values`의 값으로 다시 채워 쓰고(실행 권한 포함), 내용이 바뀐 파일의 상대 경로 목록을 돌려준다. 다른 파일은 건드리지 않는다.
 - [InitError](../../src/projinit/init.py#InitError): 초기화할 수 없을 때의 오류.
-- [main](../../src/projinit/init.py#main): 위 두 동작을 실행하고, 만들거나 바꾼 파일을 한 줄씩 출력한다. 오류는 `init: <메시지>`로 출력하고 종료 코드 1로 끝난다.
+- [START_HINT](../../src/projinit/init.py#START_HINT): 초기화를 마친 뒤 출력하는 사용법. Claude Code를 열고 `/start`를 입력하라는 안내다.
+- [main](../../src/projinit/init.py#main): 위 두 동작을 실행하고, 만들거나 바꾼 파일을 한 줄씩 출력한다. 초기화한 경우 마지막에 `START_HINT`를 출력한다. 오류는 `init: <메시지>`로 출력하고 종료 코드 1로 끝난다.
 - `projinit` 명령의 하위 명령 `init`이 이 `main`을 부른다.
 
 테스트는 [tests/test_init.py](../../tests/test_init.py)다. 빈 폴더 초기화 결과의 파일 목록과 검증 전체(`check`의 모든 검사기) 통과, hook 실행 권한과 `core.hooksPath`, git 저장소 생성, 원격 주소 결정 순서, 이미 있는 파일 때문에 실패하면 아무것도 쓰지 않음, `--refresh-common`이 고친 공통 문서를 되돌리고 다른 파일은 그대로 둠을 검사한다.

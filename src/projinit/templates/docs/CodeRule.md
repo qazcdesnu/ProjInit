@@ -26,7 +26,7 @@
 | `CLAUDE.md` | 진입 문서([문서 작업 규칙](DocumentationRule.md#7-진입-문서)). |
 | `docs/` | 모든 문서. 코드 작업의 규칙이다. |
 | `projinit.toml` | 검사기 설정([검증 도구의 설정](VerificationTools.md#11-설정)). |
-| `.claude/` | Claude Code 프로젝트 설정. 검사기를 자동 실행하는 Stop hook을 둔다([검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)). |
+| `.claude/` | Claude Code 프로젝트 설정. 검사기를 자동 실행하는 Stop hook([검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행))과 첫 작업을 시작하는 `/start` 명령([첫 작업](TaskRule.md#48-첫-작업))을 둔다. |
 | `.githooks/` | 저장소에 포함하는 git hook. `pre-commit`과 `commit-msg`를 둔다([커밋 규칙](CommitRule.md#5-강제)). |
 | `.github/` | PR 템플릿과 CI([PR 규칙](PullRequestRule.md)). |
 

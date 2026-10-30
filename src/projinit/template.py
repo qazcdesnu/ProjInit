@@ -26,6 +26,7 @@ COMMON_FILES = (
     ".githooks/commit-msg",
     ".github/workflows/verify.yml",
     ".github/pull_request_template.md",
+    ".claude/commands/start.md",
 )
 # @doc: docs/design/Templates.md#8-구현
 INITIAL_FILES = (
