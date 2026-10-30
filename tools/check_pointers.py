@@ -168,6 +168,15 @@ def check_reciprocity(
     return problems
 
 
+def check_stubs(root: Path, modules: dict[Path, ModuleIndex]) -> list[Problem]:
+    """Report mock-up markers whose task is unknown or not in progress.
+
+    @doc: docs/VerificationTools.md#4-포인터-검사기
+    @stub: I6
+    """
+    raise NotImplementedError
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run every pointer check and print problems; return the exit code.
 
