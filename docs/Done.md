@@ -2,6 +2,40 @@
 
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
+## M0-T6 커밋 메시지와 작업 ID 연결 규칙과 검사기
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+- 근거 문서: [작업 관리 규칙](TaskRule.md#67-커밋-메시지), [검증 도구](VerificationTools.md#10-커밋-메시지-검사기)
+
+### 계획
+- 작업 관리 규칙에 커밋 메시지 형식을 정한다.
+- 커밋 메시지 검사기와 `commit-msg` hook을 만들고, 강제 장치 검사기가 그 hook도 확인하게 한다.
+- 문서 → 목업 → 진행 중 커밋 → 구현 순서로 한다.
+
+### 진행 기록
+- 2026-10-31: 지금까지의 커밋 제목을 확인했다. 모두 `<ID 목록>[(진행 중)]: <요약>` 형식이라 이 관례를 규칙으로 굳힌다.
+- 2026-10-31: 문서를 고친 뒤 목업 8개를 만들어 진행 중 상태를 커밋했다(61fc21a).
+- 2026-10-31: `check_commit_msg`, `check_commit_msg_hook`과 테스트를 구현하고 `.githooks/commit-msg`를 설치했다. pre-commit과 commit-msg hook 검사는 같은 내용이라 `_check_git_hook`으로 묶었다.
+- 2026-10-31: 빈 커밋으로 hook을 시험했다. 작업 ID가 없는 제목과 없는 ID(`M9-T9`)를 쓴 제목이 모두 거부되었다.
+
+### 결정 사항
+- pre-commit은 커밋 메시지를 볼 수 없어서 git `commit-msg` hook을 쓴다.
+- ID 문법은 따로 정규식으로 두지 않고, 로드맵·이슈에서 읽은 실제 ID 집합과 비교한다. ID 형식 정의가 작업 관리 검사기와 두 곳으로 갈라지지 않게 하기 위해서다.
+- git이 만드는 제목(`Merge`, `Revert`, `fixup!`, `squash!`)은 예외로 둔다.
+
+### 변경 파일
+- `docs/TaskRule.md`, `docs/CodeRule.md`, `docs/VerificationTools.md`, `docs/Roadmap.md`, `docs/Ongoing.md`
+- 추가: `tools/check_commit_msg.py`, `tools/check_hooks.py`, `tests/test_check_commit_msg.py`, `tests/test_check_hooks.py`, `.githooks/commit-msg`, `docs/Done.md`
+
+### 결과
+- 모든 커밋 제목이 작업 ID로 시작하며, 그 ID는 로드맵이나 이슈에 있다. 커밋에서 작업 기록으로, 작업 기록에서 커밋으로 찾아갈 수 있다.
+- 형식을 어기거나 없는 ID를 쓰면 `commit-msg` hook이 커밋을 거부한다. hook이 빠지면 강제 장치 검사기가 알려 준다.
+
+### 검증
+- `uv run python -m tools.run_checks`: 모두 통과
+- 잘못된 제목 두 가지로 빈 커밋을 시도해 둘 다 거부되는 것을 확인했다.
+
 ## M0-T5 완료 문서 보관(마일스톤 단위 분리) 규칙과 검사기 반영
 
 - 시작일: 2026-10-31

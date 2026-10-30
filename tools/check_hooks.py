@@ -21,10 +21,8 @@ PRE_COMMIT_HOOK = ".githooks/pre-commit"
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
 PRE_COMMIT_COMMAND = "uv run python -m tools.run_checks --hook pre-commit"
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
-# @stub: M0-T6
 COMMIT_MSG_HOOK = ".githooks/commit-msg"
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
-# @stub: M0-T6
 COMMIT_MSG_COMMAND = 'uv run python -m tools.check_commit_msg "$1"'
 # @doc: docs/VerificationTools.md#8-강제-장치-검사기
 HOOKS_PATH = ".githooks"
@@ -60,24 +58,28 @@ def check_pre_commit(root: Path) -> list[Problem]:
 
     @doc: docs/VerificationTools.md#8-강제-장치-검사기
     """
-    path = root / PRE_COMMIT_HOOK
-    if not path.is_file():
-        return [Problem(path, 1, f"pre-commit hook 없음: {PRE_COMMIT_HOOK}")]
-    problems = []
-    if not os.access(path, os.X_OK):
-        problems.append(Problem(path, 1, "pre-commit hook에 실행 권한 없음"))
-    if PRE_COMMIT_COMMAND not in path.read_text(encoding="utf-8"):
-        problems.append(Problem(path, 1, f"pre-commit hook에 검사 명령 없음: {PRE_COMMIT_COMMAND}"))
-    return problems
+    return _check_git_hook(root, PRE_COMMIT_HOOK, PRE_COMMIT_COMMAND)
 
 
 def check_commit_msg_hook(root: Path) -> list[Problem]:
     """Report a missing, non-executable or unrelated git commit-msg hook.
 
     @doc: docs/VerificationTools.md#8-강제-장치-검사기
-    @stub: M0-T6
     """
-    raise NotImplementedError
+    return _check_git_hook(root, COMMIT_MSG_HOOK, COMMIT_MSG_COMMAND)
+
+
+def _check_git_hook(root: Path, relative: str, command: str) -> list[Problem]:
+    path = root / relative
+    name = path.name
+    if not path.is_file():
+        return [Problem(path, 1, f"{name} hook 없음: {relative}")]
+    problems = []
+    if not os.access(path, os.X_OK):
+        problems.append(Problem(path, 1, f"{name} hook에 실행 권한 없음"))
+    if command not in path.read_text(encoding="utf-8"):
+        problems.append(Problem(path, 1, f"{name} hook에 검사 명령 없음: {command}"))
+    return problems
 
 
 def check_hooks_path(root: Path) -> list[Problem]:
@@ -108,13 +110,13 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
     root = parser.parse_args(argv).root.resolve()
-    problems = check_stop_hook(root) + check_pre_commit(root) + check_hooks_path(root)
+    problems = check_stop_hook(root) + check_pre_commit(root) + check_commit_msg_hook(root) + check_hooks_path(root)
     for problem in problems:
         print(problem.format(root))
     if problems:
         print(f"check_hooks: 문제 {len(problems)}건")
         return 1
-    print("check_hooks: 통과 (Stop hook, pre-commit, core.hooksPath)")
+    print("check_hooks: 통과 (Stop hook, pre-commit, commit-msg, core.hooksPath)")
     return 0
 
 
