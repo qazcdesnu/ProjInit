@@ -17,7 +17,7 @@
 
 - [x] M1-T1 패키지 구성 상세 설계
 - [x] M1-T2 검사기를 설치 가능한 패키지로 전환
-- [ ] M1-T3 `projinit check` 일괄 검사 명령
+- [ ] M1-T3 hook이 부르는 `projinit` 실행 진입점 (`check`, `commit-msg`)
 - [ ] M1-T4 검증 도구 문서를 공통 문서와 검사기 설계 문서로 분리
 
 ## M2 초기화
@@ -29,9 +29,9 @@
 
 ## M3 갱신
 
-- [ ] M3-T1 템플릿·검사기 버전 관리 상세 설계
-- [ ] M3-T2 `projinit upgrade` 명령
-- [ ] M3-T3 ProjInit 저장소 자신을 `projinit check`·`upgrade` 대상으로 두고 공통 규칙 원본과의 일치를 검사
+- [x] M3-T1 템플릿·검사기 버전 관리 상세 설계 (취소)
+- [x] M3-T2 `projinit upgrade` 명령 (취소)
+- [x] M3-T3 ProjInit 저장소 자신을 `projinit check`·`upgrade` 대상으로 두고 공통 규칙 원본과의 일치를 검사 (취소)
 
 ## M4 첫 적용
 

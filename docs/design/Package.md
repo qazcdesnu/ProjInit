@@ -39,14 +39,15 @@ src/projinit/
 
 ## 3. 명령
 
-`pyproject.toml`의 `[project.scripts]`로 `projinit` 명령을 만든다. 하위 명령은 다음과 같다.
+`pyproject.toml`의 `[project.scripts]`로 `projinit` 명령을 만든다. 사용자가 쓰는 명령은 M2의 `projinit init` 하나다([제품 비전](../ProductVision.md#4-구성-초안)). M1에서는 초기화된 프로젝트의 hook이 검사기를 실행하는 데 필요한 하위 명령만 만든다.
 
-| 명령 | 하는 일 | 지금의 대응 |
+| 명령 | 하는 일 | 부르는 곳 |
 | --- | --- | --- |
-| `projinit check` | 모든 검사를 한 번에 실행한다. `--hook stop`, `--hook pre-commit`을 받는다. | `tools.run_checks` |
-| `projinit check docs` 등 | 검사 하나만 실행한다. 이름은 `docs`, `pointers`, `tasks`, `hooks`. | `tools.check_*` |
-| `projinit commit-msg <파일>` | 커밋 메시지를 검사한다. `commit-msg` hook이 실행한다. | `tools.check_commit_msg` |
-| `projinit init`, `projinit upgrade` | M2, M3에서 만든다. | 없음 |
+| `projinit check` | 모든 검사를 한 번에 실행한다. `--hook stop`, `--hook pre-commit`을 받는다. | Stop hook, pre-commit hook, 작업자의 직접 확인 |
+| `projinit commit-msg <파일>` | 커밋 메시지를 검사한다. | commit-msg hook |
+| `projinit init` | 폴더를 초기화한다. M2에서 만든다. | 사용자 |
+
+검사 하나만 돌리는 명령은 따로 만들지 않는다. 필요하면 `python -m projinit.check_docs`처럼 모듈을 직접 실행한다.
 
 모든 명령은 `--root <경로>`를 받으며, 기본값은 현재 디렉터리다. 지금처럼 검사기 파일 위치로부터 루트를 정하지 않는다. 설치된 패키지는 검사할 프로젝트 밖에 있기 때문이다.
 
@@ -85,7 +86,7 @@ hook이 실행하는 명령은 설정의 `projinit.command`다. 비어 있으면
 | pre-commit | `<command> check --hook pre-commit` |
 | commit-msg | `<command> commit-msg "$1"` |
 
-[강제 장치 검사기](../VerificationTools.md#8-강제-장치-검사기)는 고정된 문자열 대신 설정에서 만든 명령과 비교한다. hook 파일을 만들고 고치는 일은 `init`과 `upgrade`(M2, M3)가 맡는다.
+[강제 장치 검사기](../VerificationTools.md#8-강제-장치-검사기)는 고정된 문자열 대신 설정에서 만든 명령과 비교한다. hook 파일을 만드는 일은 `init`(M2)이 맡는다.
 
 ## 6. 이 저장소 자신
 
@@ -112,7 +113,7 @@ hook이 실행하는 명령은 설정의 `projinit.command`다. 비어 있으면
 | 태스크 | 범위 |
 | --- | --- |
 | M1-T2 | `src/projinit/`로 옮기고, 설정 파일(`config.py`)을 도입해 고정된 경로와 테스트 명령을 설정으로 바꾼다. 이 저장소에 `projinit.toml`을 둔다. |
-| M1-T3 | `projinit` 명령(`cli.py`)과 하위 명령을 만들고, hook 명령을 설정에서 만들게 바꾼다. 이 저장소의 hook을 `uv run projinit`으로 바꾼다. |
+| M1-T3 | `projinit` 명령(`cli.py`)과 하위 명령 `check`, `commit-msg`를 만들고, hook 명령을 설정에서 만들게 바꾼다. 이 저장소의 hook을 `uv run projinit`으로 바꾸고 `tools/`의 임시 진입점을 지운다. |
 | M1-T4 | 검증 도구 문서를 공통 문서와 검사기 설계 문서로 나누고, 검사기 코드의 포인터를 옮긴다. |
 
 M1-T2와 M1-T3 사이에는 `tools.run_checks` 등 기존 모듈 실행 경로가 한동안 남아 hook이 계속 동작하게 한다. 예를 들어 `tools/`에 `projinit`의 함수를 부르는 얇은 진입점을 두었다가 M1-T3에서 지운다.
