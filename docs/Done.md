@@ -2,6 +2,38 @@
 
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M3 갱신](Done-M3.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
+## M2-T6 템플릿 일치 검사와 버전 일치 검사
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+- 관련 이슈: I10
+- 근거 문서: [템플릿 구성](design/Templates.md#5-버전-묶기-i10), [검증 도구](VerificationTools.md#14-템플릿-일치-검사기)
+
+### 계획
+- 공통 문서인 검증 도구에 템플릿 일치 검사기 절을 더하고(템플릿과 이 저장소 문서 모두), 검사기 설계에 구현 명세를 적는다.
+- `check_template`을 만들어 `projinit check`에 넣는다. 템플릿 테스트의 자기 일치 테스트는 이 검사로 옮겨 지운다.
+
+### 진행 기록
+- 2026-10-31: PR #3~#5가 열려 있어 `m2-t3-install-devices` 위에 `m2-t6-template-check`를 쌓았다.
+- 2026-10-31: 검증 도구는 공통 문서라 이 저장소의 문서와 템플릿을 함께 고쳤다. 이번 검사가 생기면 둘이 어긋날 때 바로 잡힌다.
+- 2026-10-31: 첫 진행 중 커밋에서 상호 참조 검사가, 검사기 설계 문서가 `init.package_version`을 직접 가리키는데 그 함수는 템플릿 구성 문서만 근거로 둔다는 것을 잡았다. 검사기 설계에서는 템플릿 구성 문서의 절로 링크하도록 고쳐 커밋했다(3495c8b).
+- 2026-10-31: `check_template`과 테스트를 구현해 `projinit check`에 넣고, 템플릿 테스트의 자기 일치 테스트를 지웠다. 이 저장소도 새 검사를 통과했다.
+- 2026-10-31: 초기화한 임시 폴더의 공통 문서에 한 줄을 더하자 템플릿 일치 검사가 잡는 것을 확인했다.
+
+### 결정 사항
+- 템플릿 일치 검사는 공통 파일 전체(문서와 강제 장치 파일)를 본다. 강제 장치 파일의 명령도 버전에서 나오기 때문이다.
+- 버전 일치 검사는 실행 명령이 지정된 저장소(이 저장소, 미리 써 보기 설정)에서 건너뛴다.
+
+### 변경 파일
+- `docs/VerificationTools.md`, `src/projinit/templates/docs/VerificationTools.md`, `docs/design/Checkers.md`, `docs/design/Templates.md`, `docs/Roadmap.md`, `docs/Ongoing.md`
+- 추가: `src/projinit/check_template.py`(신규), `src/projinit/run_checks.py`, `tests/test_check_template.py`(신규), `tests/test_template.py`, `tests/test_run_checks.py`, `docs/Done.md`
+
+### 결과
+- 공통 문서와 강제 장치 파일을 손으로 고치거나 설정의 버전만 올리면 `projinit check`가 잡는다. 문서와 검사기가 같은 버전으로 묶인다(I10).
+
+### 검증
+- `uv run projinit check`: `check_template` 포함 모두 통과
+
 ## M2-T3 초기화할 때 강제 장치 설치
 
 - 시작일: 2026-10-31

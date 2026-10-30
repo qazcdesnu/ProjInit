@@ -6,15 +6,12 @@
 import io
 import unittest
 from contextlib import redirect_stdout
-from pathlib import Path
 
 from tests.support import RepoTestCase
 from projinit import check_docs, check_tasks
-from projinit.config import load_config
 from projinit.doclib import extract_links, is_external, resolve_link
-from projinit.template import COMMON_FILES, INITIAL_FILES, TemplateError, render, render_values
+from projinit.template import COMMON_FILES, INITIAL_FILES, TemplateError, render
 
-_REPO = Path(__file__).resolve().parent.parent
 _VALUES = {
     "repository": "git@github.com:me/demo.git",
     "version": "0.1.0",
@@ -34,11 +31,6 @@ class RenderTest(unittest.TestCase):
         with self.assertRaises(TemplateError) as raised:
             render("docs/PullRequestRule.md", {})
         self.assertEqual(str(raised.exception), "docs/PullRequestRule.md: 값이 없는 빈 자리: repository")
-
-    def test_this_repository_matches_its_templates(self) -> None:
-        values = render_values(load_config(_REPO))
-        for relative in COMMON_FILES:
-            self.assertEqual((_REPO / relative).read_text(encoding="utf-8"), render(relative, values), relative)
 
 
 class RenderedProjectTest(RepoTestCase):
