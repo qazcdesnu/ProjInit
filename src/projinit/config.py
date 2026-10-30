@@ -42,6 +42,12 @@ class Config:
     code_roots: tuple[str, ...] = ("src", "tests")
     check_commands: tuple[str, ...] = ()
     commit_baseline: str = ""
+    template: tuple[tuple[str, str], ...] = ()
+
+    @property
+    def template_values(self) -> dict[str, str]:
+        # @stub: M2-T5
+        raise NotImplementedError
 
 
 @dataclass(frozen=True)

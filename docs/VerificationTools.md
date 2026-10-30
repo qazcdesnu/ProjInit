@@ -144,8 +144,12 @@ code_roots = ["src", "tests"]   # 코드 루트
 [check]
 commands = []            # check가 검사기 다음에 실행할 프로젝트 명령 (테스트 등)
 commit_baseline = ""     # 커밋 이력 검사의 기준 커밋. 비우면 모든 커밋을 검사한다
+
+[template]
+repository = "git@github.com:me/my-project.git"   # 공통 문서의 빈 자리 {{repository}}에 들어갈 값
 ```
 
+- `[template]` 표의 값은 공통 규칙 문서의 빈 자리(`{{이름}}`)를 채운다. 키는 자유롭게 쓰되 값은 문자열이어야 한다.
 - 실행 명령 `<projinit>`은 `projinit.command`다. 비어 있으면 `uvx --from <source>@v<version> projinit`이다.
 - 인덱스는 문서 디렉터리의 `index.md`이고, 작업 관리 문서(`Roadmap.md`, `Issue.md`, `Ongoing.md`, `Done.md`, `Done-M<n>.md`)도 문서 디렉터리에 있다. 이 이름들은 공통 규칙이 정하므로 설정하지 않는다.
 - 설정 파일이 TOML로 읽히지 않거나, 모르는 표나 키가 있거나, 값의 형이 틀리면 설정 오류다. 오타로 설정이 조용히 무시되지 않게 하기 위해서다. 설정 오류는 `projinit.toml:<줄>: 설정 오류: <메시지>`로 보고한다.

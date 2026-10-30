@@ -45,10 +45,10 @@
 예:
 
 ```text
-M0-T6: 커밋 메시지와 작업 ID 연결 규칙과 commit-msg 검사
+M1-T2: 로그인 화면과 세션 저장 구현
 
-커밋 제목을 작업 ID로 시작하게 하고, 없는 ID를 쓰면 commit-msg
-hook이 커밋을 거부한다.
+로그인 폼과 세션 토큰 저장을 추가했다. 토큰이 만료되면
+로그인 화면으로 돌아간다.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ```
@@ -56,7 +56,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ## 4. 예외
 
 - 병합 커밋은 검사하지 않는다. git이 만드는 제목(`Merge `, `Revert `, `fixup! `, `squash! `로 시작)도 형식을 따르지 않아도 된다.
-- 이 규칙의 기준 커밋은 첫 커밋 `18e5cf3`이다. 기준 커밋 자신은 검사하지 않는다. 이 규칙을 들일 때 그 뒤의 이력이 모두 규칙에 맞았으므로 고쳐 쓴 이력은 없다.
+- 이 규칙이 생기기 전의 커밋이 있는 저장소는 [설정](VerificationTools.md#11-설정)의 `check.commit_baseline`에 기준 커밋을 적는다. 기준 커밋과 그 이전 커밋은 검사하지 않으며, 기존 이력은 고쳐 쓰지 않는다. 처음부터 이 규칙으로 시작한 저장소는 비워 둔다.
 
 ## 5. 강제
 

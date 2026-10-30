@@ -19,31 +19,23 @@
 
 ## 2. 디렉터리 구조
 
+모든 프로젝트에 공통인 경로는 다음과 같다. 그 밖의 디렉터리(제품 코드, 테스트, 빌드 설정 등)는 프로젝트의 **시스템 구조** 문서가 정한다. 시스템 구조 문서는 [문서 인덱스](index.md)의 제품 이해 절에 있다.
+
 | 경로 | 용도 |
 | --- | --- |
+| `CLAUDE.md` | 진입 문서([문서 작업 규칙](DocumentationRule.md#7-진입-문서)). |
 | `docs/` | 모든 문서. 코드 작업의 규칙이다. |
-| `src/` | 제품 코드. `src/projinit/`이 `projinit` 패키지다. 패키지 구성과 기술 스택은 [제품 비전](ProductVision.md)과 [패키지 구성 설계](design/Package.md)를 따른다. |
-| `tests/` | 자동 테스트. |
-| `pyproject.toml`, `.python-version`, `uv.lock` | uv 프로젝트 설정. [3. 언어와 스타일](#3-언어와-스타일)을 따른다. |
-| `projinit.toml` | 검사기 설정. [검증 도구의 설정](VerificationTools.md#11-설정)에 규정된다. |
-| `.claude/` | Claude Code 프로젝트 설정(`settings.json`). 검사기를 자동 실행하는 Stop hook을 둔다. [검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)에 규정된다. |
-| `.githooks/` | 저장소에 포함하는 git hook. `pre-commit`과 `commit-msg`를 둔다. [검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)와 [커밋 규칙](CommitRule.md#5-강제)에 규정된다. |
-| `.github/` | PR 템플릿과 CI. [PR 규칙](PullRequestRule.md)과 [검증 도구의 CI](VerificationTools.md#12-ci)에 규정된다. |
+| `projinit.toml` | 검사기 설정([검증 도구의 설정](VerificationTools.md#11-설정)). |
+| `.claude/` | Claude Code 프로젝트 설정. 검사기를 자동 실행하는 Stop hook을 둔다([검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)). |
+| `.githooks/` | 저장소에 포함하는 git hook. `pre-commit`과 `commit-msg`를 둔다([커밋 규칙](CommitRule.md#5-강제)). |
+| `.github/` | PR 템플릿과 CI([PR 규칙](PullRequestRule.md)). |
 
-새로운 최상위 디렉터리가 필요하면 이 표를 먼저 수정한다.
+새로운 최상위 디렉터리가 필요하면 시스템 구조 문서의 디렉터리 표를 먼저 수정한다.
 
 ## 3. 언어와 스타일
 
-- 기본 언어는 Python이다.
-- Python은 **반드시 uv 환경에서** 사용한다.
-  - Python 버전은 uv가 관리하며 `.python-version`(현재 `3.12`)과 `pyproject.toml`의 `requires-python`으로 고정한다.
-  - 모든 Python 실행은 `uv run`을 거친다. 시스템 Python(`python3`)이나 직접 만든 가상 환경을 쓰지 않는다.
-  - 의존성은 `uv add`(개발용은 `uv add --dev`)로만 추가·제거한다. `pip`를 직접 쓰지 않는다. `uv.lock`은 저장소에 포함한다.
-- `src/projinit/`의 코드는 표준 라이브러리와, 여러 언어의 코드를 파싱하기 위한 `tree-sitter` 및 언어별 문법 패키지(`tree-sitter-<언어>`)만 사용한다. 문법은 실행할 때 내려받지 않고 패키지에 포함된 것을 쓰며, 버전은 `uv.lock`으로 고정한다.
-- 스타일은 PEP 8을 따른다.
-  - 모듈·함수·변수 이름은 `snake_case`, 클래스는 `PascalCase`, 상수는 `UPPER_SNAKE_CASE`.
-  - 모듈 내부 전용 심볼은 이름 앞에 `_`를 붙인다.
-- 모든 함수의 인자와 반환값에 타입 힌트를 단다. `list[str]`, `str | None` 같은 내장 문법을 쓴다.
+개발 언어, 언어별 도구(버전 관리, 의존성 관리, 실행 방법), 이름 짓기와 형식은 시스템 구조 문서가 정한다. 언어와 무관하게 다음을 지킨다.
+
 - 함수 하나는 한 가지 일만 한다. 같은 로직이 두 곳 이상에 생기면 공통 모듈로 옮긴다.
 - 사용하지 않는 코드, 주석 처리된 코드는 남기지 않는다.
 - 주석은 "무엇"이 아니라 "왜"를 적는다. 동작 설명은 문서에 있어야 한다.
@@ -59,18 +51,13 @@
 
 ## 5. 테스트
 
-- 테스트는 `tests/` 아래에 `test_<대상 모듈>.py` 이름으로 둔다.
-- 테스트 프레임워크는 표준 라이브러리 `unittest`를 사용한다.
+- 테스트의 위치, 이름, 프레임워크, 실행 명령은 시스템 구조 문서가 정한다. 실행 명령은 [검증 도구의 설정](VerificationTools.md#11-설정)에 프로젝트 명령으로 적어 일괄 검사가 함께 돌게 한다.
 - 문서에 규정된 공개 동작마다 정상 경우와 실패 경우를 각각 하나 이상 테스트한다.
 - 테스트도 코드이므로 [포인터 규약](Traceability.md)을 동일하게 적용한다. 테스트 모듈은 자신이 검증하는 동작을 규정한 문서를 가리킨다.
 
 ## 6. 검증과 완료 조건
 
-코드 작업은 아래 명령이 성공(종료 코드 0)해야 완료로 본다. 이 명령은 모든 검사기와 테스트를 실행한다. 실행 방법의 상세는 [검증 도구](VerificationTools.md#1-실행-방법)에 있다.
-
-```sh
-uv run projinit check
-```
+코드 작업은 [검증 도구](VerificationTools.md#1-실행-방법)의 일괄 검사 `<projinit> check`가 성공(종료 코드 0)해야 완료로 본다. 이 명령은 모든 검사기와 프로젝트 명령(테스트 등)을 실행한다.
 
 이 검사는 Stop hook과 pre-commit으로 자동 실행된다([검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)). 자동 실행에 기대지 않고, 작업을 끝내기 전에 직접 실행해 확인한다.
 
