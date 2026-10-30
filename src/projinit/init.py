@@ -16,6 +16,8 @@ from projinit.template import COMMON_FILES, EXECUTABLE_FILES, INITIAL_FILES, Tem
 DEFAULT_SOURCE = "git+https://github.com/qazcdesnu/ProjInit"
 # @doc: docs/design/Templates.md#9-초기화-명령
 NO_REPOSITORY = "아직 없음"
+# @doc: docs/design/Templates.md#9-초기화-명령
+START_HINT = "이 폴더에서 Claude Code를 열고 /start를 입력하면 첫 작업을 시작합니다."
 
 
 class InitError(Exception):
@@ -124,6 +126,7 @@ def main(argv: list[str] | None = None) -> int:
             for relative in created:
                 print(f"만듦: {relative}")
             print(f"init: 파일 {len(created)}개를 만듦")
+            print(START_HINT)
     except ConfigError as error:
         return report_config_error(error)
     except (InitError, TemplateError) as error:

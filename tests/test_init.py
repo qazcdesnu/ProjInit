@@ -11,7 +11,7 @@ from contextlib import redirect_stdout
 from tests.support import RepoTestCase
 from projinit.run_checks import run_all
 from projinit.config import load_config, load_project
-from projinit.init import NO_REPOSITORY, init_project, main, package_version, refresh_common, repository_url
+from projinit.init import NO_REPOSITORY, START_HINT, init_project, main, package_version, refresh_common, repository_url
 from projinit.template import COMMON_FILES, EXECUTABLE_FILES, INITIAL_FILES
 
 
@@ -54,11 +54,13 @@ class InitTest(RepoTestCase):
         self.assertEqual((self.root / "docs/index.md").read_text(), "# 내 인덱스\n")
 
     def test_refresh_common_restores_common_files_only(self) -> None:
-        self.assertEqual(self.run_main()[0], 0)
+        code, output = self.run_main()
+        self.assertEqual((code, output.splitlines()[-1]), (0, START_HINT))
         self.write("docs/CodeRule.md", "손으로 고침\n")
         self.write("docs/Roadmap.md", self.root.joinpath("docs/Roadmap.md").read_text() + "- [ ] M0-T2 더함\n")
         self.assertEqual(refresh_common(load_project(self.root)), ["docs/CodeRule.md"])
         self.assertNotEqual((self.root / "docs/CodeRule.md").read_text(), "손으로 고침\n")
         self.assertIn("M0-T2 더함", (self.root / "docs/Roadmap.md").read_text())
+        self.assertTrue((self.root / ".claude/commands/start.md").is_file())
         code, output = self.run_main("--refresh-common")
         self.assertEqual((code, output.splitlines()[-1]), (0, "init: 공통 문서 0개를 다시 씀"))

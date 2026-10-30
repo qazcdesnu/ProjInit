@@ -2,6 +2,38 @@
 
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M3 갱신](Done-M3.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
+## M2-T4 첫 세션에서 만들 프로젝트를 묻고 제품 비전과 첫 로드맵을 채우는 시작 안내
+
+- 시작일: 2026-10-31
+- 완료일: 2026-10-31
+- 근거 문서: [제품 비전](ProductVision.md#3-핵심-요구사항), [템플릿 구성](design/Templates.md#1-초기화가-만드는-것)
+
+### 계획
+- 첫 작업 절차를 작업 관리 규칙(공통)에 적고, 그 절차를 부르는 `/start` 명령 파일을 템플릿에 둔다.
+- 첫 커밋을 `main`에 하는 예외를 PR 규칙에 적는다.
+- 초기화가 끝나면 사용법(`/start`)을 출력한다.
+
+### 진행 기록
+- 2026-10-31: 제품 비전은 "사용자가 입력하지 않아도 Claude가 먼저 묻는다"였다. Claude Code 공식 문서를 확인하니 대화형 세션에서 Claude가 먼저 말하게 하는 기능은 없고, SessionStart hook은 맥락이나 사용자 안내만 넣는다. `claude "첫 프롬프트"`로 여는 방법은 있다.
+- 2026-10-31: 사용자가 "세션 열자마자 Claude가 물어볼 필요 없이, 이미 있는 명령으로 시작하면 되지 않느냐"고 했다. 프로젝트 슬래시 명령 `/start`(`.claude/commands/start.md`)로 정했다. 기본 명령 `/init`과 겹치지 않게 이름을 골랐다.
+- 2026-10-31: PR #3~#6 위에 `m2-t4-start-command`를 쌓았다. 이번부터 공통 문서는 템플릿을 고친 뒤 `projinit init --refresh-common`으로 이 저장소에 반영했다(작업 관리 규칙, PR 규칙, 코드 작업 규칙, `/start` 명령 파일).
+- 2026-10-31: 초기화 테스트에 `/start` 명령 파일과 마지막 안내 문구 확인을 더했다. 작은 작업이라 진행 중 커밋 없이 완료까지 한 번에 했다.
+
+### 결정 사항
+- 첫 작업 절차는 작업 관리 규칙 4.8절에 두고, 명령 파일은 그 절을 따르라고만 적는다. 구체적인 규칙은 문서에만 둔다는 원칙 때문이다.
+- 저장소의 첫 커밋(`M0-T1`)은 `main`에 한다. 아직 `main`이 없어 작업 브랜치의 출발점이 없기 때문이다.
+- 명령 파일은 공통 파일이라 이 저장소에도 생긴다. 이 저장소에서 `/start`는 쓸 일이 없지만, 템플릿 일치 검사를 예외 없이 유지한다.
+- 제품 비전 요구사항 6을 `/start`로 시작하는 것으로 고쳤다.
+
+### 변경 파일
+- `docs/ProductVision.md`, `docs/design/Templates.md`, `docs/Roadmap.md`, `docs/Ongoing.md`, `src/projinit/templates/docs/TaskRule.md`, `src/projinit/templates/docs/PullRequestRule.md`, `src/projinit/templates/docs/CodeRule.md`, `src/projinit/templates/.claude/commands/start.md`(신규), `docs/TaskRule.md`, `docs/PullRequestRule.md`, `docs/CodeRule.md`, `.claude/commands/start.md`(신규), `src/projinit/template.py`, `src/projinit/init.py`, `tests/test_init.py`
+
+### 결과
+- 초기화한 폴더에서 Claude Code를 열고 `/start`를 입력하면, Claude가 만들 프로젝트를 물으며 첫 작업(`M0-T1`)을 규칙대로 시작한다. 초기화가 마지막에 이 사용법을 알려 준다.
+
+### 검증
+- `uv run projinit check`: 모두 통과
+
 ## M2-T6 템플릿 일치 검사와 버전 일치 검사
 
 - 시작일: 2026-10-31
