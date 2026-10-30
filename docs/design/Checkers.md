@@ -4,7 +4,7 @@
 
 ## 1. 실행 방법
 
-모든 명령은 저장소 루트에서 uv 환경으로 실행한다([코드 작업 규칙](../CodeRule.md#3-언어와-스타일)).
+모든 명령은 저장소 루트에서 uv 환경으로 실행한다([시스템 구조](../Architecture.md#2-언어와-스타일)).
 
 ```sh
 uv run projinit check                       # 아래 검사 전체와 설정의 프로젝트 명령(테스트 등)을 한 번에 실행
@@ -279,7 +279,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 - [CONFIG_FILE](../../src/projinit/config.py#CONFIG_FILE): `projinit.toml`.
 - [INDEX_NAME](../../src/projinit/config.py#INDEX_NAME): `index.md`. 문서 디렉터리 안의 인덱스 이름이다.
-- [Config](../../src/projinit/config.py#Config): 설정 값. `version`, `source`, `command`, `docs`(기본 `docs`), `entry`(기본 `CLAUDE.md`), `code_roots`(기본 `src`, `tests`), `check_commands`(기본 없음), `commit_baseline`(기본 빈 문자열)을 가진다.
+- [Config](../../src/projinit/config.py#Config): 설정 값. `version`, `source`, `command`, `docs`(기본 `docs`), `entry`(기본 `CLAUDE.md`), `code_roots`(기본 `src`, `tests`), `check_commands`(기본 없음), `commit_baseline`(기본 빈 문자열), `template`(`[template]` 표의 (키, 값) 목록, 기본 없음)을 가진다. [Config.template_values](../../src/projinit/config.py#Config.template_values)는 그것을 사전으로 돌려준다.
 - [Project](../../src/projinit/config.py#Project): 검사할 프로젝트. 루트 절대 경로와 `Config`를 가지며, [Project.docs_dir](../../src/projinit/config.py#Project.docs_dir), [Project.entry_doc](../../src/projinit/config.py#Project.entry_doc), [Project.index_doc](../../src/projinit/config.py#Project.index_doc), [Project.code_roots](../../src/projinit/config.py#Project.code_roots)로 경로를 돌려준다.
 - [ConfigError](../../src/projinit/config.py#ConfigError): 설정 오류. 메시지와 줄 번호(모르면 1)를 가진다.
 - [load_config](../../src/projinit/config.py#load_config): 루트의 설정 파일을 읽어 `Config`를 돌려준다. 파일이 없으면 기본값이다. TOML 형식 오류, 모르는 표나 키, 형이 틀린 값(문자열이어야 하는 곳에 다른 값, 문자열 목록이어야 하는 곳에 다른 값)은 `ConfigError`다.

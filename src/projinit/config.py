@@ -42,6 +42,11 @@ class Config:
     code_roots: tuple[str, ...] = ("src", "tests")
     check_commands: tuple[str, ...] = ()
     commit_baseline: str = ""
+    template: tuple[tuple[str, str], ...] = ()
+
+    @property
+    def template_values(self) -> dict[str, str]:
+        return dict(self.template)
 
 
 @dataclass(frozen=True)
@@ -99,6 +104,9 @@ def load_config(root: Path) -> Config:
     for table, entries in data.items():
         if not isinstance(entries, dict):
             raise ConfigError(f"모르는 키: {table}")
+        if table == "template":
+            values["template"] = tuple((key, _checked(f"template.{key}", value, False)) for key, value in entries.items())
+            continue
         for key, value in entries.items():
             if (table, key) not in _KEYS:
                 raise ConfigError(f"모르는 키: {table}.{key}")

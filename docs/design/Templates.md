@@ -45,7 +45,7 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 - 이 저장소의 공통 문서(`CLAUDE.md`, 위 1절의 공통 규칙 문서)는 템플릿을 이 저장소의 값으로 채운 결과와 **같아야 한다**. 다르면 검사기가 잡는다(5절). 그래서 공통 규칙을 고칠 때는 템플릿을 고치고 다시 만든다.
 - 다시 만드는 명령은 `projinit init --refresh-common`이다. 공통 문서만 템플릿에서 다시 쓰고 다른 파일은 건드리지 않는다. 이전에 미룬 갱신 기능(`upgrade`) 전체가 아니라, 공통 문서를 다시 쓰는 일만 한다.
 
-**빈 자리**: 템플릿 안의 `{{이름}}`을 `projinit.toml`의 `[template]` 표의 값으로 바꾼다. 지금 필요한 것은 `repository`(원격 저장소 주소) 하나다. 값이 없는 빈 자리가 남으면 초기화가 실패한다.
+**빈 자리**: 템플릿 안의 `{{이름}}`을 `projinit.toml`의 `[template]` 표의 값으로 바꾼다. 이름은 영문 소문자·숫자·`_`만 쓴다. 그래서 문서에서 빈 자리를 설명할 때 `{{이름}}`처럼 한글로 쓰면 빈 자리로 보지 않는다. 지금 필요한 것은 `repository`(원격 저장소 주소) 하나다. 값이 없는 빈 자리가 남으면 초기화가 실패한다.
 
 ## 4. 템플릿 테스트
 
@@ -80,3 +80,21 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 ## 7. 미결정 사항
 
 - **원격 저장소 공개 여부**: `source = "git+https://github.com/qazcdesnu/ProjInit"`로 설치하려면 저장소가 공개여야 한다. 비공개로 두면 다른 컴퓨터에서는 그 컴퓨터의 GitHub 인증(SSH 키 등)이 있어야 설치된다. M2-T7 전에 정한다.
+
+## 8. 구현
+
+[src/projinit/template.py](../../src/projinit/template.py)가 템플릿을 읽고 빈 자리를 채운다. 템플릿 파일은 `src/projinit/templates/` 아래에 초기화한 프로젝트와 같은 상대 경로로 둔다.
+
+- [TEMPLATE_DIR](../../src/projinit/template.py#TEMPLATE_DIR): 템플릿 디렉터리.
+- [COMMON_FILES](../../src/projinit/template.py#COMMON_FILES): 공통 파일의 상대 경로. `CLAUDE.md`와 1절의 공통 규칙 문서 일곱 개다. 이 저장소의 같은 파일은 템플릿을 채운 결과와 같아야 한다.
+- [INITIAL_FILES](../../src/projinit/template.py#INITIAL_FILES): 처음에만 만드는 파일의 상대 경로. 인덱스와 작업 관리 문서 네 개다.
+- [TemplateError](../../src/projinit/template.py#TemplateError): 값이 없는 빈 자리가 있을 때의 오류.
+- [render](../../src/projinit/template.py#render): 템플릿 파일 하나의 상대 경로와 값 사전을 받아, 모든 `{{이름}}`을 값으로 바꾼 내용을 돌려준다. 값이 없는 빈 자리가 있으면 그 이름들을 담아 `TemplateError`를 낸다.
+
+테스트는 [tests/test_template.py](../../tests/test_template.py)다.
+
+- 모든 템플릿 파일이 값과 함께 채워지고, 값이 빠지면 오류가 난다.
+- 이 저장소의 공통 파일이 템플릿을 이 저장소의 설정 값으로 채운 결과와 같다(M2-T6의 템플릿 일치 검사가 생기기 전까지 이 테스트가 그 역할을 한다).
+- 채운 공통 문서의 링크가 공통 파일과 처음 만드는 파일로만 간다(2절).
+- 공통 파일과 처음 만드는 파일을 임시 폴더에 채워 쓰면 문서 링크 검사와 작업 관리 검사를 통과한다. 강제 장치까지 포함한 검증 전체 통과는 M2-T3에서 시험한다.
+
