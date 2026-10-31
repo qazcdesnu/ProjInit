@@ -46,6 +46,7 @@
 | --- | --- |
 | [문서 작업 규칙](DocumentationRule.md) | 문서 작성 형식, 링크·앵커 규칙, 고아 문서 금지, 문서 우선 원칙 |
 | [포인터 규약](Traceability.md) | 문서에 코드 포인터를 걸 때의 형식 |
+| [자료 폴더 규칙](MaterialRule.md) | 참고 자료 `reference/`와 기존 프로젝트 `legacy/`, 목록 문서 |
 | [검증 도구](VerificationTools.md) | 링크·고아 문서·포인터 검사 실행 방법 |
 
 ### 코드 작업

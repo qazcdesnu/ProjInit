@@ -35,6 +35,11 @@ class CheckDocsTest(RepoTestCase):
         self.write("README.md", "# R\n\n[규칙](docs/Rule.md#1-intro) [없음](docs/Gone.md)\n")
         self.assertEqual([problem.message for problem in check_links(load_project(self.root))], ["링크 대상 없음: docs/Gone.md"])
 
+    def test_checks_that_code_files_in_material_folders_exist(self) -> None:
+        self.write("legacy/old/app.py", "x\n")
+        self.write("docs/Rule.md", "# Rule\n\n## 1. Intro\n\n[a](../legacy/old/app.py#run) [b](../legacy/old/gone.py) [c](../src/gone.py)\n")
+        self.assertEqual([problem.message for problem in check_links(load_project(self.root))], ["링크 대상 없음: ../legacy/old/gone.py"])
+
     def test_reports_readme_unlinked_from_index(self) -> None:
         readme = self.write("README.md", "# R\n\n[규칙](docs/Rule.md)\n")
         self.assertEqual([problem.path for problem in find_orphans(load_project(self.root))], [readme])

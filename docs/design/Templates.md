@@ -9,7 +9,7 @@
 | 구분 | 파일 | 내용 |
 | --- | --- | --- |
 | 진입 문서 | `CLAUDE.md` | 공통. 문서를 읽는 순서만 정한다. |
-| 공통 규칙 문서 | `docs/DocumentationRule.md`, `docs/CodeRule.md`, `docs/Traceability.md`, `docs/TaskRule.md`, `docs/CommitRule.md`, `docs/PullRequestRule.md`, `docs/VerificationTools.md` | 공통. 템플릿 그대로(빈 자리만 채움). |
+| 공통 규칙 문서 | `docs/DocumentationRule.md`, `docs/CodeRule.md`, `docs/Traceability.md`, `docs/TaskRule.md`, `docs/CommitRule.md`, `docs/PullRequestRule.md`, `docs/VerificationTools.md`, `docs/MaterialRule.md` | 공통. 템플릿 그대로(빈 자리만 채움). |
 | 인덱스 | `docs/index.md` | 공통 문서 목록과, 프로젝트 고유 문서가 들어갈 자리 |
 | 작업 관리 문서 | `docs/Roadmap.md`, `docs/Ongoing.md`, `docs/Done.md`, `docs/Issue.md` | 처음에만 만든다. 로드맵에는 첫 세션이 할 태스크 하나(`M0-T1 제품 비전과 첫 로드맵 작성`)만 있다. |
 | 설정 | `projinit.toml` | ProjInit 버전과 출처, 빈 프로젝트 명령, 템플릿 값 |
@@ -88,7 +88,7 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 [src/projinit/template.py](../../src/projinit/template.py)가 템플릿을 읽고 빈 자리를 채운다. 템플릿 파일은 `src/projinit/templates/` 아래에 초기화한 프로젝트와 같은 상대 경로로 둔다.
 
 - [TEMPLATE_DIR](../../src/projinit/template.py#TEMPLATE_DIR): 템플릿 디렉터리.
-- [COMMON_FILES](../../src/projinit/template.py#COMMON_FILES): 공통 파일의 상대 경로. `CLAUDE.md`, 1절의 공통 규칙 문서 일곱 개, 강제 장치 파일 다섯 개, 첫 세션 안내 명령 파일이다. 이 저장소의 같은 파일은 템플릿을 채운 결과와 같아야 한다.
+- [COMMON_FILES](../../src/projinit/template.py#COMMON_FILES): 공통 파일의 상대 경로. `CLAUDE.md`, 1절의 공통 규칙 문서 여덟 개, 강제 장치 파일 다섯 개, 첫 세션 안내 명령 파일이다. 이 저장소의 같은 파일은 템플릿을 채운 결과와 같아야 한다.
 - [INITIAL_FILES](../../src/projinit/template.py#INITIAL_FILES): 처음에만 만드는 파일의 상대 경로. 인덱스, 작업 관리 문서 네 개, 설정 파일이다.
 - [TemplateError](../../src/projinit/template.py#TemplateError): 값이 없는 빈 자리가 있을 때의 오류.
 - [EXECUTABLE_FILES](../../src/projinit/template.py#EXECUTABLE_FILES): 실행 권한을 줄 파일. `.githooks/pre-commit`, `.githooks/commit-msg`.

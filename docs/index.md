@@ -38,6 +38,7 @@ ProjInit이 무엇을 만드는지 이해할 때 읽는다. 제품 기능에 관
 | --- | --- | --- |
 | [패키지 구성](design/Package.md) | 검사기를 `projinit` 패키지로 만드는 구조, 명령, 프로젝트 설정 파일, hook 명령, 검증 도구 문서 분리 | M1-T2, M1-T3, M1-T4 |
 | [템플릿 구성](design/Templates.md) | `projinit init`이 만드는 것, 공통과 고유의 경계, 템플릿 원본과 빈 자리, 템플릿·버전 일치 검사(I10), 릴리스 | M2-T2~T7 |
+| [자료 폴더 설계](design/Materials.md) | 참고 자료 `reference/`와 기존 프로젝트 `legacy/`의 이름, 목록 문서, 아카이브 불변을 정한 이유와 작업 범위 | M6-T1 |
 | [검사기 설계](design/Checkers.md) | 검사기(`projinit` 패키지)의 모듈·함수·상수와 테스트 구성. 이 저장소에만 있다. | M1-T4 |
 
 ### 문서 작업
@@ -48,6 +49,7 @@ ProjInit이 무엇을 만드는지 이해할 때 읽는다. 제품 기능에 관
 | --- | --- |
 | [문서 작업 규칙](DocumentationRule.md) | 문서 작성 형식, 링크·앵커 규칙, 고아 문서 금지, 문서 우선 원칙 |
 | [포인터 규약](Traceability.md) | 문서에 코드 포인터를 걸 때의 형식 |
+| [자료 폴더 규칙](MaterialRule.md) | 참고 자료 `reference/`와 기존 프로젝트 `legacy/`, 목록 문서 |
 | [검증 도구](VerificationTools.md) | 링크·고아 문서·포인터 검사 실행 방법 |
 
 ### 코드 작업

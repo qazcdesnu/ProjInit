@@ -65,6 +65,8 @@ command = ""                        # 비우면 version과 source로 만든다
 docs = "docs"
 entry = "CLAUDE.md"
 code_roots = ["src", "tests"]
+reference = "reference"             # 참고 자료 폴더
+legacy = "legacy"                   # 기존 프로젝트 폴더
 
 [check]
 commands = ["cargo test"]           # 검사 뒤에 이어서 실행할 프로젝트 명령 (테스트 등)

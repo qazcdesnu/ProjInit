@@ -20,6 +20,7 @@ CHECKS = (
     ("check_hooks", "projinit.check_hooks"),
     ("check_commits", "projinit.check_commits"),
     ("check_template", "projinit.check_template"),
+    ("check_materials", "projinit.check_materials"),
 )
 
 _SUMMARY_LINES = 40

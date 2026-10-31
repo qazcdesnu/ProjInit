@@ -35,7 +35,7 @@ def check_links(project: Project) -> list[Problem]:
             if is_external(link.target):
                 continue
             path, anchor = resolve_link(link)
-            if path.suffix in CODE_SUFFIXES:
+            if path.suffix in CODE_SUFFIXES and not project.in_materials(path):
                 continue
             if not path.exists():
                 problems.append(Problem(doc, link.line, f"링크 대상 없음: {link.target}"))
