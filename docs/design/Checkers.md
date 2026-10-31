@@ -43,7 +43,7 @@ uv run python -m projinit.check_pr_order --pr <번호> --open-prs <파일>   # P
 
 **함수**
 
-- [find_doc_files](../../src/projinit/doclib.py#find_doc_files): `Project`를 받아 검사 대상 문서 목록을 돌려준다. 진입 문서, 루트의 [README_DOC](../../src/projinit/doclib.py#README_DOC)(`README.md`, 있으면), 문서 디렉터리 아래의 모든 `.md` 파일이다. 고아 문서 판정은 문서 디렉터리 아래 문서만 보므로 README는 들어가지 않는다.
+- [find_doc_files](../../src/projinit/doclib.py#find_doc_files): `Project`를 받아 검사 대상 문서 목록을 돌려준다. 진입 문서, 루트의 [README_DOC](../../src/projinit/doclib.py#README_DOC)(`README.md`, 있으면), 문서 디렉터리 아래의 모든 `.md` 파일이다. 고아 문서 판정은 이 목록에서 진입 문서만 뺀다.
 - [find_code_files](../../src/projinit/doclib.py#find_code_files): `Project`를 받아 코드 루트 아래의 모든 코드 파일 목록을 돌려준다. 없는 디렉터리는 건너뛴다.
 - [extract_links](../../src/projinit/doclib.py#extract_links): 문서 본문에서 링크를 찾는다. 이미지 링크(`![...](...)`), 펜스 코드 블록(```` ``` ````, `~~~`) 안, 인라인 코드 안의 링크는 제외한다.
 - [is_external](../../src/projinit/doclib.py#is_external): `http://`, `https://`, `mailto:`로 시작하는 외부 링크인지 판정한다. 외부 링크는 검사하지 않는다.
@@ -67,7 +67,7 @@ uv run python -m projinit.check_pr_order --pr <번호> --open-prs <파일>   # P
   - 첫 줄이 `# ` 제목이어야 한다. 그 뒤 빈 줄 다음의 연속된 줄들이 목적 문단이다.
   - 목적 문단 뒤의 빈 줄이 아닌 줄은 `## ` 제목이거나, `- `로 시작하고 문서 디렉터리 아래 `.md` 문서로 가는 링크를 가진 줄이어야 한다.
   - 펜스 코드 블록은 줄 위치와 상관없이 문제이며, 인라인 코드가 있는 줄도 문제다.
-- [find_orphans](../../src/projinit/check_docs.py#find_orphans): 인덱스에서 문서 간 링크를 따라 너비 우선 탐색을 하고, 도달하지 못한 문서 디렉터리 아래 문서를 고아 문서로 보고한다. 인덱스가 없으면 그 자체를 문제로 보고한다.
+- [find_orphans](../../src/projinit/check_docs.py#find_orphans): 인덱스에서 문서 간 링크를 따라 너비 우선 탐색을 하고, 도달하지 못한 검사 대상 문서(진입 문서 제외, README 포함)를 고아 문서로 보고한다. 인덱스가 없으면 그 자체를 문제로 보고한다.
 - [main](../../src/projinit/check_docs.py#main): 네 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
 
 ## 4. 포인터 검사기
@@ -97,7 +97,7 @@ uv run python -m projinit.check_pr_order --pr <번호> --open-prs <파일>   # P
 
 - [tests/support.py](../../tests/support.py): 테스트 공통 기반. [RepoTestCase](../../tests/support.py#RepoTestCase)는 테스트마다 임시 저장소 루트(`self.root`)를 만들고 지우며, [RepoTestCase.write](../../tests/support.py#RepoTestCase.write)로 그 아래에 파일을 만든다.
 - [tests/test_doclib.py](../../tests/test_doclib.py): 링크 추출(코드 블록·인라인 코드·이미지 제외), 앵커 생성(한글, 중복 제목).
-- [tests/test_check_docs.py](../../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소, README 링크 검사와 고아 판정 제외, 진입 문서 형식(정상, 코드 블록, 인라인 코드, 링크 없는 목록 줄, 추가 문단, 제목 누락).
+- [tests/test_check_docs.py](../../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소, README 링크 검사와 README 고아 판정(링크 없음, 인덱스에서 링크), 진입 문서 형식(정상, 코드 블록, 인라인 코드, 링크 없는 목록 줄, 추가 문단, 제목 누락).
 - [tests/test_check_pointers.py](../../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락, 모듈 포인터만으로는 심볼 포인터의 역방향이 되지 않음, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
 - [tests/test_code_index.py](../../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
 - [tests/test_cli.py](../../tests/test_cli.py): 하위 명령이 해당 모듈의 `main`에 인자를 넘기는지(`commit-msg`는 `--message-file`을 붙여서), 모르는 하위 명령.

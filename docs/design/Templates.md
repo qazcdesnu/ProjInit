@@ -66,6 +66,8 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 
 **릴리스**: ProjInit의 버전은 `pyproject.toml`의 `version`이다. 릴리스는 `main`에 병합된 뒤 그 커밋에 `v<버전>` 태그를 붙여 원격에 올린다. 다른 프로젝트는 그 태그로 설치한다(`uvx --from <source>@v<버전> projinit`). 첫 릴리스는 `v0.1.0`이다.
 
+버전을 올리는 작업에서는 [README](../../README.md)의 상태 줄과 설치 예시의 버전도 새 버전으로 고친다. README에 적힌 `v<버전>`이 모두 `pyproject.toml`의 버전과 같은지 [tests/test_release.py](../../tests/test_release.py)가 확인하므로, 빠뜨리면 검증에서 걸린다.
+
 ## 6. 작업 나누기
 
 | 순서 | 태스크 | 범위 |
