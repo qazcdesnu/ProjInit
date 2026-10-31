@@ -91,9 +91,9 @@ class Project:
         """Whether a path lies in the reference or legacy folder.
 
         @doc: docs/design/Checkers.md#11-설정
-        @stub: M6-T1
         """
-        raise NotImplementedError
+        path = path.resolve()
+        return any(path.is_relative_to(folder.resolve()) for folder in (self.reference_dir, self.legacy_dir))
 
 
 class ConfigError(Exception):

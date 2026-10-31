@@ -101,6 +101,13 @@ class CheckPointersTest(RepoTestCase):
         code, output = self.run_checker()
         self.assertEqual(code, 0, output)
 
+    def test_code_links_into_material_folders_are_not_pointers(self) -> None:
+        self.write("legacy/old/app.py", "def run():\n    pass\n")
+        self.write("reference/sample.rs", "fn main() {}\n")
+        self.write("docs/A.md", _DOC + "[예전](../legacy/old/app.py#run) [예시](../reference/sample.rs#gone)\n")
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+
     def test_non_python_repository_passes_and_reports(self) -> None:
         self.write("docs/A.md", "# A\n\n[parse](../src/lib.rs#Parser.parse) [mod](../src/lib.rs)\n")
         self.module.unlink()

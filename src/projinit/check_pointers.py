@@ -64,7 +64,7 @@ def collect_code_pointers(
             if is_external(link.target):
                 continue
             path, anchor = resolve_link(link)
-            if path.suffix not in CODE_SUFFIXES:
+            if path.suffix not in CODE_SUFFIXES or project.in_materials(path):
                 continue
             if not path.is_file():
                 problems.append(Problem(doc, link.line, f"코드 포인터 대상 파일 없음: {link.target}"))
