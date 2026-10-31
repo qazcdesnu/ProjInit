@@ -21,6 +21,7 @@ COMMON_FILES = (
     "docs/CommitRule.md",
     "docs/PullRequestRule.md",
     "docs/VerificationTools.md",
+    "docs/MaterialRule.md",
     ".claude/settings.json",
     ".githooks/pre-commit",
     ".githooks/commit-msg",

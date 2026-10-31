@@ -21,6 +21,8 @@ _KEYS = {
     ("paths", "docs"): ("docs", False),
     ("paths", "entry"): ("entry", False),
     ("paths", "code_roots"): ("code_roots", True),
+    ("paths", "reference"): ("reference", False),
+    ("paths", "legacy"): ("legacy", False),
     ("check", "commands"): ("check_commands", True),
     ("check", "commit_baseline"): ("commit_baseline", False),
 }
@@ -40,6 +42,8 @@ class Config:
     docs: str = "docs"
     entry: str = "CLAUDE.md"
     code_roots: tuple[str, ...] = ("src", "tests")
+    reference: str = "reference"
+    legacy: str = "legacy"
     check_commands: tuple[str, ...] = ()
     commit_baseline: str = ""
     template: tuple[tuple[str, str], ...] = ()
@@ -74,6 +78,22 @@ class Project:
     @property
     def code_roots(self) -> list[Path]:
         return [self.root / code_root for code_root in self.config.code_roots]
+
+    @property
+    def reference_dir(self) -> Path:
+        return self.root / self.config.reference
+
+    @property
+    def legacy_dir(self) -> Path:
+        return self.root / self.config.legacy
+
+    def in_materials(self, path: Path) -> bool:
+        """Whether a path lies in the reference or legacy folder.
+
+        @doc: docs/design/Checkers.md#11-설정
+        @stub: M6-T1
+        """
+        raise NotImplementedError
 
 
 class ConfigError(Exception):

@@ -14,6 +14,7 @@ uv run python -m projinit.check_tasks       # 작업 ID 기준 작업 관리 문
 uv run python -m projinit.check_hooks       # 강제 장치(Stop hook, pre-commit, commit-msg) 설치 검사
 uv run python -m projinit.check_commits     # 커밋 메시지 이력 검사 (--message-file, --subject·--branch로 다른 검사)
 uv run python -m projinit.check_pr_order --pr <번호> --open-prs <파일>   # PR 순서 검사
+uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/) 검사
 ```
 
 `projinit` 명령의 하위 명령은 여섯이다. `init`은 [초기화 명령](Templates.md#9-초기화-명령)을, `upgrade`는 [갱신 명령](Templates.md#10-갱신-명령)을 부른다. 나머지 넷 중 `check`는 `projinit.run_checks`, `commits`는 `projinit.check_commits`, `pr-order`는 `projinit.check_pr_order`의 `main`에 나머지 인자를 넘기고, `commit-msg <파일>`은 `projinit.check_commits`의 `main`에 `--message-file <파일>`과 나머지 인자를 넘긴다. [src/projinit/cli.py](../../src/projinit/cli.py)의 [main](../../src/projinit/cli.py#main)이 진입점이다. 검사 하나만 돌릴 때는 모듈을 직접 실행한다. 다른 프로젝트에서는 `uv run projinit` 대신 설정에서 만든 명령(`uvx --from …`)을 쓴다([설정](#11-설정)).
@@ -58,7 +59,7 @@ uv run python -m projinit.check_pr_order --pr <번호> --open-prs <파일>   # P
 
 [src/projinit/check_docs.py](../../src/projinit/check_docs.py)는 [문서 작업 규칙](../DocumentationRule.md)의 링크 규칙과 고아 문서 금지 규칙을 검증한다.
 
-- [check_links](../../src/projinit/check_docs.py#check_links): 모든 문서의 링크를 검사한다.
+- [check_links](../../src/projinit/check_docs.py#check_links): 모든 문서의 링크를 검사한다. 자료 폴더 안의 코드 파일 링크는 포인터가 아니므로 여기서 파일이 있는지만 본다.
   - 외부 링크와 코드 파일 링크는 건너뛴다. 코드 파일 링크는 [포인터 검사기](#4-포인터-검사기)가 검사한다.
   - 대상 파일이나 디렉터리가 없으면 문제다.
   - 대상이 `.md` 문서이고 앵커가 있으면, 대상 문서에 그 앵커가 있어야 한다.
@@ -244,7 +245,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 **상수와 자료형**
 
-- [CHECKS](../../src/projinit/run_checks.py#CHECKS): 실행할 검사기의 (이름, 모듈) 목록. `check_docs`, `check_pointers`, `check_tasks`, `check_hooks`, `check_commits`(이력 검사), `check_template` 순서다. 검사기는 `--root`로 루트를 넘긴다. 그 뒤에 설정의 `check.commands`를 하나씩 루트에서 셸 명령으로 실행하며, 명령 문자열을 그 검사의 이름으로 쓴다.
+- [CHECKS](../../src/projinit/run_checks.py#CHECKS): 실행할 검사기의 (이름, 모듈) 목록. `check_docs`, `check_pointers`, `check_tasks`, `check_hooks`, `check_commits`(이력 검사), `check_template`, `check_materials` 순서다. 검사기는 `--root`로 루트를 넘긴다. 그 뒤에 설정의 `check.commands`를 하나씩 루트에서 셸 명령으로 실행하며, 명령 문자열을 그 검사의 이름으로 쓴다.
 - [CheckResult](../../src/projinit/run_checks.py#CheckResult): 검사 하나의 결과. 이름, 종료 코드, 출력(표준 출력과 표준 오류를 합친 것)을 가진다.
 - [HookResponse](../../src/projinit/run_checks.py#HookResponse): hook에 돌려줄 응답. 종료 코드, 표준 출력, 표준 오류를 가진다.
 
@@ -279,8 +280,8 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 - [CONFIG_FILE](../../src/projinit/config.py#CONFIG_FILE): `projinit.toml`.
 - [INDEX_NAME](../../src/projinit/config.py#INDEX_NAME): `index.md`. 문서 디렉터리 안의 인덱스 이름이다.
-- [Config](../../src/projinit/config.py#Config): 설정 값. `version`, `source`, `command`, `docs`(기본 `docs`), `entry`(기본 `CLAUDE.md`), `code_roots`(기본 `src`, `tests`), `check_commands`(기본 없음), `commit_baseline`(기본 빈 문자열), `template`(`[template]` 표의 (키, 값) 목록, 기본 없음)을 가진다. [Config.template_values](../../src/projinit/config.py#Config.template_values)는 그것을 사전으로 돌려준다.
-- [Project](../../src/projinit/config.py#Project): 검사할 프로젝트. 루트 절대 경로와 `Config`를 가지며, [Project.docs_dir](../../src/projinit/config.py#Project.docs_dir), [Project.entry_doc](../../src/projinit/config.py#Project.entry_doc), [Project.index_doc](../../src/projinit/config.py#Project.index_doc), [Project.code_roots](../../src/projinit/config.py#Project.code_roots)로 경로를 돌려준다.
+- [Config](../../src/projinit/config.py#Config): 설정 값. `version`, `source`, `command`, `docs`(기본 `docs`), `entry`(기본 `CLAUDE.md`), `code_roots`(기본 `src`, `tests`), `reference`(기본 `reference`), `legacy`(기본 `legacy`), `check_commands`(기본 없음), `commit_baseline`(기본 빈 문자열), `template`(`[template]` 표의 (키, 값) 목록, 기본 없음)을 가진다. [Config.template_values](../../src/projinit/config.py#Config.template_values)는 그것을 사전으로 돌려준다.
+- [Project](../../src/projinit/config.py#Project): 검사할 프로젝트. 루트 절대 경로와 `Config`를 가지며, [Project.docs_dir](../../src/projinit/config.py#Project.docs_dir), [Project.entry_doc](../../src/projinit/config.py#Project.entry_doc), [Project.index_doc](../../src/projinit/config.py#Project.index_doc), [Project.code_roots](../../src/projinit/config.py#Project.code_roots), [Project.reference_dir](../../src/projinit/config.py#Project.reference_dir), [Project.legacy_dir](../../src/projinit/config.py#Project.legacy_dir)로 경로를 돌려준다. [Project.in_materials](../../src/projinit/config.py#Project.in_materials)는 경로가 두 자료 폴더 중 하나의 안에 있는지 돌려준다.
 - [ConfigError](../../src/projinit/config.py#ConfigError): 설정 오류. 메시지와 줄 번호(모르면 1)를 가진다.
 - [load_config](../../src/projinit/config.py#load_config): 루트의 설정 파일을 읽어 `Config`를 돌려준다. 파일이 없으면 기본값이다. TOML 형식 오류, 모르는 표나 키, 형이 틀린 값(문자열이어야 하는 곳에 다른 값, 문자열 목록이어야 하는 곳에 다른 값)은 `ConfigError`다.
 - [load_project](../../src/projinit/config.py#load_project): 루트를 받아 `Project`를 돌려준다. 루트는 절대 경로로 바꾼다.
@@ -307,3 +308,16 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 테스트는 [tests/test_check_template.py](../../tests/test_check_template.py)다. 갓 초기화한 폴더 통과, 손으로 고친 공통 문서, 없는 공통 파일, 빈 자리 값이 없는 설정, 버전 불일치, 실행 명령이 있으면 버전 검사를 건너뜀을 검사한다.
 
+## 15. 자료 폴더 검사기
+
+[src/projinit/check_materials.py](../../src/projinit/check_materials.py)는 [검증 도구의 자료 폴더 검사기](../VerificationTools.md#15-자료-폴더-검사기)를 구현한다. 결정의 이유는 [자료 폴더 설계](Materials.md)에 있다.
+
+- [REFERENCE_DOC](../../src/projinit/check_materials.py#REFERENCE_DOC), [LEGACY_DOC](../../src/projinit/check_materials.py#LEGACY_DOC): 목록 문서 이름 `Reference.md`, `Legacy.md`. 문서 디렉터리 안에 있다.
+- [check_listed](../../src/projinit/check_materials.py#check_listed): `Project`를 받아 두 자료 폴더마다, 폴더 아래 파일(`.git` 안은 빼고)이 있으면 목록 문서가 있는지 보고 없으면 폴더의 첫 파일에 `목록 문서 없음`을 보고한다. 목록 문서의 링크(외부 링크 제외) 대상 경로를 모아, 각 파일 자신이나 그 조상 폴더(자료 폴더 자신 포함)가 링크되지 않았으면 그 파일의 1줄에 `목록 문서에 없는 자료`를 보고한다.
+- [check_legacy_frozen](../../src/projinit/check_materials.py#check_legacy_frozen): `git ls-tree --name-only HEAD <legacy>/`로 커밋된 기존 프로젝트 폴더를 얻고, `git status --porcelain --untracked-files=all -- <legacy>/`의 변경 중 그 폴더들 안의 경로를 `커밋된 기존 프로젝트를 바꿈`으로 보고한다. 옮김은 옛 경로와 새 경로를 모두 본다. git 저장소가 아니거나 `HEAD`가 없으면 빈 목록이다.
+- [check_nested_git](../../src/projinit/check_materials.py#check_nested_git): `legacy/` 아래의 `.git`(파일이든 폴더든)을 `기존 프로젝트 안의 .git`으로 보고한다.
+- [main](../../src/projinit/check_materials.py#main): 세 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
+
+자료 폴더 안 코드 파일 링크는 [collect_code_pointers](../../src/projinit/check_pointers.py#collect_code_pointers)가 건너뛰고 [check_links](../../src/projinit/check_docs.py#check_links)가 대상 파일이 있는지 본다.
+
+테스트는 [tests/test_check_materials.py](../../tests/test_check_materials.py)다. 자료 폴더 없음, 목록 문서 없음, 목록에 없는 파일, 폴더 링크로 덮임, 커밋된 기존 프로젝트의 고침·지움·새 파일, 새 기존 프로젝트 폴더는 허용, git이 아닌 폴더, 중첩 `.git`을 검사한다. 자료 폴더 안 코드 파일 링크는 [tests/test_check_pointers.py](../../tests/test_check_pointers.py)와 [tests/test_check_docs.py](../../tests/test_check_docs.py)에서 검사한다.
