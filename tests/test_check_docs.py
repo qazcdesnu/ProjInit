@@ -31,11 +31,18 @@ class CheckDocsTest(RepoTestCase):
         self.write("docs/Rule.md", "# Rule\n\n## 1. Intro\n\n[w](https://x.y) [c](../missing.py#f)\n")
         self.assertEqual(check_links(load_project(self.root)), [])
 
-    def test_readme_links_are_checked_but_it_is_not_an_orphan(self) -> None:
+    def test_readme_links_are_checked(self) -> None:
         self.write("README.md", "# R\n\n[규칙](docs/Rule.md#1-intro) [없음](docs/Gone.md)\n")
-        project = load_project(self.root)
-        self.assertEqual([problem.message for problem in check_links(project)], ["링크 대상 없음: docs/Gone.md"])
-        self.assertEqual(find_orphans(project), [])
+        self.assertEqual([problem.message for problem in check_links(load_project(self.root))], ["링크 대상 없음: docs/Gone.md"])
+
+    def test_reports_readme_unlinked_from_index(self) -> None:
+        readme = self.write("README.md", "# R\n\n[규칙](docs/Rule.md)\n")
+        self.assertEqual([problem.path for problem in find_orphans(load_project(self.root))], [readme])
+
+    def test_readme_linked_from_index_is_not_an_orphan(self) -> None:
+        self.write("README.md", "# R\n")
+        self.write("docs/index.md", "# Index\n\n[rule](Rule.md#1-intro) [README](../README.md)\n")
+        self.assertEqual(find_orphans(load_project(self.root)), [])
 
     def test_reports_orphan(self) -> None:
         orphan = self.write("docs/Orphan.md", "# Orphan\n\n[index](index.md)\n")

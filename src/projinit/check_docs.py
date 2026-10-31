@@ -114,7 +114,7 @@ def _is_entry_item(entry: Path, docs_dir: Path, line: str) -> bool:
 
 
 def find_orphans(project: Project) -> list[Problem]:
-    """Report documents under the docs directory unreachable from the index.
+    """Report documents under the docs directory, and the README, unreachable from the index.
 
     @doc: docs/design/Checkers.md#3-문서-링크-검사기
     """
@@ -132,11 +132,11 @@ def find_orphans(project: Project) -> list[Problem]:
             if path.suffix == ".md" and path.is_file() and path not in reachable:
                 reachable.add(path)
                 queue.append(path)
-    docs_dir = project.docs_dir.resolve()
+    entry = project.entry_doc.resolve()
     return [
         Problem(doc, 1, f"고아 문서: {display_path(index, project.root)}에서 도달할 수 없음")
         for doc in find_doc_files(project)
-        if doc.resolve().is_relative_to(docs_dir) and doc.resolve() not in reachable
+        if doc.resolve() != entry and doc.resolve() not in reachable
     ]
 
 
