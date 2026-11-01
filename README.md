@@ -2,7 +2,7 @@
 
 ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서와 코드 두 축의 규칙 체계를 깔아 주고, 그 폴더에서 Claude Code를 열어 `/start`를 입력하면 Claude가 만들 프로젝트를 물어보며 첫 작업을 시작한다. 어떤 프로젝트에서든 같은 방식으로 일하는 것이 목적이다.
 
-> 상태: 최신 릴리스는 `v0.1.7`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
+> 상태: 최신 릴리스는 `v0.1.8`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
 
 ## 무엇을 해 주나
 
@@ -27,7 +27,7 @@ ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서�
 ### 새 프로젝트 시작하기
 
 ```sh
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.7 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.8 projinit init --root ~/my-project
 cd ~/my-project
 claude
 ```
@@ -38,6 +38,27 @@ Claude Code가 열리면 `/start`를 입력한다. Claude가 어떤 걸 만들�
 
 원격 저장소가 이미 있으면 `--repository <주소>`로 알려 준다. 없으면 나중에 `projinit.toml`의 `template.repository`를 고치고 `projinit init --refresh-common`을 실행한다.
 
+### 참고 자료와 함께 시작하기
+
+개발에 앞서 모은 자료(조사 메모, 명세, 논문, 외부 API 문서, 디자인 시안, 샘플 데이터 등)가 있으면 프로젝트 폴더의 `reference/`에 넣고 시작한다. 파일을 넣기만 하면 되고, 목록 정리는 Claude가 한다.
+
+```sh
+mkdir -p ~/my-project/reference
+cp ~/Downloads/payment-api.pdf ~/notes/research.md ~/my-project/reference/
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.8 projinit init --root ~/my-project
+cd ~/my-project
+claude
+```
+
+`/start`를 입력하면 Claude가 자료를 먼저 읽고 무엇을 알게 됐는지 알려 준 뒤, 그 내용에서 출발해 제품 비전과 첫 로드맵을 함께 쓴다. 자료마다 무엇이고 어디에 쓰는지 참고 자료 목록(`docs/Reference.md`)에 정리하고, 그 뒤로는 작업을 시작할 때마다 목록에서 관련 자료를 찾아 읽는다. 자료에서 정한 내용은 프로젝트 문서에 옮겨 적고 근거로 자료를 링크한다.
+
+- Claude가 바로 읽는 형식은 텍스트·마크다운·CSV·JSON, PDF, 이미지다. 워드·엑셀·파워포인트·한글 파일은 PDF나 마크다운, CSV로 바꿔 넣는다.
+- 웹 페이지는 PDF나 마크다운으로 저장해 넣는다. 자주 바뀌는 페이지는 주소만 알려 주면 목록에 출처로 적는다.
+- 자료가 많으면 주제별 하위 폴더로 나눈다. 무엇에 쓸 자료인지 한 줄씩 알려 주면 Claude가 더 잘 고른다.
+- 자료는 저장소에 커밋된다. 비밀 정보는 넣지 말고, 공개 저장소라면 공개해도 되는 자료만 넣는다.
+
+개발 중에도 언제든 자료를 더한다. 파일을 넣고 "reference에 결제 API 명세 넣었어. 결제 기능 설계에 써 줘"처럼 알려 주면 Claude가 목록에 올리고 참고한다. 알려 주지 않아도 목록에 없는 자료가 있으면 검사기가 Claude에게 알린다.
+
 ### 기존 프로젝트로 시작하기
 
 ProjInit 없이 작업하던 프로젝트가 있으면, 새 폴더의 `legacy/<이름>/`에 복사한 뒤 초기화한다. 기존 프로젝트의 `.git`과 의존성·빌드 산출물(`node_modules/`, `.venv/` 등)은 빼고 넣는다.
@@ -45,10 +66,10 @@ ProjInit 없이 작업하던 프로젝트가 있으면, 새 폴더의 `legacy/<�
 ```sh
 mkdir -p ~/my-project/legacy
 rsync -a --exclude .git --exclude node_modules ~/old-project/ ~/my-project/legacy/old-project/
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.7 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.8 projinit init --root ~/my-project
 ```
 
-`/start`를 입력하면 Claude가 기존 프로젝트를 먼저 읽고, 이해한 내용에서 출발해 제품 비전과 첫 로드맵을 함께 쓴다. 기존 프로젝트는 그 뒤로 아카이브가 되어 고치지 않는다. 개발 중에 참고할 자료(명세, 논문, 디자인 시안 등)는 언제든 `reference/`에 넣는다. 규칙은 [자료 폴더 규칙](docs/MaterialRule.md)에 있다.
+`/start`를 입력하면 Claude가 기존 프로젝트를 먼저 읽고, 이해한 내용에서 출발해 제품 비전과 첫 로드맵을 함께 쓴다. 기존 프로젝트는 그 뒤로 아카이브가 되어 고치지 않는다. 참고 자료와 함께 넣어도 되며, 그러면 둘 다 먼저 읽는다. 규칙은 [자료 폴더 규칙](docs/MaterialRule.md)에 있다.
 
 ### 이미 초기화한 프로젝트를 새 버전으로
 
