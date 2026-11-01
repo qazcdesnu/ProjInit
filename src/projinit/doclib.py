@@ -64,6 +64,15 @@ class Problem:
         return f"{display_path(self.path, root)}:{self.line}: {self.message}"
 
 
+def actual_case(path: Path, root: Path) -> str | None:
+    """Return the on-disk spelling of a path inside the root when it differs from the given one only in case.
+
+    @doc: docs/design/Checkers.md#2-공통-모듈
+    @stub: M7-T2
+    """
+    raise NotImplementedError
+
+
 def display_path(path: Path, root: Path) -> str:
     """Return the path relative to the repository root when it lies inside it.
 

@@ -51,6 +51,7 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 - [is_external](../../src/projinit/doclib.py#is_external): `http://`, `https://`, `mailto:`로 시작하는 외부 링크인지 판정한다. 외부 링크는 검사하지 않는다.
 - [resolve_link](../../src/projinit/doclib.py#resolve_link): 링크 대상을 (절대 경로, 앵커)로 나눈다. `#앵커`만 있는 링크는 출처 문서 자신을 가리킨다. 앵커는 URL 디코딩한다.
 - [slugify](../../src/projinit/doclib.py#slugify): 제목 문자열을 앵커로 바꾼다. 규칙은 [문서 작업 규칙](../DocumentationRule.md#3-링크-규칙)에 있다.
+- [actual_case](../../src/projinit/doclib.py#actual_case): 경로와 저장소 루트를 받아, 경로가 루트 안에 있고 실제로 있으며 대소문자만 다르면 디스크의 실제 이름으로 된 저장소 기준 경로를 돌려준다. 그 밖에는 `None`이다. 루트부터 경로의 각 부분을 디렉터리 목록과 정확히 비교하고, 정확한 이름이 없으면 대소문자를 무시하고 같은 이름을 찾는다. 대소문자를 구분하지 않는 파일 시스템에서는 `exists()`가 참이 되므로 디렉터리 목록으로 비교한다(M7-T2).
 - [display_path](../../src/projinit/doclib.py#display_path): 출력용 경로 문자열. 저장소 루트 기준 상대 경로이며, 루트 밖이면 절대 경로다. [Problem.format](../../src/projinit/doclib.py#Problem.format)과 검사기 메시지가 함께 쓴다.
 - [heading_anchors](../../src/projinit/doclib.py#heading_anchors): 문서의 모든 ATX 제목(`#` ~ `######`, 코드 블록 밖)의 앵커 집합. 같은 앵커가 반복되면 두 번째부터 `-1`, `-2`를 붙인다.
 - [section_anchor](../../src/projinit/doclib.py#section_anchor): 문서 내용과 줄 번호를 받아, 그 줄이 속한 절(그 줄이나 그 위의 가장 가까운 제목)의 앵커를 돌려준다. 앵커는 `heading_anchors`와 같은 규칙으로 만든다. 제목이 없으면 빈 문자열이다.
@@ -61,7 +62,7 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 
 [src/projinit/check_docs.py](../../src/projinit/check_docs.py)는 [문서 작업 규칙](../DocumentationRule.md)의 링크 규칙과 고아 문서 금지 규칙을 검증한다.
 
-- [check_links](../../src/projinit/check_docs.py#check_links): 모든 문서의 링크를 검사한다. 대상이 로컬 자료 폴더 안이면([Project.in_private](../../src/projinit/config.py#Project.in_private)) 선택 링크든 대상이 없든 `로컬 자료로 링크할 수 없음: <대상>. 경로는 인라인 코드로 적는다`를 보고하고 그 링크는 더 보지 않는다. 선택 링크는 대상이 없으면 건너뛴다. 자료 폴더 안의 코드 파일 링크는 포인터가 아니므로 여기서 파일이 있는지만 본다.
+- [check_links](../../src/projinit/check_docs.py#check_links): 모든 문서의 링크를 검사한다. 외부 링크가 아니고 로컬 자료 링크도 아니며 대상이 있는 링크(코드 파일 링크 포함)는 `actual_case`가 경로를 돌려주면 `링크 대상의 대소문자가 다름: <대상> (실제: <경로>)`를 보고한다. 대상이 로컬 자료 폴더 안이면([Project.in_private](../../src/projinit/config.py#Project.in_private)) 선택 링크든 대상이 없든 `로컬 자료로 링크할 수 없음: <대상>. 경로는 인라인 코드로 적는다`를 보고하고 그 링크는 더 보지 않는다. 선택 링크는 대상이 없으면 건너뛴다. 자료 폴더 안의 코드 파일 링크는 포인터가 아니므로 여기서 파일이 있는지만 본다.
   - 외부 링크와 코드 파일 링크는 건너뛴다. 코드 파일 링크는 [포인터 검사기](#4-포인터-검사기)가 검사한다.
   - 대상 파일이나 디렉터리가 없으면 문제다.
   - 대상이 `.md` 문서이고 앵커가 있으면, 대상 문서에 그 앵커가 있어야 한다.
@@ -85,7 +86,7 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 **함수**
 
 - [collect_code_pointers](../../src/projinit/check_pointers.py#collect_code_pointers): 모든 문서에서 코드 포인터를 모으고 검사한다. 대상 파일이 없거나, 앵커가 줄 번호 형식(`L` 뒤에 숫자)이거나, 구문 트리에 해당 한정 이름이 없으면 문제다. 코드 루트 밖의 코드 파일은 가리키는 문서가 있을 때 분석한다.
-- [check_doc_pointers](../../src/projinit/check_pointers.py#check_doc_pointers): 코드 → 문서 포인터의 대상 문서와 앵커가 존재하는지 검사한다.
+- [check_doc_pointers](../../src/projinit/check_pointers.py#check_doc_pointers): 코드 → 문서 포인터의 대상 문서와 앵커가 존재하는지 검사한다. 근거 문서가 있으면 `actual_case`로 `근거 문서의 대소문자가 다름: <경로> (실제: <경로>)`도 보고한다(M7-T2).
 - [check_coverage](../../src/projinit/check_pointers.py#check_coverage): [커버리지 규칙](../Traceability.md#4-커버리지-규칙)을 검사한다.
   - 코드가 없는 파일(`ModuleIndex.has_code`가 거짓)은 건너뛴다.
   - 파일 자체에 포인터가 없으면 1줄에 문제를 보고한다.
