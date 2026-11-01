@@ -55,6 +55,18 @@ class CheckDocsTest(RepoTestCase):
             ],
         )
 
+    def test_reports_links_whose_case_differs(self) -> None:
+        self.write("src/App.py", "x = 1\n")
+        self.write("docs/Rule.md", "# Rule\n\n## 1. Intro\n\n[i](INDEX.md) [c](../src/app.py#x) [ok](index.md)\n")
+        messages = [problem.message for problem in check_links(load_project(self.root))]
+        if (self.root / "docs/INDEX.md").exists():
+            self.assertEqual(
+                messages,
+                ["링크 대상의 대소문자가 다름: INDEX.md (실제: docs/index.md)", "링크 대상의 대소문자가 다름: ../src/app.py#x (실제: src/App.py)"],
+            )
+        else:
+            self.assertEqual(messages, ["링크 대상 없음: INDEX.md"])
+
     def test_optional_link_may_have_no_target(self) -> None:
         self.write("docs/Rule.md", '# Rule\n\n## 1. Intro\n\n[R](../README.md "선택") [S](Gone.md "설명")\n')
         self.assertEqual([problem.message for problem in check_links(load_project(self.root))], ["링크 대상 없음: Gone.md"])

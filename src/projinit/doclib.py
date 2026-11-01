@@ -3,6 +3,7 @@
 @doc: docs/design/Checkers.md#2-공통-모듈
 """
 
+import os
 import re
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -68,9 +69,26 @@ def actual_case(path: Path, root: Path) -> str | None:
     """Return the on-disk spelling of a path inside the root when it differs from the given one only in case.
 
     @doc: docs/design/Checkers.md#2-공통-모듈
-    @stub: M7-T2
     """
-    raise NotImplementedError
+    root = root.resolve()
+    absolute = path if path.is_absolute() else root / path
+    absolute = Path(os.path.normpath(absolute))
+    if not absolute.is_relative_to(root) or not absolute.exists():
+        return None
+    current, parts, differs = root, [], False
+    for part in absolute.relative_to(root).parts:
+        try:
+            entries = os.listdir(current)
+        except OSError:
+            return None
+        if part not in entries:
+            matches = [entry for entry in entries if entry.lower() == part.lower()]
+            if not matches:
+                return None
+            part, differs = matches[0], True
+        parts.append(part)
+        current = current / part
+    return "/".join(parts) if differs else None
 
 
 def display_path(path: Path, root: Path) -> str:

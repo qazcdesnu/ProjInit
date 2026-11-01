@@ -14,6 +14,7 @@ from projinit.code_index import ModuleIndex, SymbolRef, index_module
 from projinit.config import ConfigError, Project, load_project, report_config_error
 from projinit.doclib import (
     CODE_SUFFIXES,
+    actual_case,
     Problem,
     display_path,
     extract_links,
@@ -97,6 +98,10 @@ def check_doc_pointers(root: Path, modules: dict[Path, ModuleIndex]) -> list[Pro
             target = display_path(pointer.doc, root)
             if pointer.doc.suffix != ".md" or not pointer.doc.is_file():
                 problems.append(Problem(module.path, pointer.line, f"근거 문서 없음: {target}"))
+                continue
+            actual = actual_case(pointer.doc, root)
+            if actual is not None:
+                problems.append(Problem(module.path, pointer.line, f"근거 문서의 대소문자가 다름: {target} (실제: {actual})"))
                 continue
             if not pointer.anchor:
                 continue

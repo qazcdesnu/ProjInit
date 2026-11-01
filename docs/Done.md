@@ -3,6 +3,39 @@
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M2 초기화](Done-M2.md), [M3 갱신](Done-M3.md), [M4 첫 적용](Done-M4.md), [M5 갱신](Done-M5.md), [M6 자료 폴더](Done-M6.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
 
+## M7-T2 대소문자만 다른 링크를 로컬에서도 잡는 검사
+
+- 시작일: 2026-11-01
+- 완료일: 2026-11-01
+- 근거 문서: [문서 작업 규칙](DocumentationRule.md#3-링크-규칙), [검증 도구](VerificationTools.md#3-문서-링크-검사기)
+- 참고 자료: 없음
+
+### 계획
+- 링크 경로와 `@doc:` 경로는 대소문자까지 실제 파일 이름과 같아야 한다는 규칙을 문서 작업 규칙과 포인터 규약에 적는다.
+- 공통 모듈에 실제 대소문자 경로를 찾는 함수를 두고, 문서 링크 검사기(코드 포인터 포함)와 포인터 검사기의 `@doc:` 검사가 쓴다.
+- 대소문자를 구분하지 않는 파일 시스템(macOS 기본)에서도 Stop hook과 pre-commit이 잡는다. CI 절의 설명을 고친다.
+
+### 진행 기록
+- 2026-11-01: 전수조사에서 대소문자만 다른 링크가 macOS에서는 통과하고 CI에서만 잡히는 것을 확인했다(M7-T1 기록). 사용자가 검토한 대로 진행하라고 했다.
+- 2026-11-01: `actual_case`를 구현해 `check_links`와 `check_doc_pointers`가 쓰게 했다. 전수조사의 D14 경우(대소문자만 다른 링크)를 지금 코드로 다시 돌리자 `링크 대상의 대소문자가 다름`으로 잡혔다.
+
+### 결정 사항
+- 디렉터리 목록으로 각 경로 부분을 비교한다. 대소문자를 구분하지 않는 파일 시스템에서는 `exists()`가 참이 되어 존재 검사로는 알 수 없다.
+- 테스트는 파일 시스템에 따라 갈린다. 구분하지 않는 곳에서는 대소문자 메시지를, 구분하는 곳(CI)에서는 기존의 대상 없음 메시지를 기대한다. 어느 쪽이든 잡히는지를 본다.
+
+### 변경 파일
+- `docs/Roadmap.md`, `docs/Ongoing.md`, `docs/Done.md`
+- 템플릿: `src/projinit/templates/docs/DocumentationRule.md`, `Traceability.md`, `VerificationTools.md`, 그리고 다시 만든 이 저장소의 같은 문서
+- `src/projinit/doclib.py`, `src/projinit/check_docs.py`, `src/projinit/check_pointers.py`, `docs/design/Checkers.md`
+- `tests/unit/test_doclib.py`, `tests/unit/test_check_docs.py`, `tests/unit/test_check_pointers.py`
+
+### 결과
+- 대소문자만 다른 문서 링크, 코드 포인터, `@doc:` 경로를 macOS에서도 Stop hook과 pre-commit이 잡는다.
+
+### 검증
+- `uv run projinit check`: 모두 통과
+- 전수조사 D14 경우: 지금 코드로 잡힘
+
 ## M7-T1 테스트 종류와 배치의 공통 규칙
 
 - 시작일: 2026-11-01

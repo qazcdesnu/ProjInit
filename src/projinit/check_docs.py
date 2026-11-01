@@ -11,6 +11,7 @@ from pathlib import Path
 from projinit.config import ConfigError, Project, load_project, report_config_error
 from projinit.doclib import (
     CODE_SUFFIXES,
+    actual_case,
     display_path,
     Problem,
     extract_links,
@@ -37,6 +38,10 @@ def check_links(project: Project) -> list[Problem]:
             path, anchor = resolve_link(link)
             if project.in_private(path):
                 problems.append(Problem(doc, link.line, f"로컬 자료로 링크할 수 없음: {link.target}. 경로는 인라인 코드로 적는다"))
+                continue
+            actual = actual_case(path, project.root)
+            if actual is not None:
+                problems.append(Problem(doc, link.line, f"링크 대상의 대소문자가 다름: {link.target} (실제: {actual})"))
                 continue
             if path.suffix in CODE_SUFFIXES and not project.in_materials(path):
                 continue
