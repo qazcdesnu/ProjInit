@@ -43,7 +43,9 @@ _EXTERNAL_PREFIXES = ("http://", "https://", "mailto:")
 _FENCE_RE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
 # A backreference so that ``` `` `x` `` ``` style spans close on the same run length.
 _INLINE_CODE_RE = re.compile(r"(`+)(.+?)\1")
-_LINK_RE = re.compile(r"(?<!!)\[([^\]]*)\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
+_LINK_RE = re.compile(r"(?<!!)\[([^\]]*)\]\(([^)\s]+)(?:\s+\"([^\"]*)\")?\)")
+# @doc: docs/design/Checkers.md#2-공통-모듈
+OPTIONAL_TITLE = "선택"
 _HEADING_RE = re.compile(r"^\s{0,3}(#{1,6})\s+(.+?)(?:\s+#+)?\s*$")
 
 
@@ -84,6 +86,7 @@ class Link:
     line: int
     text: str
     target: str
+    optional: bool = False
 
 
 def find_doc_files(project: Project) -> list[Path]:
@@ -152,7 +155,7 @@ def extract_links(source: Path, text: str) -> list[Link]:
     links = []
     for number, line in iter_prose_lines(text):
         for match in _LINK_RE.finditer(strip_inline_code(line)):
-            links.append(Link(source, number, match.group(1), match.group(2)))
+            links.append(Link(source, number, match.group(1), match.group(2), match.group(3) == OPTIONAL_TITLE))
     return links
 
 

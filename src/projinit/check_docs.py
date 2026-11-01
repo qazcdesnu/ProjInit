@@ -38,6 +38,8 @@ def check_links(project: Project) -> list[Problem]:
             if path.suffix in CODE_SUFFIXES and not project.in_materials(path):
                 continue
             if not path.exists():
+                if link.optional:
+                    continue
                 problems.append(Problem(doc, link.line, f"링크 대상 없음: {link.target}"))
                 continue
             if anchor and path.suffix == ".md":

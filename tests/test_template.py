@@ -48,7 +48,7 @@ class RenderedProjectTest(RepoTestCase):
         for relative in COMMON_FILES:
             path = self.root / relative
             for link in extract_links(path, path.read_text(encoding="utf-8")):
-                if is_external(link.target):
+                if is_external(link.target) or link.optional:
                     continue
                 self.assertIn(resolve_link(link)[0], generated, f"{relative}:{link.line} {link.target}")
 

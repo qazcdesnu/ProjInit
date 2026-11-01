@@ -40,6 +40,17 @@ class CheckDocsTest(RepoTestCase):
         self.write("docs/Rule.md", "# Rule\n\n## 1. Intro\n\n[a](../legacy/old/app.py#run) [b](../legacy/old/gone.py) [c](../src/gone.py)\n")
         self.assertEqual([problem.message for problem in check_links(load_project(self.root))], ["링크 대상 없음: ../legacy/old/gone.py"])
 
+    def test_optional_link_may_have_no_target(self) -> None:
+        self.write("docs/Rule.md", '# Rule\n\n## 1. Intro\n\n[R](../README.md "선택") [S](Gone.md "설명")\n')
+        self.assertEqual([problem.message for problem in check_links(load_project(self.root))], ["링크 대상 없음: Gone.md"])
+
+    def test_optional_link_is_checked_and_followed_when_its_target_exists(self) -> None:
+        self.write("README.md", "# R\n")
+        self.write("docs/Rule.md", '# Rule\n\n## 1. Intro\n\n[R](../README.md#nope "선택")\n')
+        project = load_project(self.root)
+        self.assertEqual([problem.message for problem in check_links(project)], ["앵커 없음: ../README.md#nope"])
+        self.assertEqual(find_orphans(project), [])
+
     def test_reports_readme_unlinked_from_index(self) -> None:
         readme = self.write("README.md", "# R\n\n[규칙](docs/Rule.md)\n")
         self.assertEqual([problem.path for problem in find_orphans(load_project(self.root))], [readme])
