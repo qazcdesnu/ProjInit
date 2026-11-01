@@ -50,6 +50,15 @@ def _capped(items: list[str]) -> list[str]:
     return items[:MAX_ITEMS] + [f"- … 외 {len(items) - MAX_ITEMS}개"]
 
 
+def private_context(project: Project) -> str:
+    """Return the context text about the private folder, or an empty string when it has no files.
+
+    @doc: docs/design/Checkers.md#16-세션-시작-안내
+    @stub: I24
+    """
+    raise NotImplementedError
+
+
 def main(argv: list[str] | None = None) -> int:
     """Print the session context and return 0 even when something goes wrong.
 

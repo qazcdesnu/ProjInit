@@ -91,6 +91,15 @@ def check_legacy_frozen(project: Project) -> list[Problem]:
     return problems
 
 
+def check_private(project: Project) -> list[Problem]:
+    """Report private files that git does not ignore or already tracks.
+
+    @doc: docs/design/Checkers.md#15-자료-폴더-검사기
+    @stub: I24
+    """
+    raise NotImplementedError
+
+
 def check_nested_git(project: Project) -> list[Problem]:
     """Report .git entries under the legacy folder.
 
