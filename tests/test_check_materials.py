@@ -7,7 +7,7 @@ import subprocess
 import unittest
 
 from tests.support import RepoTestCase
-from projinit.check_materials import check_legacy_frozen, check_listed, check_nested_git
+from projinit.check_materials import check_legacy_frozen, check_listed, check_nested_git, unlisted_files
 from projinit.config import load_project
 
 
@@ -17,16 +17,31 @@ class ListedTest(RepoTestCase):
     def test_passes_without_material_folders(self) -> None:
         self.assertEqual(check_listed(load_project(self.root)), [])
 
-    def test_reports_missing_list_document(self) -> None:
-        paper = self.write("reference/paper.pdf", "x")
-        problems = check_listed(load_project(self.root))
-        self.assertEqual([(problem.path, problem.message) for problem in problems], [(paper, "목록 문서 없음: docs/Reference.md")])
-
-    def test_reports_unlisted_file(self) -> None:
+    def test_reference_needs_no_list(self) -> None:
         self.write("reference/paper.pdf", "x")
-        spec = self.write("reference/spec.txt", "x")
+        self.write("reference/spec.txt", "x")
+        self.assertEqual(check_listed(load_project(self.root)), [])
         self.write("docs/Reference.md", "# R\n\n[논문](../reference/paper.pdf)\n")
-        self.assertEqual([problem.path for problem in check_listed(load_project(self.root))], [spec])
+        self.assertEqual(check_listed(load_project(self.root)), [])
+
+    def test_reports_missing_legacy_list_document(self) -> None:
+        main = self.write("legacy/old-app/main.py", "x")
+        problems = check_listed(load_project(self.root))
+        self.assertEqual([(problem.path, problem.message) for problem in problems], [(main, "목록 문서 없음: docs/Legacy.md")])
+
+    def test_reports_unlisted_legacy_file(self) -> None:
+        self.write("legacy/a/main.py", "x")
+        other = self.write("legacy/b/main.py", "x")
+        self.write("docs/Legacy.md", "# L\n\n[a](../legacy/a/)\n")
+        self.assertEqual([problem.path for problem in check_listed(load_project(self.root))], [other])
+
+    def test_unlisted_files(self) -> None:
+        paper = self.write("reference/paper.pdf", "x")
+        spec = self.write("reference/api/spec.txt", "x")
+        list_doc = self.root / "docs/Reference.md"
+        self.assertEqual(unlisted_files(self.root / "reference", list_doc), [spec, paper])
+        self.write("docs/Reference.md", "# R\n\n[API](../reference/api/)\n")
+        self.assertEqual(unlisted_files(self.root / "reference", list_doc), [paper])
 
     def test_folder_link_covers_its_files(self) -> None:
         self.write("legacy/old-app/src/main.py", "print(1)\n")
@@ -35,9 +50,9 @@ class ListedTest(RepoTestCase):
         self.assertEqual(check_listed(load_project(self.root)), [])
 
     def test_honours_configured_folders(self) -> None:
-        self.write("projinit.toml", '[paths]\nreference = "refs"\n')
-        notes = self.write("refs/notes.txt", "x")
-        self.write("reference/ignored.txt", "x")
+        self.write("projinit.toml", '[paths]\nlegacy = "old"\n')
+        notes = self.write("old/app/notes.txt", "x")
+        self.write("legacy/ignored.txt", "x")
         self.assertEqual([problem.path for problem in check_listed(load_project(self.root))], [notes])
 
 

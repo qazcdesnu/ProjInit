@@ -85,6 +85,7 @@ hook이 실행하는 명령은 설정의 `projinit.command`다. 비어 있으면
 | 장치 | 실행하는 명령 |
 | --- | --- |
 | Stop hook | `cd "$CLAUDE_PROJECT_DIR" && <command> check --hook stop` |
+| SessionStart hook | `cd "$CLAUDE_PROJECT_DIR" && <command> context` |
 | pre-commit | `<command> check --hook pre-commit` |
 | commit-msg | `<command> commit-msg "$1"` |
 

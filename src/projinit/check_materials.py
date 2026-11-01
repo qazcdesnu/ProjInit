@@ -1,4 +1,4 @@
-"""Verify the reference and legacy folders: every file listed, legacy projects left as they were.
+"""Verify the material folders: every legacy file listed and left as it was.
 
 @doc: docs/design/Checkers.md#15-자료-폴더-검사기
 """
@@ -17,37 +17,52 @@ REFERENCE_DOC = "Reference.md"
 LEGACY_DOC = "Legacy.md"
 
 
-def _material_files(folder: Path) -> list[Path]:
+def material_files(folder: Path) -> list[Path]:
+    """Return the files under a material folder, outside .git, sorted.
+
+    @doc: docs/design/Checkers.md#15-자료-폴더-검사기
+    """
     if not folder.is_dir():
         return []
     return sorted(path for path in folder.rglob("*") if path.is_file() and ".git" not in path.relative_to(folder).parts)
 
 
-def check_listed(project: Project) -> list[Problem]:
-    """Report material files that their folder's list document does not link.
+def unlisted_files(folder: Path, list_doc: Path) -> list[Path]:
+    """Return the files of a material folder that the list document does not link.
 
     @doc: docs/design/Checkers.md#15-자료-폴더-검사기
     """
-    problems = []
-    for folder, name in ((project.reference_dir, REFERENCE_DOC), (project.legacy_dir, LEGACY_DOC)):
-        files = _material_files(folder)
-        if not files:
-            continue
-        list_doc = project.docs_dir / name
-        if not list_doc.is_file():
-            problems.append(Problem(files[0], 1, f"목록 문서 없음: {project.config.docs}/{name}"))
-            continue
-        linked = {
-            resolve_link(link)[0]
-            for link in extract_links(list_doc.resolve(), list_doc.read_text(encoding="utf-8"))
-            if not is_external(link.target)
-        }
-        top = folder.resolve()
-        for path in files:
-            path = path.resolve()
-            if not any(candidate in linked for candidate in (path, *path.parents) if candidate.is_relative_to(top)):
-                problems.append(Problem(path, 1, f"목록 문서에 없는 자료: {project.config.docs}/{name}에 링크 필요"))
-    return problems
+    files = material_files(folder)
+    if not list_doc.is_file():
+        return files
+    linked = {
+        resolve_link(link)[0]
+        for link in extract_links(list_doc.resolve(), list_doc.read_text(encoding="utf-8"))
+        if not is_external(link.target)
+    }
+    top = folder.resolve()
+    return [
+        path
+        for path in files
+        if not any(candidate in linked for candidate in (path.resolve(), *path.resolve().parents) if candidate.is_relative_to(top))
+    ]
+
+
+def check_listed(project: Project) -> list[Problem]:
+    """Report legacy files that the legacy list document does not link.
+
+    @doc: docs/design/Checkers.md#15-자료-폴더-검사기
+    """
+    files = material_files(project.legacy_dir)
+    if not files:
+        return []
+    list_doc = project.docs_dir / LEGACY_DOC
+    if not list_doc.is_file():
+        return [Problem(files[0], 1, f"목록 문서 없음: {project.config.docs}/{LEGACY_DOC}")]
+    return [
+        Problem(path, 1, f"목록 문서에 없는 자료: {project.config.docs}/{LEGACY_DOC}에 링크 필요")
+        for path in unlisted_files(project.legacy_dir, list_doc)
+    ]
 
 
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -104,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
     if problems:
         print(f"check_materials: 문제 {len(problems)}건")
         return 1
-    counts = (len(_material_files(project.reference_dir)), len(_material_files(project.legacy_dir)))
+    counts = (len(material_files(project.reference_dir)), len(material_files(project.legacy_dir)))
     print(f"check_materials: 통과 (참고 자료 {counts[0]}개, 기존 프로젝트 파일 {counts[1]}개)")
     return 0
 

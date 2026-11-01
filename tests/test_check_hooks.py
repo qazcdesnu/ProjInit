@@ -13,6 +13,7 @@ from projinit.check_hooks import (
     check_commit_msg_hook,
     check_hooks_path,
     check_pre_commit,
+    check_session_start_hook,
     check_stop_hook,
     hook_commands,
     projinit_command,
@@ -27,6 +28,7 @@ class HookCommandsTest(unittest.TestCase):
 
     def test_commands_come_from_the_settings(self) -> None:
         self.assertEqual(_COMMANDS.stop, 'cd "$CLAUDE_PROJECT_DIR" && uv run projinit check --hook stop')
+        self.assertEqual(_COMMANDS.session_start, 'cd "$CLAUDE_PROJECT_DIR" && uv run projinit context')
         self.assertEqual(_COMMANDS.pre_commit, "uv run projinit check --hook pre-commit")
         self.assertEqual(_COMMANDS.commit_msg, 'uv run projinit commit-msg "$1"')
 
@@ -44,7 +46,7 @@ class CheckHooksTest(RepoTestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.write_settings({"hooks": {"Stop": [{"hooks": [{"type": "command", "command": _COMMANDS.stop}]}]}})
+        self.write_settings(self.settings(_COMMANDS.stop, _COMMANDS.session_start))
         hook = self.write(".githooks/pre-commit", f"#!/bin/sh\nexec {_COMMANDS.pre_commit}\n")
         hook.chmod(0o755)
         self.write(".githooks/commit-msg", f"#!/bin/sh\nexec {_COMMANDS.commit_msg}\n").chmod(0o755)
@@ -54,6 +56,15 @@ class CheckHooksTest(RepoTestCase):
     def git(self, *args: str) -> None:
         subprocess.run(["git", "-C", str(self.root), *args], check=True, capture_output=True)
 
+    @staticmethod
+    def settings(stop: str, session_start: str) -> object:
+        return {
+            "hooks": {
+                "SessionStart": [{"hooks": [{"type": "command", "command": session_start}]}],
+                "Stop": [{"hooks": [{"type": "command", "command": stop}]}],
+            }
+        }
+
     def write_settings(self, settings: object) -> None:
         self.write(".claude/settings.json", json.dumps(settings))
 
@@ -61,6 +72,7 @@ class CheckHooksTest(RepoTestCase):
         project = load_project(self.root)
         problems = (
             check_stop_hook(project, _COMMANDS.stop)
+            + check_session_start_hook(project, _COMMANDS.session_start)
             + check_pre_commit(project, _COMMANDS.pre_commit)
             + check_commit_msg_hook(project, _COMMANDS.commit_msg)
             + check_hooks_path(self.root)
@@ -75,8 +87,13 @@ class CheckHooksTest(RepoTestCase):
         self.assertIn("Claude Code 설정 없음: .claude/settings.json", self.messages())
         self.write(".claude/settings.json", "{not json")
         self.assertTrue(self.messages()[0].startswith("JSON 형식 오류"))
-        self.write_settings({"hooks": {"Stop": [{"hooks": [{"type": "command", "command": "true"}]}]}})
+        self.assertFalse(any(message.startswith("SessionStart") for message in self.messages()))
+        self.write_settings(self.settings("true", _COMMANDS.session_start))
         self.assertIn(f"Stop hook에 검사 명령 없음: {_COMMANDS.stop}", self.messages())
+
+    def test_reports_missing_session_start_hook(self) -> None:
+        self.write_settings({"hooks": {"Stop": [{"hooks": [{"type": "command", "command": _COMMANDS.stop}]}]}})
+        self.assertEqual(self.messages(), [f"SessionStart hook에 안내 명령 없음: {_COMMANDS.session_start}"])
 
     def test_reports_pre_commit_problems(self) -> None:
         hook = self.root / ".githooks/pre-commit"

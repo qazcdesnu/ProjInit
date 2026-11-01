@@ -2,7 +2,7 @@
 
 ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서와 코드 두 축의 규칙 체계를 깔아 주고, 그 폴더에서 Claude Code를 열어 `/start`를 입력하면 Claude가 만들 프로젝트를 물어보며 첫 작업을 시작한다. 어떤 프로젝트에서든 같은 방식으로 일하는 것이 목적이다.
 
-> 상태: 최신 릴리스는 `v0.1.8`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
+> 상태: 최신 릴리스는 `v0.1.9`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
 
 ## 무엇을 해 주나
 
@@ -12,7 +12,7 @@ ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서�
 - **문서 ↔ 코드 포인터**: 문서는 코드의 심볼을, 코드는 근거 문서를 가리킨다. 개발 언어와 무관하다(Python, JavaScript, TypeScript, Rust, C, C++, Go, Java).
 - **작업 ID와 기록**: 모든 작업이 로드맵·이슈의 ID로 시작하고 끝나며, 진행 중·완료 기록이 남는다.
 - **커밋과 PR 규칙**: 커밋 제목은 작업 ID로 시작하고, 작업마다 브랜치를 만들어 PR로 합친다.
-- **자료 폴더**: 개발 중 참고하는 자료는 `reference/`에, ProjInit 없이 작업하던 기존 프로젝트는 `legacy/`에 둔다. 모든 자료는 목록 문서에 링크되고, 기존 프로젝트는 넣은 뒤 고치지 못하게 검사한다.
+- **자료 폴더**: 개발 중 참고하는 자료는 `reference/`에, ProjInit 없이 작업하던 기존 프로젝트는 `legacy/`에 둔다. 세션을 시작할 때마다 참고 자료를 Claude에게 알려 주고, 기존 프로젝트는 넣은 뒤 고치지 못하게 검사한다.
 - **자동 검사**: Claude가 턴을 끝낼 때(Stop hook), 커밋할 때(pre-commit, commit-msg), PR을 열 때(GitHub Actions) 규칙을 검사한다. 사람이 검사를 기억할 필요가 없다.
 
 ## 필요한 것
@@ -27,7 +27,7 @@ ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서�
 ### 새 프로젝트 시작하기
 
 ```sh
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.8 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.9 projinit init --root ~/my-project
 cd ~/my-project
 claude
 ```
@@ -45,19 +45,21 @@ Claude Code가 열리면 `/start`를 입력한다. Claude가 어떤 걸 만들�
 ```sh
 mkdir -p ~/my-project/reference
 cp ~/Downloads/payment-api.pdf ~/notes/research.md ~/my-project/reference/
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.8 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.9 projinit init --root ~/my-project
 cd ~/my-project
 claude
 ```
 
-`/start`를 입력하면 Claude가 자료를 먼저 읽고 무엇을 알게 됐는지 알려 준 뒤, 그 내용에서 출발해 제품 비전과 첫 로드맵을 함께 쓴다. 자료마다 무엇이고 어디에 쓰는지 참고 자료 목록(`docs/Reference.md`)에 정리하고, 그 뒤로는 작업을 시작할 때마다 목록에서 관련 자료를 찾아 읽는다. 자료에서 정한 내용은 프로젝트 문서에 옮겨 적고 근거로 자료를 링크한다.
+`/start`를 입력하면 Claude가 자료를 먼저 읽고 무엇을 알게 됐는지 알려 준 뒤, 그 내용에서 출발해 제품 비전과 첫 로드맵을 함께 쓴다. 자료마다 무엇이고 어디에 쓰는지는 참고 자료 목록(`docs/Reference.md`)에 정리한다. 자료에서 정한 내용은 프로젝트 문서에 옮겨 적고 근거로 자료를 링크한다.
+
+Claude Code 세션이 시작될 때마다 hook이 `reference/`에 어떤 자료가 있는지(목록 항목과 아직 목록에 없는 자료) Claude에게 알려 준다. 그래서 Claude가 자료를 잊지 않고, 작업을 시작할 때 관련 자료를 찾아 읽은 뒤 무엇을 참고했는지 작업 기록에 남긴다.
 
 - Claude가 바로 읽는 형식은 텍스트·마크다운·CSV·JSON, PDF, 이미지다. 워드·엑셀·파워포인트·한글 파일은 PDF나 마크다운, CSV로 바꿔 넣는다.
 - 웹 페이지는 PDF나 마크다운으로 저장해 넣는다. 자주 바뀌는 페이지는 주소만 알려 주면 목록에 출처로 적는다.
 - 자료가 많으면 주제별 하위 폴더로 나눈다. 무엇에 쓸 자료인지 한 줄씩 알려 주면 Claude가 더 잘 고른다.
 - 자료는 저장소에 커밋된다. 비밀 정보는 넣지 말고, 공개 저장소라면 공개해도 되는 자료만 넣는다.
 
-개발 중에도 언제든 자료를 더한다. 파일을 넣고 "reference에 결제 API 명세 넣었어. 결제 기능 설계에 써 줘"처럼 알려 주면 Claude가 목록에 올리고 참고한다. 알려 주지 않아도 목록에 없는 자료가 있으면 검사기가 Claude에게 알린다.
+개발 중에도 언제든 자료를 더한다. 목록에 올리지 않아도 되므로 넣고 바로 커밋할 수 있다. 커밋 메시지에는 작업 ID가 필요하니 Claude에게 "reference에 결제 API 명세 넣었어. 결제 기능 설계에 써 줘"처럼 맡기는 것이 가장 쉽다. 어디에 쓸지 알려 주면 목록에 올리고, 알려 주지 않아도 다음 세션부터 Claude가 그 자료가 있다는 것을 안다.
 
 ### 기존 프로젝트로 시작하기
 
@@ -66,7 +68,7 @@ ProjInit 없이 작업하던 프로젝트가 있으면, 새 폴더의 `legacy/<�
 ```sh
 mkdir -p ~/my-project/legacy
 rsync -a --exclude .git --exclude node_modules ~/old-project/ ~/my-project/legacy/old-project/
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.8 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.9 projinit init --root ~/my-project
 ```
 
 `/start`를 입력하면 Claude가 기존 프로젝트를 먼저 읽고, 이해한 내용에서 출발해 제품 비전과 첫 로드맵을 함께 쓴다. 기존 프로젝트는 그 뒤로 아카이브가 되어 고치지 않는다. 참고 자료와 함께 넣어도 되며, 그러면 둘 다 먼저 읽는다. 규칙은 [자료 폴더 규칙](docs/MaterialRule.md)에 있다.
@@ -79,7 +81,7 @@ uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.8 projinit init --root
 uvx --from git+https://github.com/qazcdesnu/ProjInit@v<새 버전> projinit upgrade
 ```
 
-설정의 버전을 바꾸고 공통 규칙 문서와 자동 검사 장치를 새 버전으로 다시 만든다. 커밋하지 않은 변경이 있으면 진행 중인 작업과 섞이지 않도록 거부한다. 이 명령은 커밋하지 않으므로, 끝나면 Claude Code에서 "ProjInit 업데이트를 작업으로 등록해 커밋해 줘"라고 맡긴다. Claude가 바뀐 규칙을 알려 주고 커밋한다. Claude에게 갱신 자체를 맡겨도 된다.
+설정의 버전을 바꾸고 공통 규칙 문서와 자동 검사 장치를 새 버전으로 다시 만든다. 커밋하지 않은 변경이 있으면 진행 중인 작업과 섞이지 않도록 거부한다. 검사 때문에 그 변경을 커밋할 수 없으면 `git stash -u`로 치워 두고 갱신한 뒤, 갱신을 커밋하고 `git stash pop`으로 되돌린다. 이 명령은 커밋하지 않으므로, 끝나면 Claude Code에서 "ProjInit 업데이트를 작업으로 등록해 커밋해 줘"라고 맡긴다. Claude가 바뀐 규칙을 알려 주고 커밋한다. Claude에게 갱신 자체를 맡겨도 된다.
 
 ### 초기화가 만드는 것
 
@@ -89,7 +91,7 @@ uvx --from git+https://github.com/qazcdesnu/ProjInit@v<새 버전> projinit upgr
 | 공통 규칙 문서 | `docs/`의 문서 작업·코드 작업·포인터·작업 관리·커밋·PR·자료 폴더 규칙, 검증 도구 |
 | 작업 관리 문서 | `docs/index.md`, `docs/Roadmap.md`, `docs/Ongoing.md`, `docs/Done.md`, `docs/Issue.md` |
 | 설정 | `projinit.toml` |
-| 자동 검사 장치 | `.claude/settings.json`(Stop hook), `.githooks/pre-commit`, `.githooks/commit-msg`, `.github/workflows/verify.yml`, `.github/pull_request_template.md` |
+| 자동 검사 장치 | `.claude/settings.json`(Stop hook, 세션 시작 안내 hook), `.githooks/pre-commit`, `.githooks/commit-msg`, `.github/workflows/verify.yml`, `.github/pull_request_template.md` |
 | 첫 작업 명령 | `.claude/commands/start.md` (`/start`) |
 
 제품 비전, 시스템 구조, 상세 설계 같은 프로젝트 고유 문서는 만들지 않는다. `/start`로 시작하는 첫 작업에서 사용자와 함께 쓴다. 자세한 구성은 [템플릿 구성 설계](docs/design/Templates.md)에 있다.
@@ -104,6 +106,7 @@ uvx --from git+https://github.com/qazcdesnu/ProjInit@v<새 버전> projinit upgr
 | `projinit upgrade` | 이미 초기화한 프로젝트를 실행한 ProjInit 버전으로 갱신한다. |
 | `projinit init --refresh-common` | 공통 규칙 문서와 자동 검사 장치를 지금 설정 값으로 다시 만든다. |
 | `projinit check` | 모든 검사와 프로젝트 테스트를 한 번에 실행한다. 작업을 마치기 전에 직접 실행해도 된다. |
+| `projinit context` | 세션 시작 안내(참고 자료 목록)를 출력한다(SessionStart hook용). |
 | `projinit commit-msg`, `commits`, `pr-order` | 커밋 메시지, PR 제목·브랜치, PR 순서를 검사한다(hook과 CI용). |
 
 검사 항목과 설정 파일 형식은 [검증 도구](docs/VerificationTools.md)에 있다.

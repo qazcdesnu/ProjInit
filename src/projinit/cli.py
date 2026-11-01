@@ -7,7 +7,7 @@ import argparse
 import sys
 from collections.abc import Callable
 
-from projinit import check_commits, check_pr_order, init, run_checks, upgrade
+from projinit import check_commits, check_pr_order, init, run_checks, session_context, upgrade
 
 _SUBCOMMANDS: dict[str, Callable[[list[str] | None], int]] = {
     "check": run_checks.main,
@@ -16,6 +16,7 @@ _SUBCOMMANDS: dict[str, Callable[[list[str] | None], int]] = {
     "pr-order": check_pr_order.main,
     "init": init.main,
     "upgrade": upgrade.main,
+    "context": session_context.main,
 }
 
 
