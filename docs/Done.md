@@ -3,6 +3,50 @@
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M2 초기화](Done-M2.md), [M3 갱신](Done-M3.md), [M4 첫 적용](Done-M4.md), [M5 갱신](Done-M5.md), [M6 자료 폴더](Done-M6.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
 
+## I23 참고 자료 목록 강제를 빼고 세션 시작 때 자료를 알림
+
+- 시작일: 2026-11-01
+- 완료일: 2026-11-01
+- 근거 문서: [자료 폴더 규칙](MaterialRule.md), [검증 도구](VerificationTools.md)
+- 참고 자료: 없음
+
+### 계획
+- 자료 폴더 검사기에서 `reference/`의 목록 검사를 뺀다. `Reference.md`는 선택 문서가 된다. `legacy/`의 목록 검사는 그대로 둔다.
+- 세션 시작 hook(`SessionStart`)이 `<projinit> context`를 실행해, `reference/`의 자료와 목록 항목, 목록에 없는 자료를 Claude의 맥락에 넣는다. 강제 장치 검사기가 이 hook도 검사한다.
+- 작업 관리 규칙 4.1과 5절: 작업을 시작할 때 관련 자료를 확인하고 진행 중 기록에 `- 참고 자료:` 줄을 남긴다. 검사기로 강제하지는 않는다.
+- 갱신 명령의 거부 메시지에 `git stash -u`로 치워 두고 갱신하는 방법을 더한다.
+- README, 설계 문서. 버전 `0.1.9`.
+
+### 진행 기록
+- 2026-11-01: 사용자가 0.1.7로 초기화한 프로젝트에서 `reference/`에 자료를 넣고 커밋하자 자료 폴더 검사기가 막았고, 갱신도 커밋하지 않은 변경 때문에 거부되었다고 알렸다. 사용자가 참고 자료는 참고할 수도 안 할 수도 있으니 목록 강제를 빼고, 참고하지 않는 문제는 따로 풀자고 했다. 세션 시작 hook과 기록 줄(규칙만)을 제안했고 사용자가 진행하라고 했다.
+- 2026-11-01: 규칙과 설계 문서를 고치고 목업을 만들어 진행 중 커밋을 했다. 자료 폴더 검사기, 강제 장치 검사기, `context` 하위 명령, 갱신 거부 메시지를 구현하고 테스트를 고치고 더했다.
+- 2026-11-01: 임시 폴더에서 시험했다. 목록 없이 `reference/`에 자료를 넣어도 검사가 통과하고, `context`가 자료와 목록 항목, 목록에 없는 자료를 출력했다. `v0.1.7`로 초기화한 프로젝트에 커밋하지 않은 자료가 있을 때 갱신이 `git stash -u` 안내와 함께 거부되었고, 안내대로 하면 0.1.9로 갱신되어 SessionStart hook이 들어가고 검사가 통과했다.
+
+### 결정 사항
+- `legacy/`의 목록 검사는 그대로 둔다. 한 번 넣는 아카이브라 목록 한 줄이 부담이 아니다([자료 폴더 설계](design/Materials.md#2-결정)).
+- 진행 중 기록의 `참고 자료` 줄은 규칙으로만 두고 검사하지 않는다. 사용자와 정한 대로 hook부터 시작한다.
+- `참고 자료` 줄은 링크가 아니라 인라인 코드 경로로 적는다. 자료는 지워질 수 있고 완료 기록은 고칠 수 없다.
+- `context`는 어떤 오류에도 종료 코드 0이다. 세션 시작을 막지 않는다.
+
+### 변경 파일
+- `docs/Issue.md`, `docs/Ongoing.md`, `docs/Done.md`
+- 템플릿: `src/projinit/templates/docs/MaterialRule.md`, `TaskRule.md`, `VerificationTools.md`, `src/projinit/templates/.claude/settings.json`, 그리고 다시 만든 이 저장소의 같은 파일
+- `src/projinit/check_materials.py`, `src/projinit/check_hooks.py`, `src/projinit/session_context.py`, `src/projinit/cli.py`, `src/projinit/upgrade.py`
+- `tests/test_check_materials.py`, `tests/test_check_hooks.py`, `tests/test_session_context.py`
+- `docs/design/Checkers.md`, `docs/design/Materials.md`, `docs/design/Package.md`, `docs/design/Templates.md`
+- `README.md`, `pyproject.toml`, `uv.lock`
+
+### 결과
+- `reference/`에 자료를 넣고 목록 없이 커밋할 수 있다. `Reference.md`는 선택 문서다.
+- 세션이 시작될 때마다(재개, 맥락 압축 뒤 포함) SessionStart hook이 `reference/`의 자료를 Claude의 맥락에 넣는다. 강제 장치 검사기가 이 hook이 설치되었는지 검사한다.
+- 작업을 시작할 때 관련 자료를 찾아 읽고 진행 중 기록의 `참고 자료` 줄에 남긴다.
+- 갱신 거부 메시지가 `git stash -u`로 빠져나가는 방법을 알려 준다.
+- 버전 `0.1.9`. 병합 뒤 `v0.1.9` 태그를 붙인다.
+
+### 검증
+- `uv run projinit check`: 모두 통과
+- 임시 폴더 시험: 위 진행 기록대로 동작
+
 ## I22 참고 자료를 넣고 쓰는 방법 보강
 
 - 시작일: 2026-11-01

@@ -26,12 +26,13 @@ HOOKS_PATH = ".githooks"
 
 @dataclass(frozen=True)
 class HookCommands:
-    """The commands that the Stop, pre-commit and commit-msg hooks run.
+    """The commands that the Stop, SessionStart, pre-commit and commit-msg hooks run.
 
     @doc: docs/design/Checkers.md#8-강제-장치-검사기
     """
 
     stop: str
+    session_start: str
     pre_commit: str
     commit_msg: str
 
@@ -58,6 +59,7 @@ def hook_commands(config: Config) -> HookCommands | None:
         return None
     return HookCommands(
         stop=f'cd "$CLAUDE_PROJECT_DIR" && {command} check --hook stop',
+        session_start=f'cd "$CLAUDE_PROJECT_DIR" && {command} context',
         pre_commit=f"{command} check --hook pre-commit",
         commit_msg=f'{command} commit-msg "$1"',
     )
@@ -75,15 +77,7 @@ def check_stop_hook(project: Project, expected: str) -> list[Problem]:
         settings = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
         return [Problem(path, error.lineno, f"JSON 형식 오류: {error.msg}")]
-    groups = settings.get("hooks", {}).get("Stop", []) if isinstance(settings, dict) else []
-    commands = [
-        hook.get("command")
-        for group in groups
-        if isinstance(group, dict)
-        for hook in group.get("hooks", [])
-        if isinstance(hook, dict) and hook.get("type") == "command"
-    ]
-    if expected not in commands:
+    if expected not in _hook_commands(settings, "Stop"):
         return [Problem(path, 1, f"Stop hook에 검사 명령 없음: {expected}")]
     return []
 
@@ -92,9 +86,26 @@ def check_session_start_hook(project: Project, expected: str) -> list[Problem]:
     """Report a missing Claude Code SessionStart hook that prints the session context.
 
     @doc: docs/design/Checkers.md#8-강제-장치-검사기
-    @stub: I23
     """
-    raise NotImplementedError
+    path = project.root / CLAUDE_SETTINGS
+    try:
+        settings = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    if expected not in _hook_commands(settings, "SessionStart"):
+        return [Problem(path, 1, f"SessionStart hook에 안내 명령 없음: {expected}")]
+    return []
+
+
+def _hook_commands(settings: object, event: str) -> list[object]:
+    groups = settings.get("hooks", {}).get(event, []) if isinstance(settings, dict) else []
+    return [
+        hook.get("command")
+        for group in groups
+        if isinstance(group, dict)
+        for hook in group.get("hooks", [])
+        if isinstance(hook, dict) and hook.get("type") == "command"
+    ]
 
 
 def check_pre_commit(project: Project, expected: str) -> list[Problem]:
@@ -170,6 +181,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         problems = (
             check_stop_hook(project, commands.stop)
+            + check_session_start_hook(project, commands.session_start)
             + check_pre_commit(project, commands.pre_commit)
             + check_commit_msg_hook(project, commands.commit_msg)
         )
@@ -179,7 +191,7 @@ def main(argv: list[str] | None = None) -> int:
     if problems:
         print(f"check_hooks: 문제 {len(problems)}건")
         return 1
-    print("check_hooks: 통과 (Stop hook, pre-commit, commit-msg, core.hooksPath)")
+    print("check_hooks: 통과 (Stop hook, SessionStart hook, pre-commit, commit-msg, core.hooksPath)")
     return 0
 
 

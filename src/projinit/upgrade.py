@@ -64,7 +64,10 @@ def upgrade_project(root: Path) -> tuple[str, str, list[str]]:
         raise UpgradeError("설정에 실행 명령(projinit.command)이 있어 버전을 고정하지 않는 프로젝트다. init --refresh-common을 쓴다.")
     status = subprocess.run(["git", "status", "--porcelain"], cwd=project.root, capture_output=True, text=True)
     if status.returncode == 0 and status.stdout.strip():
-        raise UpgradeError("커밋하지 않은 변경이 있다. 진행 중인 작업과 섞이지 않도록 먼저 커밋하거나 정리한다.")
+        raise UpgradeError(
+            "커밋하지 않은 변경이 있다. 진행 중인 작업과 섞이지 않도록 먼저 커밋하거나 정리한다. "
+            "검사 때문에 커밋할 수 없으면 git stash -u로 치워 두고 갱신한 뒤, 갱신을 커밋하고 git stash pop으로 되돌린다."
+        )
     old, new = project.config.version, package_version()
     path = project.root / CONFIG_FILE
     path.write_text(set_version(path.read_text(encoding="utf-8"), new), encoding="utf-8")
