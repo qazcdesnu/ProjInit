@@ -3,6 +3,41 @@
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M2 초기화](Done-M2.md), [M3 갱신](Done-M3.md), [M4 첫 적용](Done-M4.md), [M5 갱신](Done-M5.md), [M6 자료 폴더](Done-M6.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
 
+## I26 초기화와 갱신이 `.gitignore`에 로컬 자료 폴더를 넣음
+
+- 시작일: 2026-11-01
+- 완료일: 2026-11-01
+- 근거 문서: [자료 폴더 규칙](MaterialRule.md#5-로컬-자료-폴더-private), [템플릿 구성 설계](design/Templates.md#9-초기화-명령)
+- 참고 자료: 없음
+
+### 계획
+- 초기화, `--refresh-common`, 갱신이 `.gitignore`에 `/<private>/` 줄이 없으면 더한다. 파일이 없으면 만든다. 다른 줄은 건드리지 않는다.
+- 자료 폴더 규칙 5절과 작업 관리 규칙 4.8절에서 사용자나 에이전트가 줄을 넣는 절차를 뺀다. 자료 폴더 검사기는 그 줄을 지웠을 때의 안전망으로 남긴다.
+- README에서 `echo "/private/" >> .gitignore`를 뺀다. 버전 `0.1.11`.
+
+### 진행 기록
+- 2026-11-01: 사용자가 README의 `.gitignore`에 줄을 넣는 단계를 보고, 미리 넣어 두면 되는 일을 사용자에게 시키는 게 맞냐고 했다. I24에서 초기화가 이미 있는 파일을 만들 수 없다는 이유로 검사만 하기로 했는데, `.gitignore`는 파일 전체가 아니라 줄 하나만 보장하면 되므로 그 이유가 맞지 않았다.
+- 2026-11-01: `ensure_ignored`를 구현해 초기화와 `refresh_common`(갱신 포함)이 부르게 했다. 이 저장소의 `.gitignore`에도 `/private/`가 더해졌다.
+- 2026-11-01: 임시 폴더에서 시험했다. 빈 폴더 초기화가 `.gitignore`를 만들고 `git add -A`가 로컬 자료를 스테이징하지 않았다. `v0.1.10`으로 초기화한 프로젝트(기존 `.gitignore` 있음)를 갱신하자 기존 줄은 그대로 두고 `/private/`만 더했다.
+
+### 결정 사항
+- `.gitignore`는 공통 파일로 만들지 않고 줄 하나만 보장한다. 기존 저장소의 `.gitignore`를 덮어쓰지 않고, 초기화를 막지도 않는다.
+- 이미 있는지는 그 저장소의 `.gitignore` 줄로만 판단한다. 전역 제외 설정은 다른 컴퓨터에 없으므로 세지 않는다.
+
+### 변경 파일
+- `docs/Issue.md`, `docs/Ongoing.md`, `docs/Done.md`
+- 템플릿: `src/projinit/templates/docs/MaterialRule.md`, `TaskRule.md`, `VerificationTools.md`, 그리고 다시 만든 이 저장소의 같은 문서
+- `src/projinit/init.py`, `tests/test_init.py`, `docs/design/Templates.md`, `docs/design/Materials.md`
+- `.gitignore`, `README.md`, `pyproject.toml`, `uv.lock`
+
+### 결과
+- 초기화, `init --refresh-common`, 갱신이 `.gitignore`에 `/private/` 줄이 없으면 더한다. 사용자가 할 일이 없다.
+- 버전 `0.1.11`. 병합 뒤 `v0.1.11` 태그를 붙인다.
+
+### 검증
+- `uv run projinit check`: 모두 통과
+- 임시 폴더 시험: 위 진행 기록대로 동작
+
 ## I24 로컬 자료 폴더 `private/`
 
 - 시작일: 2026-11-01

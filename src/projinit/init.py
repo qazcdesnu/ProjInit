@@ -75,7 +75,8 @@ def init_project(root: Path, repository: str | None) -> list[str]:
     if _git(root, "rev-parse", "--is-inside-work-tree").returncode != 0:
         subprocess.run(["git", "init", "-q"], cwd=root, check=True)
     subprocess.run(["git", "config", "core.hooksPath", ".githooks"], cwd=root, check=True)
-    return list(targets)
+    ignored = ensure_ignored(Project(root, config))
+    return list(targets) + ([GITIGNORE] if ignored else [])
 
 
 # @doc: docs/design/Templates.md#9-초기화-명령
@@ -86,9 +87,16 @@ def ensure_ignored(project: Project) -> bool:
     """Make the root .gitignore ignore the private folder; return whether the file changed.
 
     @doc: docs/design/Templates.md#9-초기화-명령
-    @stub: I26
     """
-    raise NotImplementedError
+    name = project.config.private.strip("/")
+    path = project.root / GITIGNORE
+    text = path.read_text(encoding="utf-8") if path.is_file() else ""
+    if {f"/{name}/", f"{name}/", f"/{name}", name} & {line.strip() for line in text.splitlines()}:
+        return False
+    if text and not text.endswith("\n"):
+        text += "\n"
+    path.write_text(f"{text}/{name}/\n", encoding="utf-8")
+    return True
 
 
 def _write(path: Path, text: str, executable: bool) -> None:
@@ -115,6 +123,8 @@ def refresh_common(project: Project) -> list[str]:
             continue
         _write(path, text, executable)
         changed.append(relative)
+    if ensure_ignored(project):
+        changed.append(GITIGNORE)
     return changed
 
 
