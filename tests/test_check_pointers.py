@@ -184,6 +184,14 @@ class ConfirmationTest(RepoTestCase):
         code, output = self.run_checker()
         self.assertEqual(code, 0, output)
 
+    def test_new_symbol_needs_no_confirmation(self) -> None:
+        # Thing named docs/A.md in HEAD, but Thing.stop is new, so no code pointer could have led to it.
+        module = (self.root / "src/mod.py").read_text(encoding="utf-8")
+        self.write("src/mod.py", module + "\n    def stop(self):\n        pass\n")
+        self.write("docs/A.md", _DOC.replace(" [d]", " [stop](../src/mod.py#Thing.stop) [d]"))
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+
     def test_module_pointer_does_not_count_for_a_symbol(self) -> None:
         # Only the file header pointed to docs/C.md in HEAD, so the new pointer to Thing.run followed no code pointer.
         module = (self.root / "src/mod.py").read_text(encoding="utf-8").replace("@doc: docs/A.md#1-spec", "@doc: docs/A.md#1-spec\n@doc: docs/C.md")
