@@ -40,7 +40,7 @@ uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/)
 **자료형**
 
 - [Problem](../../src/projinit/doclib.py#Problem): 검사에서 발견된 문제 하나. 파일 경로, 줄 번호, 메시지를 가지며 [Problem.format](../../src/projinit/doclib.py#Problem.format)으로 출력 형식 문자열을 만든다.
-- [Link](../../src/projinit/doclib.py#Link): 문서에서 찾은 마크다운 링크 하나. 출처 문서, 줄 번호, 표시 이름, 원본 대상 문자열을 가진다.
+- [Link](../../src/projinit/doclib.py#Link): 문서에서 찾은 마크다운 링크 하나. 출처 문서, 줄 번호, 표시 이름, 원본 대상 문자열, [선택 링크](../DocumentationRule.md#3-링크-규칙)인지(`optional`, 링크 제목이 [OPTIONAL_TITLE](../../src/projinit/doclib.py#OPTIONAL_TITLE) `선택`)를 가진다.
 
 **함수**
 
@@ -60,7 +60,7 @@ uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/)
 
 [src/projinit/check_docs.py](../../src/projinit/check_docs.py)는 [문서 작업 규칙](../DocumentationRule.md)의 링크 규칙과 고아 문서 금지 규칙을 검증한다.
 
-- [check_links](../../src/projinit/check_docs.py#check_links): 모든 문서의 링크를 검사한다. 자료 폴더 안의 코드 파일 링크는 포인터가 아니므로 여기서 파일이 있는지만 본다.
+- [check_links](../../src/projinit/check_docs.py#check_links): 모든 문서의 링크를 검사한다. 선택 링크는 대상이 없으면 건너뛴다. 자료 폴더 안의 코드 파일 링크는 포인터가 아니므로 여기서 파일이 있는지만 본다.
   - 외부 링크와 코드 파일 링크는 건너뛴다. 코드 파일 링크는 [포인터 검사기](#4-포인터-검사기)가 검사한다.
   - 대상 파일이나 디렉터리가 없으면 문제다.
   - 대상이 `.md` 문서이고 앵커가 있으면, 대상 문서에 그 앵커가 있어야 한다.
