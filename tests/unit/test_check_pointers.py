@@ -79,6 +79,14 @@ class CheckPointersTest(RepoTestCase):
         self.assertIn("앵커 없음: docs/A.md#nope", output)
         self.assertIn("근거 문서 없음: docs/Gone.md", output)
 
+    def test_reports_document_path_whose_case_differs(self) -> None:
+        self.write("src/mod.py", _MODULE.replace("@doc: docs/A.md#1-spec", "@doc: docs/a.md#1-spec"))
+        output = self.run_checker()[1]
+        if (self.root / "docs/a.md").exists():
+            self.assertIn("근거 문서의 대소문자가 다름: docs/a.md (실제: docs/A.md)", output)
+        else:
+            self.assertIn("근거 문서 없음: docs/a.md", output)
+
     def test_reports_missing_coverage(self) -> None:
         self.write("src/bare.py", "def helper():\n    pass\n")
         output = self.run_checker()[1]

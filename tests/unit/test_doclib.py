@@ -3,10 +3,11 @@
 @doc: docs/design/Checkers.md#5-테스트
 """
 
+import tempfile
 import unittest
 from pathlib import Path
 
-from projinit.doclib import extract_links, heading_anchors, slugify
+from projinit.doclib import actual_case, extract_links, heading_anchors, slugify
 
 
 class ExtractLinksTest(unittest.TestCase):
@@ -32,6 +33,31 @@ class HeadingAnchorsTest(unittest.TestCase):
     def test_duplicate_headings_get_suffixes(self) -> None:
         text = "# A\n## Same\n## Same\n```\n# Hidden\n```\n"
         self.assertEqual(heading_anchors(text), {"a", "same", "same-1"})
+
+
+class ActualCaseTest(unittest.TestCase):
+    """@doc: docs/design/Checkers.md#2-공통-모듈"""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name).resolve()
+        (self.root / "docs/Design").mkdir(parents=True)
+        (self.root / "docs/Design/Rule.md").write_text("# R\n")
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def test_exact_spelling_and_outside_paths_are_none(self) -> None:
+        self.assertIsNone(actual_case(self.root / "docs/Design/Rule.md", self.root))
+        self.assertIsNone(actual_case(self.root / "docs/Gone.md", self.root))
+        self.assertIsNone(actual_case(self.root.parent, self.root))
+
+    def test_reports_the_disk_spelling(self) -> None:
+        wrong = self.root / "docs/design/rule.md"
+        if not wrong.exists():
+            self.skipTest("대소문자를 구분하는 파일 시스템에서는 틀린 이름이 없는 파일이다")
+        self.assertEqual(actual_case(wrong, self.root), "docs/Design/Rule.md")
+        self.assertEqual(actual_case(Path("docs/design/../Design/rule.md"), self.root), "docs/Design/Rule.md")
 
 
 if __name__ == "__main__":
