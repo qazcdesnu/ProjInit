@@ -189,19 +189,31 @@ def slugify(heading: str) -> str:
     return text.replace(" ", "-")
 
 
-def heading_anchors(text: str) -> set[str]:
-    """Return the anchors of every ATX heading outside code blocks.
+def section_anchor(text: str, line: int) -> str:
+    """Return the anchor of the section a line belongs to, or an empty string before any heading.
 
     @doc: docs/design/Checkers.md#2-공통-모듈
     """
-    anchors = set()
+    return next((anchor for number, anchor in reversed(_heading_lines(text)) if number <= line), "")
+
+
+def _heading_lines(text: str) -> list[tuple[int, str]]:
+    headings = []
     seen: dict[str, int] = {}
-    for _, line in iter_prose_lines(text):
+    for number, line in iter_prose_lines(text):
         match = _HEADING_RE.match(line)
         if not match:
             continue
         slug = slugify(match.group(2))
         count = seen.get(slug, 0)
         seen[slug] = count + 1
-        anchors.add(slug if count == 0 else f"{slug}-{count}")
-    return anchors
+        headings.append((number, slug if count == 0 else f"{slug}-{count}"))
+    return headings
+
+
+def heading_anchors(text: str) -> set[str]:
+    """Return the anchors of every ATX heading outside code blocks.
+
+    @doc: docs/design/Checkers.md#2-공통-모듈
+    """
+    return {anchor for _, anchor in _heading_lines(text)}

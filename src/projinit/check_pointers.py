@@ -5,6 +5,7 @@
 
 import argparse
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,11 +22,14 @@ from projinit.doclib import (
     heading_anchors,
     is_external,
     resolve_link,
+    section_anchor,
 )
-from projinit.check_tasks import ISSUE_DOC, ROADMAP_DOC, WorkItem, parse_issues, parse_roadmap
+from projinit.check_tasks import ISSUE_DOC, ONGOING_DOC, ROADMAP_DOC, WorkItem, parse_issues, parse_roadmap
 from projinit.languages import DEFINITION
 
 _LINE_ANCHOR_RE = re.compile(r"L\d+(-L?\d+)?")
+# @doc: docs/design/Checkers.md#4-포인터-검사기
+CONFIRM_PREFIX = "- 포인터 확인: "
 
 
 @dataclass(frozen=True)
@@ -135,26 +139,38 @@ def check_reciprocity(
 ) -> list[Problem]:
     """Report pointers in either direction that have no pointer back between related symbols.
 
+    A document pointer is the reference: its missing back pointer is reported at the code
+    symbol with the exact @doc line to add, computed from the document.
+
     @doc: docs/design/Checkers.md#4-포인터-검사기
     """
     doc_pointers = [pointer for module in modules.values() for pointer in module.doc_pointers]
     problems = []
+    doc_texts: dict[Path, str] = {}
     for code_pointer in code_pointers:
         # A symbol named by a document must know that document itself; the file header does not count.
-        if not any(
+        if any(
             pointer.doc == code_pointer.doc
             and pointer.symbol.is_related(code_pointer.symbol)
             and (pointer.symbol.qualname or not code_pointer.symbol.qualname)
             for pointer in doc_pointers
         ):
-            problems.append(
-                Problem(
-                    code_pointer.doc,
-                    code_pointer.line,
-                    f"역방향 포인터 없음: {_describe(code_pointer.symbol, root)} 또는 관련 심볼이 "
-                    f"{display_path(code_pointer.doc, root)}를 가리켜야 함",
-                )
+            continue
+        if code_pointer.doc not in doc_texts:
+            doc_texts[code_pointer.doc] = code_pointer.doc.read_text(encoding="utf-8")
+        anchor = section_anchor(doc_texts[code_pointer.doc], code_pointer.line)
+        doc = display_path(code_pointer.doc, root)
+        symbol = code_pointer.symbol
+        definitions = modules[symbol.file].symbols.get(symbol.qualname) or []
+        where = symbol.qualname or "파일 머리"
+        problems.append(
+            Problem(
+                symbol.file,
+                definitions[0].line if definitions else 1,
+                f"역방향 포인터 없음: {doc}:{code_pointer.line}이 {_describe(symbol, root)}을 가리킴. "
+                f"{where}에 @doc: {doc}{'#' + anchor if anchor else ''}를 단다",
             )
+        )
     for doc_pointer in doc_pointers:
         if not doc_pointer.doc.is_file():
             continue
@@ -166,8 +182,85 @@ def check_reciprocity(
                 Problem(
                     doc_pointer.symbol.file,
                     doc_pointer.line,
-                    f"역방향 포인터 없음: {display_path(doc_pointer.doc, root)}가 "
-                    f"{_describe(doc_pointer.symbol, root)} 또는 관련 심볼을 가리켜야 함",
+                    f"받아 주는 문서 포인터 없음: {display_path(doc_pointer.doc, root)}가 "
+                    f"{_describe(doc_pointer.symbol, root)} 또는 관련 심볼을 가리키지 않음. "
+                    "문서가 이 심볼을 뜻하는지 문서에서 판단한다",
+                )
+            )
+    return problems
+
+
+def _git_show(root: Path, relative: str) -> str | None:
+    shown = subprocess.run(
+        ["git", "-C", str(root), "show", f"HEAD:{relative}"], capture_output=True, encoding="utf-8"
+    )
+    return shown.stdout if shown.returncode == 0 else None
+
+
+def _head_code_links(root: Path, doc: Path) -> set[tuple[Path, str]]:
+    text = _git_show(root, display_path(doc, root))
+    if text is None:
+        return set()
+    pairs = set()
+    for link in extract_links(doc, text):
+        if is_external(link.target):
+            continue
+        path, anchor = resolve_link(link)
+        if path.suffix in CODE_SUFFIXES:
+            pairs.add((path, anchor))
+    return pairs
+
+
+def _confirmed(lines: list[str], expected: str) -> bool:
+    for line in lines:
+        line = line.strip()
+        if line.startswith(CONFIRM_PREFIX + expected) and line[len(CONFIRM_PREFIX + expected) :].strip():
+            return True
+    return False
+
+
+def check_confirmations(
+    project: Project, code_pointers: list[CodePointer], modules: dict[Path, ModuleIndex]
+) -> list[Problem]:
+    """Report new document pointers that followed an older code pointer without a recorded confirmation.
+
+    @doc: docs/design/Checkers.md#4-포인터-검사기
+    """
+    root = project.root
+    if subprocess.run(["git", "-C", str(root), "rev-parse", "--verify", "-q", "HEAD"], capture_output=True).returncode != 0:
+        return []
+    ongoing = project.docs_dir / ONGOING_DOC
+    lines = ongoing.read_text(encoding="utf-8").splitlines() if ongoing.is_file() else []
+    head_links: dict[Path, set[tuple[Path, str]]] = {}
+    head_modules: dict[Path, ModuleIndex | None] = {}
+    problems = []
+    for pointer in code_pointers:
+        symbol = pointer.symbol
+        if pointer.doc not in head_links:
+            head_links[pointer.doc] = _head_code_links(root, pointer.doc)
+        if (symbol.file, symbol.qualname) in head_links[pointer.doc]:
+            continue
+        if symbol.file not in head_modules:
+            text = _git_show(root, display_path(symbol.file, root))
+            head = None if text is None else index_module(symbol.file, root, text.encode("utf-8"))
+            head_modules[symbol.file] = head if head is not None and not head.problems else None
+        head = head_modules[symbol.file]
+        if head is None or not any(
+            old.doc == pointer.doc
+            and old.symbol.is_related(symbol)
+            and (old.symbol.qualname or not symbol.qualname)
+            for old in head.doc_pointers
+        ):
+            continue
+        doc = display_path(pointer.doc, root)
+        expected = f"{doc} → {_describe(symbol, root)}:"
+        if not _confirmed(lines, expected):
+            problems.append(
+                Problem(
+                    pointer.doc,
+                    pointer.line,
+                    f"포인터 확인 필요: {_describe(symbol, root)}의 @doc이 이 문서 포인터보다 먼저 있었음. "
+                    f"문서를 다시 읽고 진행 중 기록에 `{CONFIRM_PREFIX}{expected} <이유>`를 남긴다",
                 )
             )
     return problems
@@ -208,14 +301,22 @@ def main(argv: list[str] | None = None) -> int:
     except ConfigError as error:
         return report_config_error(error)
     modules = {path.resolve(): index_module(path.resolve(), root) for path in find_code_files(project)}
-    code_pointers, problems = collect_code_pointers(project, modules)
+    code_pointers, pointer_problems = collect_code_pointers(project, modules)
     problems = (
         [problem for module in modules.values() for problem in module.problems]
-        + problems
-        + check_doc_pointers(root, modules)
+        + pointer_problems
+        + check_stubs(project, modules)
+    )
+    if pointer_problems:
+        for problem in problems:
+            print(problem.format(root))
+        print(f"check_pointers: 문서→코드 포인터 문제 {len(pointer_problems)}건을 먼저 고친다. 코드 쪽 검사는 그 뒤에 한다")
+        return 1
+    problems += (
+        check_doc_pointers(root, modules)
         + check_coverage(project, modules)
         + check_reciprocity(root, code_pointers, modules)
-        + check_stubs(project, modules)
+        + check_confirmations(project, code_pointers, modules)
     )
     for problem in problems:
         print(problem.format(root))

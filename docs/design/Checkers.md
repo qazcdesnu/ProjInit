@@ -52,6 +52,7 @@ uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/)
 - [slugify](../../src/projinit/doclib.py#slugify): 제목 문자열을 앵커로 바꾼다. 규칙은 [문서 작업 규칙](../DocumentationRule.md#3-링크-규칙)에 있다.
 - [display_path](../../src/projinit/doclib.py#display_path): 출력용 경로 문자열. 저장소 루트 기준 상대 경로이며, 루트 밖이면 절대 경로다. [Problem.format](../../src/projinit/doclib.py#Problem.format)과 검사기 메시지가 함께 쓴다.
 - [heading_anchors](../../src/projinit/doclib.py#heading_anchors): 문서의 모든 ATX 제목(`#` ~ `######`, 코드 블록 밖)의 앵커 집합. 같은 앵커가 반복되면 두 번째부터 `-1`, `-2`를 붙인다.
+- [section_anchor](../../src/projinit/doclib.py#section_anchor): 문서 내용과 줄 번호를 받아, 그 줄이 속한 절(그 줄이나 그 위의 가장 가까운 제목)의 앵커를 돌려준다. 앵커는 `heading_anchors`와 같은 규칙으로 만든다. 제목이 없으면 빈 문자열이다.
 - [iter_prose_lines](../../src/projinit/doclib.py#iter_prose_lines): 펜스 코드 블록 밖의 줄을 (줄 번호, 줄)로 차례로 돌려준다. 펜스 줄 자체도 제외한다.
 - [strip_inline_code](../../src/projinit/doclib.py#strip_inline_code): 줄에서 인라인 코드 구간을 지운다. 여는 백틱 수와 같은 수의 백틱으로 닫힌 구간을 지운다.
 
@@ -88,9 +89,16 @@ uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/)
   - 코드가 없는 파일(`ModuleIndex.has_code`가 거짓)은 건너뛴다.
   - 파일 자체에 포인터가 없으면 1줄에 문제를 보고한다.
   - 분류가 정의이고 최상위이며 공개인 심볼마다, 같은 한정 이름의 심볼 중 하나라도 포인터를 가져야 한다. 없으면 그 심볼의 시작 줄에 문제를 보고한다.
-- [check_reciprocity](../../src/projinit/check_pointers.py#check_reciprocity): [상호 참조 규칙](../Traceability.md#5-상호-참조-규칙)을 두 방향 모두 검사한다. 문서가 모듈이 아닌 심볼을 가리킬 때는 모듈의 포인터를 역방향 포인터로 세지 않는다.
+- [check_reciprocity](../../src/projinit/check_pointers.py#check_reciprocity): [상호 참조 규칙](../Traceability.md#5-상호-참조-규칙)을 두 방향 모두 검사한다. 문서가 모듈이 아닌 심볼을 가리킬 때는 모듈의 포인터를 역방향 포인터로 세지 않는다. 보고는 [어긋났을 때의 우선순위](../Traceability.md#9-어긋났을-때의-우선순위)를 따른다.
+  - 역방향이 없는 문서 → 코드 포인터: 대상 심볼의 첫 정의 줄(모듈이면 1줄)에 `역방향 포인터 없음: <문서>:<줄>이 <심볼>을 가리킴. <심볼>에 @doc: <문서>#<앵커>를 단다`. 앵커는 `section_anchor`로 링크가 있는 절에서 구한다. 모듈이면 "파일 머리에"를 붙인다.
+  - 받아 주는 문서 포인터가 없는 `@doc:`: 그 `@doc:`의 줄에 `받아 주는 문서 포인터 없음: <문서>가 <심볼> 또는 관련 심볼을 가리키지 않음. 문서가 이 심볼을 뜻하는지 문서에서 판단한다`.
+- [check_confirmations](../../src/projinit/check_pointers.py#check_confirmations): [포인터 확인](../Traceability.md#9-어긋났을-때의-우선순위)을 검사한다.
+  - `HEAD`에 있던 문서마다 `git show HEAD:<문서>`의 링크로 `HEAD`의 문서 → 코드 포인터 (문서, 파일, 한정 이름) 집합을 만든다. 지금 포인터 중 이 집합에 없는 것이 새 포인터다.
+  - 새 포인터 D → S마다 `git show HEAD:<S의 파일>`을 `index_module`로 분석해, S와 관련 있는 심볼(S가 모듈이 아니면 모듈 제외)의 `@doc:`이 D를 가리켰는지 본다. 가리켰으면 확인이 필요하다. 파일이 `HEAD`에 없거나 분석에 실패하면 확인이 필요 없다.
+  - 진행 중 문서에 [CONFIRM_PREFIX](../../src/projinit/check_pointers.py#CONFIRM_PREFIX)(`- 포인터 확인: `) 뒤에 `<문서> → <파일>[#<한정 이름>]: <이유>`인 줄이 있으면 확인된 것이다. 이유가 비어 있으면 확인으로 보지 않는다. 없으면 문서 포인터의 줄에 `포인터 확인 필요`와 남길 줄을 보고한다.
+  - git 저장소가 아니거나 `HEAD`가 없으면 빈 목록이다.
 - [check_stubs](../../src/projinit/check_pointers.py#check_stubs): [목업 표시](../Traceability.md#8-목업-표시)를 검사한다. 로드맵과 이슈를 [작업 관리 검사기](#6-작업-관리-검사기)의 `parse_roadmap`, `parse_issues`로 읽는다. 표시한 작업 ID가 없거나, 그 작업(연결 작업이 있으면 연결 작업)의 상태가 `[~]`가 아니면 문제다.
-- [main](../../src/projinit/check_pointers.py#main): 설정의 코드 루트에 있는 코드 파일과 문서가 가리키는 코드 파일을 모두 분석하고, 위 검사를 실행해 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다. 통과 요약에는 남은 목업 수를 함께 적는다.
+- [main](../../src/projinit/check_pointers.py#main): 설정의 코드 루트에 있는 코드 파일과 문서가 가리키는 코드 파일을 모두 분석하고, 위 검사를 두 단계로 실행해 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다. 1단계는 파일 분석의 문제, `collect_code_pointers`, `check_stubs`다. `collect_code_pointers`가 문제를 내면 `문서→코드 포인터 문제 <N>건을 먼저 고친다. 코드 쪽 검사는 그 뒤에 한다`를 출력하고 2단계 없이 끝난다. 2단계는 `check_doc_pointers`, `check_coverage`, `check_reciprocity`, `check_confirmations`다. 통과 요약에는 남은 목업 수를 함께 적는다.
 
 ## 5. 테스트
 
@@ -99,7 +107,7 @@ uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/)
 - [tests/support.py](../../tests/support.py): 테스트 공통 기반. [RepoTestCase](../../tests/support.py#RepoTestCase)는 테스트마다 임시 저장소 루트(`self.root`)를 만들고 지우며, [RepoTestCase.write](../../tests/support.py#RepoTestCase.write)로 그 아래에 파일을 만든다.
 - [tests/test_doclib.py](../../tests/test_doclib.py): 링크 추출(코드 블록·인라인 코드·이미지 제외), 앵커 생성(한글, 중복 제목).
 - [tests/test_check_docs.py](../../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소, README 링크 검사와 README 고아 판정(링크 없음, 인덱스에서 링크), 진입 문서 형식(정상, 코드 블록, 인라인 코드, 링크 없는 목록 줄, 추가 문단, 제목 누락).
-- [tests/test_check_pointers.py](../../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락, 모듈 포인터만으로는 심볼 포인터의 역방향이 되지 않음, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
+- [tests/test_check_pointers.py](../../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락과 계산한 `@doc:` 수정안, 받아 주는 문서 포인터가 없는 `@doc:`, 문서→코드 문제가 있으면 코드 쪽 검사를 하지 않음, 포인터 확인(코드 포인터가 먼저 있던 새 문서 포인터는 확인 줄이 있어야 통과, 이유 없는 확인 줄, 함께 생긴 포인터와 git 밖은 확인 불필요), 모듈 포인터만으로는 심볼 포인터의 역방향이 되지 않음, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
 - [tests/test_code_index.py](../../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
 - [tests/test_cli.py](../../tests/test_cli.py): 하위 명령이 해당 모듈의 `main`에 인자를 넘기는지(`commit-msg`는 `--message-file`을 붙여서), 모르는 하위 명령.
 - [tests/test_check_hooks.py](../../tests/test_check_hooks.py): 설정에서 만든 hook 명령(직접 지정, `uvx` 조합, 만들 수 없는 경우), 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, commit-msg 누락, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
@@ -182,7 +190,7 @@ uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/)
 
 **함수**
 
-- [index_module](../../src/projinit/code_index.py#index_module): 코드 파일을 분석해 `ModuleIndex`를 만든다.
+- [index_module](../../src/projinit/code_index.py#index_module): 코드 파일을 분석해 `ModuleIndex`를 만든다. 내용(`source`)을 넘기면 파일 대신 그것을 분석한다. 포인터 확인이 `HEAD`의 내용을 분석할 때 쓴다.
   - 언어는 확장자로 정한다.
   - 구문 트리에 오류 노드가 있으면 첫 오류 위치에 `파싱 실패` 문제를 보고하고, 심볼 없이 돌려준다.
   - 심볼: 모듈(빈 이름)과 `Language`의 함수가 찾은 `Definition`을 등록한다.
