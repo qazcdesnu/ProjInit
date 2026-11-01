@@ -11,7 +11,7 @@ from contextlib import redirect_stdout
 from tests.support import RepoTestCase
 from projinit.run_checks import run_all
 from projinit.config import load_config, load_project
-from projinit.init import NO_REPOSITORY, START_HINT, init_project, main, package_version, refresh_common, repository_url
+from projinit.init import NO_REPOSITORY, START_HINT, ensure_ignored, init_project, main, package_version, refresh_common, repository_url
 from projinit.template import COMMON_FILES, EXECUTABLE_FILES, INITIAL_FILES
 
 
@@ -27,7 +27,8 @@ class InitTest(RepoTestCase):
     def test_initializes_an_empty_folder(self) -> None:
         target = self.root / "new"
         created = init_project(target, "git@github.com:me/demo.git")
-        self.assertEqual(created, list(COMMON_FILES + INITIAL_FILES))
+        self.assertEqual(created, list(COMMON_FILES + INITIAL_FILES) + [".gitignore"])
+        self.assertEqual((target / ".gitignore").read_text(), "/private/\n")
         self.assertTrue((target / ".git").is_dir())
         config = load_config(target)
         self.assertEqual((config.version, config.template_values), (package_version(), {"repository": "git@github.com:me/demo.git"}))
@@ -37,6 +38,32 @@ class InitTest(RepoTestCase):
             self.assertTrue(os.access(target / relative, os.X_OK), relative)
         results = run_all(load_project(target))
         self.assertEqual([(r.name, r.returncode) for r in results if r.returncode], [], [r.output for r in results])
+
+    def test_initializing_keeps_an_existing_gitignore(self) -> None:
+        self.write(".gitignore", "node_modules/\n.env")
+        code, output = self.run_main()
+        self.assertEqual(code, 0, output)
+        self.assertIn("만듦: .gitignore", output)
+        self.assertEqual((self.root / ".gitignore").read_text(), "node_modules/\n.env\n/private/\n")
+
+    def test_ensure_ignored(self) -> None:
+        self.write("projinit.toml", "")
+        self.assertTrue(ensure_ignored(load_project(self.root)))
+        self.assertEqual((self.root / ".gitignore").read_text(), "/private/\n")
+        self.assertFalse(ensure_ignored(load_project(self.root)))
+        for line in ("private/", "/private", "private", "  /private/  "):
+            self.write(".gitignore", f"a\n{line}\n")
+            self.assertFalse(ensure_ignored(load_project(self.root)), line)
+        self.write("projinit.toml", '[paths]\nprivate = "secret-docs/"\n')
+        self.write(".gitignore", "a\n/private/\n")
+        self.assertTrue(ensure_ignored(load_project(self.root)))
+        self.assertEqual((self.root / ".gitignore").read_text(), "a\n/private/\n/secret-docs/\n")
+
+    def test_refresh_common_adds_a_missing_gitignore_line(self) -> None:
+        self.run_main()
+        self.write(".gitignore", "dist/\n")
+        self.assertEqual(refresh_common(load_project(self.root)), [".gitignore"])
+        self.assertEqual((self.root / ".gitignore").read_text(), "dist/\n/private/\n")
 
     def test_repository_comes_from_argument_then_origin(self) -> None:
         self.assertEqual(repository_url(self.root, None), NO_REPOSITORY)

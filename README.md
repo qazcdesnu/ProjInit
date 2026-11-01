@@ -2,7 +2,7 @@
 
 ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서와 코드 두 축의 규칙 체계를 깔아 주고, 그 폴더에서 Claude Code를 열어 `/start`를 입력하면 Claude가 만들 프로젝트를 물어보며 첫 작업을 시작한다. 어떤 프로젝트에서든 같은 방식으로 일하는 것이 목적이다.
 
-> 상태: 최신 릴리스는 `v0.1.10`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
+> 상태: 최신 릴리스는 `v0.1.11`이다. 진행 상황은 [로드맵](docs/Roadmap.md)에 있다.
 
 ## 무엇을 해 주나
 
@@ -27,7 +27,7 @@ ProjInit은 **Claude Code 프로젝트 초기화 CLI**다. 빈 폴더에 문서�
 ### 새 프로젝트 시작하기
 
 ```sh
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.10 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.11 projinit init --root ~/my-project
 cd ~/my-project
 claude
 ```
@@ -45,7 +45,7 @@ Claude Code가 열리면 `/start`를 입력한다. Claude가 어떤 걸 만들�
 ```sh
 mkdir -p ~/my-project/reference
 cp ~/Downloads/payment-api.pdf ~/notes/research.md ~/my-project/reference/
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.10 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.11 projinit init --root ~/my-project
 cd ~/my-project
 claude
 ```
@@ -63,15 +63,14 @@ Claude Code 세션이 시작될 때마다 hook이 `reference/`에 어떤 자료�
 
 ### 로컬에서만 볼 자료
 
-계약서, 내부 문서, 고객 데이터 샘플처럼 저장소에 올리면 안 되지만 작업할 때는 봐야 하는 자료는 `private/`에 넣는다. 먼저 git에서 빼 둔다.
+계약서, 내부 문서, 고객 데이터 샘플처럼 저장소에 올리면 안 되지만 작업할 때는 봐야 하는 자료는 `private/`에 넣는다. 초기화와 갱신이 `.gitignore`에 `/private/`를 미리 넣어 두므로, 폴더를 만들어 넣기만 하면 된다.
 
 ```sh
-echo "/private/" >> ~/my-project/.gitignore
 mkdir -p ~/my-project/private
 cp ~/Documents/contract.pdf ~/my-project/private/
 ```
 
-- `private/`는 커밋되지 않는다. `.gitignore`에서 빠져 있지 않거나 git에 올라가 있으면 커밋할 때 검사기가 막는다.
+- `private/`는 커밋되지 않는다. `.gitignore`의 그 줄을 지웠거나 파일을 강제로 git에 올리면 커밋할 때 검사기가 막는다.
 - 문서는 `private/` 안을 링크하지 않는다(선택 링크도 안 된다). 다른 컴퓨터와 CI에는 그 파일이 없고, 링크에 파일 이름이 남기 때문이다. 근거를 적어야 하면 경로만 글자로 적는다.
 - 목록 문서도 두지 않는다. 대신 세션을 시작할 때 hook이 로컬 자료의 경로를 Claude에게 알려 준다. Claude는 자료에서 정한 것 중 공개해도 되는 결정만 문서에 옮긴다.
 - 저장소에 올라가지 않을 뿐, Claude가 읽으면 그 내용은 모델로 전송된다. API 키, 비밀번호, 인증서처럼 Claude도 보면 안 되는 비밀은 넣지 않는다.
@@ -84,7 +83,7 @@ ProjInit 없이 작업하던 프로젝트가 있으면, 새 폴더의 `legacy/<�
 ```sh
 mkdir -p ~/my-project/legacy
 rsync -a --exclude .git --exclude node_modules ~/old-project/ ~/my-project/legacy/old-project/
-uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.10 projinit init --root ~/my-project
+uvx --from git+https://github.com/qazcdesnu/ProjInit@v0.1.11 projinit init --root ~/my-project
 ```
 
 `/start`를 입력하면 Claude가 기존 프로젝트를 먼저 읽고, 이해한 내용에서 출발해 제품 비전과 첫 로드맵을 함께 쓴다. 기존 프로젝트는 그 뒤로 아카이브가 되어 고치지 않는다. 참고 자료와 함께 넣어도 되며, 그러면 둘 다 먼저 읽는다. 규칙은 [자료 폴더 규칙](docs/MaterialRule.md)에 있다.
