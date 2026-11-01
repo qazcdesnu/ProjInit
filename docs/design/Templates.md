@@ -66,7 +66,7 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 
 **릴리스**: ProjInit의 버전은 `pyproject.toml`의 `version`이다. 릴리스는 `main`에 병합된 뒤 그 커밋에 `v<버전>` 태그를 붙여 원격에 올린다. 다른 프로젝트는 그 태그로 설치한다(`uvx --from <source>@v<버전> projinit`). 첫 릴리스는 `v0.1.0`이다.
 
-버전을 올리는 작업에서는 [README](../../README.md)의 상태 줄과 설치 예시의 버전도 새 버전으로 고친다. README에 적힌 `v<버전>`이 모두 `pyproject.toml`의 버전과 같은지 [tests/test_release.py](../../tests/test_release.py)가 확인하므로, 빠뜨리면 검증에서 걸린다.
+버전을 올리는 작업에서는 [README](../../README.md)의 상태 줄과 설치 예시의 버전도 새 버전으로 고친다. README에 적힌 `v<버전>`이 모두 `pyproject.toml`의 버전과 같은지 [tests/unit/test_release.py](../../tests/unit/test_release.py)가 확인하므로, 빠뜨리면 검증에서 걸린다.
 
 ## 6. 작업 나누기
 
@@ -95,7 +95,7 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 - [render_values](../../src/projinit/template.py#render_values): `Config`를 받아 빈 자리 값 사전을 만든다. 설정의 `[template]` 값에, 설정에서 만든 실행 명령 `projinit`([강제 장치 검사기의 `projinit_command`](Checkers.md#8-강제-장치-검사기))을 더한다. 실행 명령을 만들 수 없으면 넣지 않는다. 강제 장치 템플릿은 이 실행 명령 하나만 빈 자리로 두고 나머지 명령 부분(`check --hook stop` 등)은 직접 적는다. hook 명령 전체를 빈 자리로 두면 그 안의 큰따옴표가 JSON 설정 파일을 깨기 때문이다. 채운 결과가 강제 장치 검사기가 기대하는 명령과 같은지는 테스트가 확인한다.
 - [render](../../src/projinit/template.py#render): 템플릿 파일 하나의 상대 경로와 값 사전을 받아, 모든 `{{이름}}`을 값으로 바꾼 내용을 돌려준다. 값이 없는 빈 자리가 있으면 그 이름들을 담아 `TemplateError`를 낸다.
 
-테스트는 [tests/test_template.py](../../tests/test_template.py)다.
+테스트는 [tests/unit/test_template.py](../../tests/unit/test_template.py)다.
 
 - 모든 템플릿 파일이 값과 함께 채워지고, 값이 빠지면 오류가 난다.
 - 채운 공통 문서의 링크가 공통 파일과 처음 만드는 파일로만 간다(2절).
@@ -124,7 +124,7 @@ projinit init --refresh-common [--root <폴더>]
 - [main](../../src/projinit/init.py#main): 위 두 동작을 실행하고, 만들거나 바꾼 파일을 한 줄씩 출력한다. 초기화한 경우 마지막에 `START_HINT`를 출력한다. 오류는 `init: <메시지>`로 출력하고 종료 코드 1로 끝난다.
 - `projinit` 명령의 하위 명령 `init`이 이 `main`을 부른다.
 
-테스트는 [tests/test_init.py](../../tests/test_init.py)다. 빈 폴더 초기화 결과의 파일 목록과 검증 전체(`check`의 모든 검사기) 통과, hook 실행 권한과 `core.hooksPath`, git 저장소 생성, 원격 주소 결정 순서, 이미 있는 파일 때문에 실패하면 아무것도 쓰지 않음, `--refresh-common`이 고친 공통 문서를 되돌리고 다른 파일은 그대로 둠, `.gitignore`가 없을 때·다른 줄만 있을 때·이미 줄이 있을 때·폴더 위치를 바꿨을 때를 검사한다.
+테스트는 [tests/unit/test_init.py](../../tests/unit/test_init.py)다. 빈 폴더 초기화 결과의 파일 목록과 검증 전체(`check`의 모든 검사기) 통과, hook 실행 권한과 `core.hooksPath`, git 저장소 생성, 원격 주소 결정 순서, 이미 있는 파일 때문에 실패하면 아무것도 쓰지 않음, `--refresh-common`이 고친 공통 문서를 되돌리고 다른 파일은 그대로 둠, `.gitignore`가 없을 때·다른 줄만 있을 때·이미 줄이 있을 때·폴더 위치를 바꿨을 때를 검사한다.
 
 ## 10. 갱신 명령
 
@@ -143,5 +143,5 @@ projinit upgrade [--root <폴더>]
 - [NEXT_STEP](../../src/projinit/upgrade.py#NEXT_STEP): 갱신을 마친 뒤 출력하는 다음 할 일. 바뀐 파일을 Claude Code에서 작업으로 등록해 커밋하게 하라는 안내다.
 - [main](../../src/projinit/upgrade.py#main): 갱신하고 바뀐 파일과 `NEXT_STEP`을 출력한다. 오류는 `upgrade: <메시지>`로 출력하고 종료 코드 1로 끝난다. `projinit` 명령의 하위 명령 `upgrade`가 이 `main`을 부른다.
 
-테스트는 [tests/test_upgrade.py](../../tests/test_upgrade.py)다. 이전 버전 프로젝트의 갱신(버전, 공통 파일, 설정의 다른 줄 유지), 커밋하지 않은 변경이 있을 때와 실행 명령이 있을 때의 거부, `version` 줄이 없는 설정을 검사한다.
+테스트는 [tests/unit/test_upgrade.py](../../tests/unit/test_upgrade.py)다. 이전 버전 프로젝트의 갱신(버전, 공통 파일, 설정의 다른 줄 유지), 커밋하지 않은 변경이 있을 때와 실행 명령이 있을 때의 거부, `version` 줄이 없는 설정을 검사한다.
 

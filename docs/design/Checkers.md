@@ -103,21 +103,21 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 
 ## 5. 테스트
 
-각 도구의 동작은 아래 테스트가 검증한다. 테스트는 임시 디렉터리에 작은 저장소를 만들어 `--root`와 같은 방식으로 검사기를 실행한다.
+각 도구의 동작은 아래 단위 테스트(`tests/unit/`)가 검증한다. 테스트는 임시 디렉터리에 작은 저장소를 만들어 `--root`와 같은 방식으로 검사기를 실행한다. 테스트의 종류와 폴더는 [시스템 구조](../Architecture.md#3-테스트)가 정한다.
 
 - [tests/support.py](../../tests/support.py): 테스트 공통 기반. [RepoTestCase](../../tests/support.py#RepoTestCase)는 테스트마다 임시 저장소 루트(`self.root`)를 만들고 지우며, [RepoTestCase.write](../../tests/support.py#RepoTestCase.write)로 그 아래에 파일을 만든다.
-- [tests/test_doclib.py](../../tests/test_doclib.py): 링크 추출(코드 블록·인라인 코드·이미지 제외), 앵커 생성(한글, 중복 제목).
-- [tests/test_check_docs.py](../../tests/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소, README 링크 검사와 README 고아 판정(링크 없음, 인덱스에서 링크), 진입 문서 형식(정상, 코드 블록, 인라인 코드, 링크 없는 목록 줄, 추가 문단, 제목 누락).
-- [tests/test_check_pointers.py](../../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락과 계산한 `@doc:` 수정안, 받아 주는 문서 포인터가 없는 `@doc:`, 문서→코드 문제가 있으면 코드 쪽 검사를 하지 않음, 포인터 확인(코드 포인터가 먼저 있던 새 문서 포인터는 확인 줄이 있어야 통과, 이유 없는 확인 줄, 함께 생긴 포인터와 git 밖은 확인 불필요), 모듈 포인터만으로는 심볼 포인터의 역방향이 되지 않음, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
-- [tests/test_code_index.py](../../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
-- [tests/test_cli.py](../../tests/test_cli.py): 하위 명령이 해당 모듈의 `main`에 인자를 넘기는지(`commit-msg`는 `--message-file`을 붙여서), 모르는 하위 명령.
-- [tests/test_check_hooks.py](../../tests/test_check_hooks.py): 설정에서 만든 hook 명령(직접 지정, `uvx` 조합, 만들 수 없는 경우), 정상 설치, settings 파일 누락·형식 오류·명령 불일치, SessionStart hook 누락, pre-commit 누락·실행 권한 없음·명령 불일치, commit-msg 누락, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
-- [tests/test_check_commits.py](../../tests/test_check_commits.py): 정상 메시지(여러 ID, 진행 중, 트레일러, 주석 줄), git이 만드는 제목, 제목 형식·길이·마침표·빈 줄·중복 ID 오류, 없는 ID, 시작하지 않은 ID, PR 제목의 진행 중 표기, 브랜치 이름 형식과 없는 ID, 임시 git 저장소의 이력 검사와 기준 커밋·병합 커밋 제외, 명령의 세 가지 쓰임.
-- [tests/test_check_pr_order.py](../../tests/test_check_pr_order.py): 임시 git 저장소로 쌓인 브랜치(포함)와 `main`에서 따로 만든 브랜치(빠짐), 번호가 뒤인 PR은 무시함, 저장소에 없는 커밋.
-- [tests/test_config.py](../../tests/test_config.py): 기본 설정, 설정 파일 읽기, 설정 오류(TOML 형식, 모르는 키, 값의 형), `Project`의 경로.
-- [tests/test_run_checks.py](../../tests/test_run_checks.py): 실행할 검사 목록, 설정의 프로젝트 명령 실행, Stop hook 응답(통과, 첫 실패에서 막기, 이미 막힌 뒤 허용과 사용자 경고), 실패 요약의 길이 제한.
-- [tests/test_languages.py](../../tests/test_languages.py): 언어마다 [포인터 규약](../Traceability.md#7-언어별-심볼-규칙)의 표에 있는 정의·값·이름 붙이기·공개 규칙. `LANGUAGES`와 `LANGUAGE_SUFFIXES`의 일치.
-- [tests/test_check_tasks.py](../../tests/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함), 완료 보관(정상 보관, 닫힌 마일스톤 기록이 완료 문서에 남은 경우, 닫히지 않은 마일스톤의 보관, 잘못된 보관 문서 이름, 다른 마일스톤 태스크, 중복 기록, 보관으로 옮긴 기록의 보존), 경량 이슈(정상, `[~]` 상태, 기록이 있는 경우, 완료일 누락, 빈 결과, 연결 작업), 기록 보존(그대로 옮긴 경우 통과, 옮기며 줄이 빠진 경우, 진행 중 기록의 진행 기록 줄을 지운 경우, 진행 중 기록이 사라진 경우, 완료 기록의 줄이 바뀐 경우, 링크 대상만 바꾼 경우 통과, 링크 표시 이름을 바꾼 경우, git 저장소가 아닌 경우).
+- [tests/unit/test_doclib.py](../../tests/unit/test_doclib.py): 링크 추출(코드 블록·인라인 코드·이미지 제외), 앵커 생성(한글, 중복 제목).
+- [tests/unit/test_check_docs.py](../../tests/unit/test_check_docs.py): 깨진 링크, 없는 앵커, 고아 문서, 진입 문서 누락, 정상 저장소, README 링크 검사와 README 고아 판정(링크 없음, 인덱스에서 링크), 진입 문서 형식(정상, 코드 블록, 인라인 코드, 링크 없는 목록 줄, 추가 문단, 제목 누락).
+- [tests/unit/test_check_pointers.py](../../tests/unit/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락과 계산한 `@doc:` 수정안, 받아 주는 문서 포인터가 없는 `@doc:`, 문서→코드 문제가 있으면 코드 쪽 검사를 하지 않음, 포인터 확인(코드 포인터가 먼저 있던 새 문서 포인터는 확인 줄이 있어야 통과, 이유 없는 확인 줄, 함께 생긴 포인터와 git 밖은 확인 불필요), 모듈 포인터만으로는 심볼 포인터의 역방향이 되지 않음, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
+- [tests/unit/test_code_index.py](../../tests/unit/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
+- [tests/unit/test_cli.py](../../tests/unit/test_cli.py): 하위 명령이 해당 모듈의 `main`에 인자를 넘기는지(`commit-msg`는 `--message-file`을 붙여서), 모르는 하위 명령.
+- [tests/unit/test_check_hooks.py](../../tests/unit/test_check_hooks.py): 설정에서 만든 hook 명령(직접 지정, `uvx` 조합, 만들 수 없는 경우), 정상 설치, settings 파일 누락·형식 오류·명령 불일치, SessionStart hook 누락, pre-commit 누락·실행 권한 없음·명령 불일치, commit-msg 누락, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
+- [tests/unit/test_check_commits.py](../../tests/unit/test_check_commits.py): 정상 메시지(여러 ID, 진행 중, 트레일러, 주석 줄), git이 만드는 제목, 제목 형식·길이·마침표·빈 줄·중복 ID 오류, 없는 ID, 시작하지 않은 ID, PR 제목의 진행 중 표기, 브랜치 이름 형식과 없는 ID, 임시 git 저장소의 이력 검사와 기준 커밋·병합 커밋 제외, 명령의 세 가지 쓰임.
+- [tests/unit/test_check_pr_order.py](../../tests/unit/test_check_pr_order.py): 임시 git 저장소로 쌓인 브랜치(포함)와 `main`에서 따로 만든 브랜치(빠짐), 번호가 뒤인 PR은 무시함, 저장소에 없는 커밋.
+- [tests/unit/test_config.py](../../tests/unit/test_config.py): 기본 설정, 설정 파일 읽기, 설정 오류(TOML 형식, 모르는 키, 값의 형), `Project`의 경로.
+- [tests/unit/test_run_checks.py](../../tests/unit/test_run_checks.py): 실행할 검사 목록, 설정의 프로젝트 명령 실행, Stop hook 응답(통과, 첫 실패에서 막기, 이미 막힌 뒤 허용과 사용자 경고), 실패 요약의 길이 제한.
+- [tests/unit/test_languages.py](../../tests/unit/test_languages.py): 언어마다 [포인터 규약](../Traceability.md#7-언어별-심볼-규칙)의 표에 있는 정의·값·이름 붙이기·공개 규칙. `LANGUAGES`와 `LANGUAGE_SUFFIXES`의 일치.
+- [tests/unit/test_check_tasks.py](../../tests/unit/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함), 완료 보관(정상 보관, 닫힌 마일스톤 기록이 완료 문서에 남은 경우, 닫히지 않은 마일스톤의 보관, 잘못된 보관 문서 이름, 다른 마일스톤 태스크, 중복 기록, 보관으로 옮긴 기록의 보존), 경량 이슈(정상, `[~]` 상태, 기록이 있는 경우, 완료일 누락, 빈 결과, 연결 작업), 기록 보존(그대로 옮긴 경우 통과, 옮기며 줄이 빠진 경우, 진행 중 기록의 진행 기록 줄을 지운 경우, 진행 중 기록이 사라진 경우, 완료 기록의 줄이 바뀐 경우, 링크 대상만 바꾼 경우 통과, 링크 표시 이름을 바꾼 경우, git 저장소가 아닌 경우).
 
 ## 6. 작업 관리 검사기
 
@@ -316,7 +316,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 - [check_version](../../src/projinit/check_template.py#check_version): `Project`와 실행 중인 버전을 받아, 설정의 `projinit.command`가 비어 있고 `version`이 실행 중인 버전과 다르면 설정 파일의 문제로 보고한다.
 - [main](../../src/projinit/check_template.py#main): 두 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다. 실행 중인 버전은 [초기화 명령](Templates.md#9-초기화-명령)의 `package_version`으로 얻는다.
 
-테스트는 [tests/test_check_template.py](../../tests/test_check_template.py)다. 갓 초기화한 폴더 통과, 손으로 고친 공통 문서, 없는 공통 파일, 빈 자리 값이 없는 설정, 버전 불일치, 실행 명령이 있으면 버전 검사를 건너뜀을 검사한다.
+테스트는 [tests/unit/test_check_template.py](../../tests/unit/test_check_template.py)다. 갓 초기화한 폴더 통과, 손으로 고친 공통 문서, 없는 공통 파일, 빈 자리 값이 없는 설정, 버전 불일치, 실행 명령이 있으면 버전 검사를 건너뜀을 검사한다.
 
 ## 15. 자료 폴더 검사기
 
@@ -333,7 +333,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 자료 폴더 안 코드 파일 링크는 [collect_code_pointers](../../src/projinit/check_pointers.py#collect_code_pointers)가 건너뛰고 [check_links](../../src/projinit/check_docs.py#check_links)가 대상 파일이 있는지 본다.
 
-테스트는 [tests/test_check_materials.py](../../tests/test_check_materials.py)다. 자료 폴더 없음, 목록 없는 참고 자료는 통과, 기존 프로젝트의 목록 문서 없음, 목록에 없는 파일, 폴더 링크로 덮임, 커밋된 기존 프로젝트의 고침·지움·새 파일, 새 기존 프로젝트 폴더는 허용, git이 아닌 폴더, 중첩 `.git`, 로컬 자료의 무시 안 됨·추적됨·정상을 검사한다. 자료 폴더 안 코드 파일 링크는 [tests/test_check_pointers.py](../../tests/test_check_pointers.py)와 [tests/test_check_docs.py](../../tests/test_check_docs.py)에서 검사한다.
+테스트는 [tests/unit/test_check_materials.py](../../tests/unit/test_check_materials.py)다. 자료 폴더 없음, 목록 없는 참고 자료는 통과, 기존 프로젝트의 목록 문서 없음, 목록에 없는 파일, 폴더 링크로 덮임, 커밋된 기존 프로젝트의 고침·지움·새 파일, 새 기존 프로젝트 폴더는 허용, git이 아닌 폴더, 중첩 `.git`, 로컬 자료의 무시 안 됨·추적됨·정상을 검사한다. 자료 폴더 안 코드 파일 링크는 [tests/unit/test_check_pointers.py](../../tests/unit/test_check_pointers.py)와 [tests/unit/test_check_docs.py](../../tests/unit/test_check_docs.py)에서 검사한다.
 
 ## 16. 세션 시작 안내
 
@@ -348,5 +348,5 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 - [private_context](../../src/projinit/session_context.py#private_context): `Project`를 받아 로컬 자료 안내를 돌려준다. `private/`에 파일이 없으면 빈 문자열이다. 아니면 `로컬 자료: <private>/에 자료 <N>개가 있다. 이 컴퓨터에만 있다. 커밋하지 않고 문서에서 링크하지 않으며, 문서에는 공개해도 되는 결정만 옮긴다(<docs>/MaterialRule.md의 5 로컬 자료 폴더).`와, `MAX_ITEMS`개까지의 `- <저장소 기준 경로>` 줄이다.
 - [main](../../src/projinit/session_context.py#main): `--root`를 받아 설정을 읽고 `reference_context`와 `private_context` 중 비지 않은 것을 빈 줄 하나로 이어 출력한다. 둘 다 비면 아무것도 출력하지 않는다. 설정 오류나 읽기 오류가 나도 출력 없이 종료 코드 0이다. `projinit` 명령의 하위 명령 `context`가 이 `main`을 부른다.
 
-테스트는 [tests/test_session_context.py](../../tests/test_session_context.py)다. 자료가 없을 때 빈 출력, 목록 문서가 없을 때, 목록 항목과 목록에 없는 자료, 개수 제한, 로컬 자료 안내, 설정 오류에도 종료 코드 0을 검사한다.
+테스트는 [tests/unit/test_session_context.py](../../tests/unit/test_session_context.py)다. 자료가 없을 때 빈 출력, 목록 문서가 없을 때, 목록 항목과 목록에 없는 자료, 개수 제한, 로컬 자료 안내, 설정 오류에도 종료 코드 0을 검사한다.
 
