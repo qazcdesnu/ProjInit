@@ -17,7 +17,7 @@
 | 첫 세션 안내 | `.claude/commands/start.md` | 공통. `/start` 명령으로, 작업 관리 규칙의 [첫 작업](../TaskRule.md#48-첫-작업) 절차를 따르라고만 적는다. 절차 자체는 규칙 문서에 둔다. |
 
 - 프로젝트 고유 문서(제품 비전, 시스템 구조, 상세 설계)는 만들지 않는다. 인덱스에 자리만 두고, 첫 세션이 사용자와 대화해 만든다(M2-T4).
-- 폴더가 git 저장소가 아니면 `git init`을 하고, `core.hooksPath`를 `.githooks`로 설정한다. 커밋은 하지 않는다. 첫 커밋은 첫 세션이 커밋 규칙대로 한다.
+- 폴더가 git 저장소가 아니면 `git init`을 하고, `core.hooksPath`를 `.githooks`로 설정하고, `ensure_ignored`를 부른다. 돌려주는 목록에는 `.gitignore`를 고쳤으면 그것도 넣는다. 커밋은 하지 않는다. 첫 커밋은 첫 세션이 커밋 규칙대로 한다.
 - 만들 파일이 하나라도 이미 있으면 아무것도 쓰지 않고 그 파일 목록을 알려 주며 실패한다. 기존 파일을 덮어쓰지 않기 위해서다.
 - 커밋 이력의 기준 커밋(`check.commit_baseline`)은 비워 둔다. 초기화한 저장소의 커밋은 처음부터 커밋 규칙을 따르기 때문이다. 기존 이력이 있는 저장소라면 사용자가 기준 커밋을 정해 적는다.
 
@@ -116,13 +116,15 @@ projinit init --refresh-common [--root <폴더>]
 - [package_version](../../src/projinit/init.py#package_version): 실행 중인 `projinit` 패키지의 버전.
 - [repository_url](../../src/projinit/init.py#repository_url): 원격 저장소 주소를 정한다. 인자로 받은 값, git `origin` 주소, `NO_REPOSITORY` 순서다.
 - [init_project](../../src/projinit/init.py#init_project): 폴더와 원격 주소를 받아 공통 파일, 처음 만드는 파일(설정 파일 포함)을 채워 쓰고, 만든 파일의 상대 경로 목록을 돌려준다. 하나라도 이미 있으면 아무것도 쓰지 않고 그 목록을 담아 `InitError`를 낸다. 폴더가 git 저장소가 아니면 `git init`을 하고, `core.hooksPath`를 `.githooks`로 설정한다. `EXECUTABLE_FILES`에는 실행 권한을 준다. 폴더가 없으면 만든다.
-- [refresh_common](../../src/projinit/init.py#refresh_common): `Project`를 받아 공통 파일을 `render_values`의 값으로 다시 채워 쓰고(실행 권한 포함), 내용이 바뀐 파일의 상대 경로 목록을 돌려준다. 다른 파일은 건드리지 않는다.
+- [refresh_common](../../src/projinit/init.py#refresh_common): `Project`를 받아 공통 파일을 `render_values`의 값으로 다시 채워 쓰고(실행 권한 포함), `ensure_ignored`를 부른 뒤, 내용이 바뀐 파일의 상대 경로 목록을 돌려준다(`.gitignore`를 고쳤으면 포함). 다른 파일은 건드리지 않는다.
+- [GITIGNORE](../../src/projinit/init.py#GITIGNORE): `.gitignore`.
+- [ensure_ignored](../../src/projinit/init.py#ensure_ignored): `Project`를 받아 루트의 `GITIGNORE`에 로컬 자료 폴더를 빼는 줄 `/<private>/`가 있게 하고, 고쳤으면 참을 돌려준다(I26). 앞뒤 공백을 지운 줄 중 `/<private>/`, `<private>/`, `/<private>`, `<private>`가 있으면 이미 있는 것으로 본다. 없으면 파일 끝에 그 줄을 더하고(파일이 줄바꿈으로 끝나지 않으면 줄바꿈을 먼저 넣는다), 파일이 없으면 그 한 줄로 만든다. 다른 줄은 그대로 둔다. `.gitignore`는 공통 파일이 아니다. 파일 전체가 아니라 이 줄 하나만 보장하므로, 이미 있는 저장소에서도 초기화를 막지 않는다.
 - [InitError](../../src/projinit/init.py#InitError): 초기화할 수 없을 때의 오류.
 - [START_HINT](../../src/projinit/init.py#START_HINT): 초기화를 마친 뒤 출력하는 사용법. Claude Code를 열고 `/start`를 입력하라는 안내다.
 - [main](../../src/projinit/init.py#main): 위 두 동작을 실행하고, 만들거나 바꾼 파일을 한 줄씩 출력한다. 초기화한 경우 마지막에 `START_HINT`를 출력한다. 오류는 `init: <메시지>`로 출력하고 종료 코드 1로 끝난다.
 - `projinit` 명령의 하위 명령 `init`이 이 `main`을 부른다.
 
-테스트는 [tests/test_init.py](../../tests/test_init.py)다. 빈 폴더 초기화 결과의 파일 목록과 검증 전체(`check`의 모든 검사기) 통과, hook 실행 권한과 `core.hooksPath`, git 저장소 생성, 원격 주소 결정 순서, 이미 있는 파일 때문에 실패하면 아무것도 쓰지 않음, `--refresh-common`이 고친 공통 문서를 되돌리고 다른 파일은 그대로 둠을 검사한다.
+테스트는 [tests/test_init.py](../../tests/test_init.py)다. 빈 폴더 초기화 결과의 파일 목록과 검증 전체(`check`의 모든 검사기) 통과, hook 실행 권한과 `core.hooksPath`, git 저장소 생성, 원격 주소 결정 순서, 이미 있는 파일 때문에 실패하면 아무것도 쓰지 않음, `--refresh-common`이 고친 공통 문서를 되돌리고 다른 파일은 그대로 둠, `.gitignore`가 없을 때·다른 줄만 있을 때·이미 줄이 있을 때·폴더 위치를 바꿨을 때를 검사한다.
 
 ## 10. 갱신 명령
 

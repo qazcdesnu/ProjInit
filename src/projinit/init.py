@@ -78,6 +78,19 @@ def init_project(root: Path, repository: str | None) -> list[str]:
     return list(targets)
 
 
+# @doc: docs/design/Templates.md#9-초기화-명령
+GITIGNORE = ".gitignore"
+
+
+def ensure_ignored(project: Project) -> bool:
+    """Make the root .gitignore ignore the private folder; return whether the file changed.
+
+    @doc: docs/design/Templates.md#9-초기화-명령
+    @stub: I26
+    """
+    raise NotImplementedError
+
+
 def _write(path: Path, text: str, executable: bool) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
