@@ -120,6 +120,35 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 - [tests/unit/test_languages.py](../../tests/unit/test_languages.py): 언어마다 [포인터 규약](../Traceability.md#7-언어별-심볼-규칙)의 표에 있는 정의·값·이름 붙이기·공개 규칙. `LANGUAGES`와 `LANGUAGE_SUFFIXES`의 일치.
 - [tests/unit/test_check_tasks.py](../../tests/unit/test_check_tasks.py): 정상 저장소, 형식 오류, 번호 누락, 상태와 기록의 불일치, 연결 작업, 기록 필드·절 누락, 완료 순서, `없음` 규칙, 알 수 없는 ID 참조(한글 조사가 붙은 ID 포함), 완료 보관(정상 보관, 닫힌 마일스톤 기록이 완료 문서에 남은 경우, 닫히지 않은 마일스톤의 보관, 잘못된 보관 문서 이름, 다른 마일스톤 태스크, 중복 기록, 보관으로 옮긴 기록의 보존), 경량 이슈(정상, `[~]` 상태, 기록이 있는 경우, 완료일 누락, 빈 결과, 연결 작업), 기록 보존(그대로 옮긴 경우 통과, 옮기며 줄이 빠진 경우, 진행 중 기록의 진행 기록 줄을 지운 경우, 진행 중 기록이 사라진 경우, 완료 기록의 줄이 바뀐 경우, 링크 대상만 바꾼 경우 통과, 링크 표시 이름을 바꾼 경우, git 저장소가 아닌 경우).
 
+### 5.1 시나리오 테스트
+
+[tests/scenario/](../../tests/scenario/)는 종단 테스트다([시스템 구조](../Architecture.md#3-테스트)). M7에서 손으로 한 전수조사를 영구 테스트로 옮긴 것이다. 초기화로 실제 프로젝트를 만들고 규칙을 하나씩 일부러 깨뜨려, 담당 검사기가 맞는 메시지로 잡는지 본다. 검사기가 "무조건 통과"하지 않는다는 것을 확인하는 것이 목적이므로, 통과해야 하는 경우(대상 없는 선택 링크, 목록 없는 참고 자료, 정상 커밋 등)도 함께 둔다.
+
+[tests/scenario/project.py](../../tests/scenario/project.py)가 공통 도구다.
+
+- [COMMAND](../../tests/scenario/project.py#COMMAND): 시나리오 프로젝트에서 `projinit`을 실행하는 명령. 지금 테스트를 돌리는 Python으로 `-m projinit.cli`를 실행한다. 기준 프로젝트 설정의 `projinit.command`에 넣어 hook도 이 명령을 쓴다. 배포된 태그가 아니라 지금 코드를 시험하기 위해서다. 그래서 버전 일치 검사는 건너뛰며, 그것은 단위 테스트가 본다.
+- [baseline](../../tests/scenario/project.py#baseline): 기준 프로젝트를 프로세스에서 한 번만 만들고 그 경로를 돌려준다. 프로세스가 끝나면 지운다. 만드는 순서는 다음과 같다.
+  1. 빈 git 저장소를 [초기화 명령](Templates.md#9-초기화-명령)의 `init_project`로 초기화하고, 설정에 `COMMAND`를 넣어 `refresh_common`으로 강제 장치를 다시 만든다.
+  2. 설계 문서 하나(`docs/design/Feature.md`, 인덱스에서 링크)와 그것이 가리키는 Python 모듈(함수, 클래스, 목업)과 TypeScript 모듈을 만든다.
+  3. 로드맵에 완료한 태스크와 아직 시작하지 않은 태스크(마일스톤을 열어 둔다), 완료 기록, 경량 이슈, 진행 중 이슈와 그 기록을 만든다.
+  4. `reference/`, `legacy/`(목록 문서 포함), `private/`에 자료를 하나씩 넣는다.
+  5. 모든 검사기가 통과하는지 확인하고, 실제 `git commit`(pre-commit과 commit-msg hook 통과)으로 커밋한다. 확인이 실패하면 오류를 낸다.
+- [ScenarioCase](../../tests/scenario/project.py#ScenarioCase): 테스트마다 기준 프로젝트를 임시 폴더로 복사해 `self.root`로 둔다. 파일을 고치는 도우미(`write`, `append`, `replace`, `remove`), `git`, 실제 hook을 거치는 `commit`, `COMMAND`로 하위 명령을 실행하는 `projinit`을 둔다.
+  - [ScenarioCase.checks](../../tests/scenario/project.py#ScenarioCase.checks): [CHECKS](../../src/projinit/run_checks.py#CHECKS)의 검사기마다 `main(["--root", <루트>])`을 같은 프로세스에서 부르고, 이름 → (종료 코드, 출력)을 돌려준다. 명령으로 실행하면 경우마다 검사기 일곱 개의 프로세스가 떠서 느리다.
+  - [ScenarioCase.assert_caught](../../tests/scenario/project.py#ScenarioCase.assert_caught): 검사기 이름과 기대 문자열을 받아, 그 검사기가 실패하고 출력에 그 문자열이 있는지 확인한다.
+  - [ScenarioCase.assert_clean](../../tests/scenario/project.py#ScenarioCase.assert_clean): 모든 검사기가 통과하는지 확인한다.
+
+시나리오는 규칙 영역마다 파일 하나다.
+
+- [tests/scenario/test_doc_rules.py](../../tests/scenario/test_doc_rules.py): 깨진 링크와 앵커, 고아 문서, 진입 문서 형식(인덱스 링크, 인라인 코드, 산문, 코드 블록, 없음), 인덱스 없음, 로컬 자료 링크(일반, 선택), 있는 선택 링크의 앵커, 없는 기존 프로젝트 파일 링크, README의 깨진 링크, 대소문자만 다른 링크. 통과: 대상 없는 선택 링크.
+- [tests/scenario/test_pointer_rules.py](../../tests/scenario/test_pointer_rules.py): 없는 심볼·파일, 줄 번호, 없는 근거 문서와 앵커, 커버리지(Python 함수, 모듈, TypeScript 함수), 역방향 포인터 없음, 받아 주는 문서 포인터 없음, 모듈 포인터로는 심볼의 역방향이 안 됨, 목업의 없는 작업·완료된 작업, 구문 오류, 소속 없는 주석과 코드와 같은 줄의 주석, 포인터 확인, 검사 단계 순서, 문서 포인터 삭제, 클래스 `@doc` 삭제.
+- [tests/scenario/test_task_rules.py](../../tests/scenario/test_task_rules.py): 진행 중 기록 없는 `[~]`, 이슈 번호 건너뜀과 중복, 모르는 ID의 기록, 완료 기록 고침과 지움, 완료 기록 없는 `[x]`, 필수 절 없음, 경량 이슈의 빈 결과와 완료일 없음, 날짜 형식, `없음` 규칙, 로드맵 형식, 마일스톤 번호, 진행 기록 줄 지움, 완료 순서, 없는 마일스톤의 보관 문서, 본문의 모르는 ID, 완료한 이슈에 남은 진행 중 기록, 계획 절 없음.
+- [tests/scenario/test_material_rules.py](../../tests/scenario/test_material_rules.py): 목록에 없는 기존 프로젝트, 목록 문서 없음, 커밋된 기존 프로젝트의 고침·지움·새 파일·스테이징, 중첩 `.git`, 로컬 자료의 `.gitignore` 줄 지움과 강제 스테이징, 세션 시작 안내. 통과: 목록 없는 참고 자료, 새 기존 프로젝트 폴더.
+- [tests/scenario/test_device_rules.py](../../tests/scenario/test_device_rules.py): Stop·SessionStart hook 제거, pre-commit 실행 권한과 내용, commit-msg 없음, `core.hooksPath`, 설정 JSON 오류, 공통 문서와 강제 장치 손수정, 공통 문서 지움, 실패하는 프로젝트 명령, 실제 커밋을 막는 pre-commit과 commit-msg, Stop hook의 막기와 두 번째 허용. 통과: 정상 커밋, 깨끗한 상태의 Stop.
+- [tests/scenario/test_commit_rules.py](../../tests/scenario/test_commit_rules.py): 커밋 메시지(ID 없음, 없는 ID, 마침표, 길이, 중복 ID, 빈 줄 없음, 빈 메시지, 콜론 뒤 공백, 범위 표기, 시작 안 한 작업), hook을 우회한 커밋의 이력 검사, PR 제목·브랜치, PR 순서. 통과: 진행 중 커밋, 완료한 작업, 병합 제목, 정상 PR, 쌓은 PR.
+
+새 규칙이나 검사를 더하면 그 규칙을 깨뜨리는 시나리오도 더한다.
+
 ## 6. 작업 관리 검사기
 
 [src/projinit/check_tasks.py](../../src/projinit/check_tasks.py)는 [작업 관리 규칙](../TaskRule.md)을 작업 ID 기준으로 검증한다. 해석하는 문서 형식은 [작업 관리 규칙의 문서 형식](../TaskRule.md#6-문서-형식)에 있다.

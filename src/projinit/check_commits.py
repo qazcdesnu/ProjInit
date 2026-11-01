@@ -79,7 +79,7 @@ def check_message(
         return problems
     ids, in_progress, summary = parsed
     if in_progress and is_pr_title:
-        problems.append(f"PR 제목에는 {_IN_PROGRESS}를 붙이지 않음")
+        problems.append(f"PR 제목에는 {_IN_PROGRESS}을 붙이지 않음")
     if summary.endswith("."):
         problems.append("요약은 마침표로 끝내지 않음")
     for work_id in sorted({work_id for work_id in ids if ids.count(work_id) > 1}):
