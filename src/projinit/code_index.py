@@ -78,14 +78,14 @@ class _Layout:
     first_code: tuple[int, int] | None = None
 
 
-def index_module(path: Path, root: Path) -> ModuleIndex:
+def index_module(path: Path, root: Path, source: bytes | None = None) -> ModuleIndex:
     """Parse a code file into its symbols and its pointers to documents.
 
     @doc: docs/design/Checkers.md#72-파일-분석
     """
     index = ModuleIndex(path)
     language = LANGUAGES[LANGUAGE_SUFFIXES[path.suffix]]
-    tree = parse(language, path.read_bytes())
+    tree = parse(language, path.read_bytes() if source is None else source)
     error = _first_error(tree.root_node)
     if error is not None:
         index.problems.append(Problem(path, error.start_point.row + 1, "파싱 실패: 구문 오류"))

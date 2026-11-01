@@ -4,6 +4,7 @@
 """
 
 import io
+import subprocess
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -88,14 +89,29 @@ class CheckPointersTest(RepoTestCase):
         self.write("docs/B.md", "# B\n\n[thing](../src/mod.py#Thing)\n")
         self.write("src/other.py", "'''@doc: docs/A.md'''\n")
         output = self.run_checker()[1]
-        self.assertIn("docs/B.md:3: 역방향 포인터 없음: src/mod.py#Thing", output)
-        self.assertIn("src/other.py:1: 역방향 포인터 없음: docs/A.md가 src/other.py", output)
+        self.assertIn("src/mod.py:12: 역방향 포인터 없음: docs/B.md:3이 src/mod.py#Thing을 가리킴. Thing에 @doc: docs/B.md#b를 단다", output)
+        self.assertIn("src/other.py:1: 받아 주는 문서 포인터 없음: docs/A.md가 src/other.py 또는 관련 심볼을", output)
+
+    def test_suggested_back_pointer_uses_the_section_of_the_link(self) -> None:
+        self.write("docs/B.md", "# B\n\n## 1. Intro\n\n## 2. Files\n\n[mod](../src/mod.py)\n")
+        output = self.run_checker()[1]
+        self.assertIn("src/mod.py:1: 역방향 포인터 없음: docs/B.md:7이 src/mod.py을 가리킴. 파일 머리에 @doc: docs/B.md#2-files를 단다", output)
+
+    def test_document_pointer_problems_hold_back_code_side_checks(self) -> None:
+        self.write("docs/B.md", "# B\n\n[gone](../src/mod.py#Gone) [thing](../src/mod.py#Thing)\n")
+        self.write("src/bare.py", "def helper():\n    pass\n")
+        code, output = self.run_checker()
+        self.assertEqual(code, 1)
+        self.assertIn("구문 트리에 심볼 없음: ../src/mod.py#Gone", output)
+        self.assertIn("문서→코드 포인터 문제 1건을 먼저 고친다", output)
+        self.assertNotIn("역방향", output)
+        self.assertNotIn("@doc 포인터 없음", output)
 
     def test_module_pointer_alone_does_not_back_a_symbol_pointer(self) -> None:
         self.write("docs/B.md", "# B\n\n[run](../src/mod.py#Thing.run) [file](../src/mod.py)\n")
         self.write("src/mod.py", _MODULE.replace("@doc: docs/A.md#1-spec", "@doc: docs/A.md#1-spec\n@doc: docs/B.md"))
         output = self.run_checker()[1]
-        self.assertIn("docs/B.md:3: 역방향 포인터 없음: src/mod.py#Thing.run", output)
+        self.assertIn("src/mod.py:16: 역방향 포인터 없음: docs/B.md:3이 src/mod.py#Thing.run을 가리킴", output)
         self.assertNotIn("src/mod.py 또는", output)
         self.write("src/mod.py", _MODULE.replace("\'\'\'@doc: docs/A.md\'\'\'", "\'\'\'@doc: docs/A.md\n    @doc: docs/B.md\'\'\'"))
         code, output = self.run_checker()
@@ -121,6 +137,70 @@ class CheckPointersTest(RepoTestCase):
         output = self.run_checker()[1]
         self.assertIn("src/util.ts:3: 공개 심볼 helper에 @doc 포인터 없음", output)
         self.assertNotIn("hidden", output)
+
+
+class ConfirmationTest(RepoTestCase):
+    """@doc: docs/design/Checkers.md#4-포인터-검사기"""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.write("docs/A.md", _DOC)
+        self.write("docs/B.md", "# B\n\n## 1. Run\n\n[thing](../src/mod.py#Thing)\n")
+        self.write("src/mod.py", _MODULE.replace("'''@doc: docs/A.md'''", "'''@doc: docs/A.md\n    @doc: docs/B.md'''"))
+        self.write("docs/Ongoing.md", "# 진행 중\n\n없음\n")
+        self.git("init", "-q")
+        self.git("add", "-A")
+        self.git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "base")
+
+    def git(self, *args: str) -> None:
+        subprocess.run(["git", "-C", str(self.root), *args], check=True, capture_output=True)
+
+    def run_checker(self) -> tuple[int, str]:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = main(["--root", str(self.root)])
+        return code, output.getvalue()
+
+    def test_committed_pointers_need_no_confirmation(self) -> None:
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+
+    def test_document_pointer_that_followed_an_older_code_pointer_needs_confirmation(self) -> None:
+        # The link to Thing.run is retargeted to Thing, which already named docs/A.md in HEAD.
+        self.write("docs/A.md", _DOC.replace("#Thing.run", "#Thing"))
+        code, output = self.run_checker()
+        self.assertEqual(code, 1)
+        self.assertIn("docs/A.md:5: 포인터 확인 필요: src/mod.py#Thing의 @doc이 이 문서 포인터보다 먼저 있었음", output)
+        self.assertIn("`- 포인터 확인: docs/A.md → src/mod.py#Thing: <이유>`", output)
+        self.write("docs/Ongoing.md", "# 진행 중\n\n- 포인터 확인: docs/A.md → src/mod.py#Thing:\n")
+        self.assertEqual(self.run_checker()[0], 1)
+        self.write("docs/Ongoing.md", "# 진행 중\n\n- 포인터 확인: docs/A.md → src/mod.py#Thing: 1절은 클래스 전체를 말한다\n")
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+
+    def test_pointers_added_with_their_code_pointer_need_no_confirmation(self) -> None:
+        self.write("docs/B.md", "# B\n\n## 1. Run\n\n[thing](../src/mod.py#Thing) [extra](../src/mod.py#extra)\n")
+        self.write("src/mod.py", _MODULE.replace("'''@doc: docs/A.md'''", "'''@doc: docs/A.md\n    @doc: docs/B.md'''") + "\n\ndef extra():\n    '''@doc: docs/B.md'''\n")
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+
+    def test_module_pointer_does_not_count_for_a_symbol(self) -> None:
+        # Only the file header pointed to docs/C.md in HEAD, so the new pointer to Thing.run followed no code pointer.
+        module = (self.root / "src/mod.py").read_text(encoding="utf-8").replace("@doc: docs/A.md#1-spec", "@doc: docs/A.md#1-spec\n@doc: docs/C.md")
+        self.write("docs/C.md", "# C\n\n[mod](../src/mod.py)\n")
+        self.write("src/mod.py", module)
+        self.git("add", "-A")
+        self.git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "c")
+        self.write("docs/C.md", "# C\n\n[mod](../src/mod.py) [run](../src/mod.py#Thing.run)\n")
+        self.write("src/mod.py", module.replace("    def run(self):", "    def run(self):\n        '''@doc: docs/C.md'''"))
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
+
+    def test_skips_outside_git(self) -> None:
+        self.git("update-ref", "-d", "HEAD")
+        self.write("docs/A.md", _DOC.replace("#Thing.run", "#Thing"))
+        code, output = self.run_checker()
+        self.assertEqual(code, 0, output)
 
 
 class StubTest(RepoTestCase):
