@@ -48,7 +48,7 @@ class CheckMessageTest(unittest.TestCase):
         self.assertEqual(self.problems("I9: 요약", require_started=False), [])
 
     def test_pull_request_title_cannot_be_in_progress(self) -> None:
-        self.assertEqual(self.problems("M0-T8(진행 중): 요약", is_pr_title=True), ["PR 제목에는 (진행 중)를 붙이지 않음"])
+        self.assertEqual(self.problems("M0-T8(진행 중): 요약", is_pr_title=True), ["PR 제목에는 (진행 중)을 붙이지 않음"])
 
     def test_branch_names(self) -> None:
         self.assertEqual(check_branch("m0-t6-commit-rule", _STATUSES), [])
@@ -108,7 +108,7 @@ class CheckCommitsCommandTest(RepoTestCase):
         code, output = self.run_main("--subject", "M0-T1: 요약", "--branch", "m0-t1-x")
         self.assertEqual(code, 0, output)
         code, output = self.run_main("--subject", "M0-T1(진행 중): 요약", "--branch", "bad")
-        self.assertIn("PR:1: PR 제목: PR 제목에는 (진행 중)를 붙이지 않음", output)
+        self.assertIn("PR:1: PR 제목: PR 제목에는 (진행 중)을 붙이지 않음", output)
         self.assertIn("PR:1: 브랜치 이름 형식 오류", output)
 
 
