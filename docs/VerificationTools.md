@@ -9,6 +9,7 @@
 ```sh
 <projinit> check                         # 모든 검사와 설정의 프로젝트 명령(테스트 등)을 한 번에 실행
 <projinit> check --hook stop             # Claude Code Stop hook이 실행
+<projinit> context                       # Claude Code SessionStart hook이 실행
 <projinit> check --hook pre-commit       # git pre-commit hook이 실행
 <projinit> commit-msg <메시지 파일>       # git commit-msg hook이 실행
 <projinit> commits --subject <PR 제목> --branch <브랜치>   # CI가 PR에서 실행
@@ -81,7 +82,7 @@
 
 [9. 일괄 실행과 자동 실행](#9-일괄-실행과-자동-실행)의 장치가 설치되어 있는지 검사한다. 장치가 빠지면 검사기가 자동으로 돌지 않는데, 그 사실을 아무도 모르게 되는 것을 막는다.
 
-- `.claude/settings.json`에 Stop 명령을 실행하는 command hook이 있어야 한다.
+- `.claude/settings.json`에 Stop 명령과 SessionStart 명령을 실행하는 command hook이 있어야 한다.
 - `.githooks/pre-commit`, `.githooks/commit-msg`가 있고, 실행 권한이 있으며, 각 명령을 담고 있어야 한다.
 - git 설정 `core.hooksPath`가 `.githooks`여야 한다. 이 설정은 저장소에 포함되지 않아 클론할 때마다 한 번 해 줘야 하므로, 빠뜨리면 이 검사가 알려 준다.
 
@@ -90,6 +91,7 @@
 | 장치 | 명령 |
 | --- | --- |
 | Stop hook | `cd "$CLAUDE_PROJECT_DIR" && <projinit> check --hook stop` |
+| SessionStart hook | `cd "$CLAUDE_PROJECT_DIR" && <projinit> context` |
 | pre-commit | `<projinit> check --hook pre-commit` |
 | commit-msg | `<projinit> commit-msg "$1"` |
 
@@ -97,12 +99,13 @@
 
 ## 9. 일괄 실행과 자동 실행
 
-검사기를 작업자의 기억에 맡기지 않고 자동으로 실행한다. 장치는 네 가지이며 서로 다른 구멍을 막는다.
+검사기를 작업자의 기억에 맡기지 않고 자동으로 실행한다. 장치는 다섯 가지이며 서로 다른 구멍을 막는다.
 
 | 장치 | 실행 시점 | 실패하면 |
 | --- | --- | --- |
 | Claude Code Stop hook | Claude가 턴을 끝내려 할 때 | 첫 시도에서는 턴 종료를 막고 실패 요약을 Claude에게 돌려준다. 이미 한 번 막힌 뒤의 종료(`stop_hook_active`)는 허용하고, 남은 실패를 사용자에게 경고로 보여 준다. |
 | git pre-commit | 사람이든 Claude든 커밋하려 할 때 | 커밋을 거부한다. |
+| Claude Code SessionStart hook | 세션이 시작될 때(새 세션, 재개, 지우기, 맥락 압축 뒤) | 검사가 아니라 [세션 시작 안내](#16-세션-시작-안내)를 맥락에 넣는다. 실패해도 세션을 막지 않는다. |
 | git commit-msg | 커밋 메시지를 확정할 때 | [커밋 메시지 형식](CommitRule.md#3-메시지-형식)을 어기면 커밋을 거부한다. |
 | [CI](#12-ci) | PR을 열거나 갱신할 때, `main`에 push될 때 | 검사가 실패한 PR은 병합하지 않는다([PR 규칙](PullRequestRule.md#4-병합)). |
 
@@ -195,6 +198,15 @@ gh pr list --state open --json number,headRefName,headRefOid > open-prs.json
 
 [자료 폴더 규칙](MaterialRule.md)을 검사한다. 자료 폴더가 없으면 건너뛴다.
 
-- **목록**: 자료 폴더에 파일이 있으면 그 폴더의 목록 문서(`Reference.md`, `Legacy.md`)가 문서 디렉터리에 있어야 한다. 폴더의 모든 파일이 목록 문서의 링크로 덮여야 한다. 파일 자신이나 그 파일을 담은 자료 폴더 안의 폴더를 링크하면 덮인 것이다. 목록 문서는 자료 폴더 규칙과 인덱스가 선택 링크로 가리킨다. 목록 문서가 인덱스에서 도달할 수 있는지는 [문서 링크 검사기](#3-문서-링크-검사기)의 고아 문서 검사가 본다.
+- **목록**: `legacy/`에 파일이 있으면 목록 문서 `Legacy.md`가 문서 디렉터리에 있어야 한다. 폴더의 모든 파일이 목록 문서의 링크로 덮여야 한다. `reference/`는 목록을 검사하지 않는다([자료 폴더 규칙의 목록 문서](MaterialRule.md#2-목록-문서)). 파일 자신이나 그 파일을 담은 자료 폴더 안의 폴더를 링크하면 덮인 것이다. 목록 문서는 자료 폴더 규칙과 인덱스가 선택 링크로 가리킨다. 목록 문서가 인덱스에서 도달할 수 있는지는 [문서 링크 검사기](#3-문서-링크-검사기)의 고아 문서 검사가 본다.
 - **아카이브 불변**: `HEAD`에 커밋된 `legacy/<이름>/` 폴더 안에서, 작업 트리와 스테이징의 변경(고침, 지움, 옮김, 새 파일)을 문제로 보고한다. git 저장소가 아니거나 커밋이 없으면 건너뛴다. 새 기존 프로젝트를 새 하위 폴더로 넣는 것은 허용한다.
 - **중첩 저장소 금지**: `legacy/` 아래에 `.git`이 있으면 문제로 보고한다.
+
+## 16. 세션 시작 안내
+
+`<projinit> context`는 검사가 아니라, Claude Code SessionStart hook이 에이전트의 맥락에 넣을 안내를 출력한다([자료 폴더 규칙의 세션 시작 안내](MaterialRule.md#5-세션-시작-안내)).
+
+- `reference/`에 파일이 없으면 아무것도 출력하지 않는다.
+- 있으면 자료 수와 함께, 작업을 시작할 때 관련 자료를 찾아 읽으라는 안내를 출력한다. 이어서 목록 문서 `Reference.md`가 있으면 그 목록 항목을, 목록이 덮지 않는 자료의 경로를 출력한다. 항목과 경로는 각각 100개까지 출력하고 나머지는 개수만 적는다.
+- 설정 오류가 있거나 문서를 읽지 못해도 종료 코드 0으로 끝난다. 세션을 막지 않기 위해서다.
+

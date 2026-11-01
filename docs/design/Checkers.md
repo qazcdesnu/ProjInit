@@ -15,9 +15,10 @@ uv run python -m projinit.check_hooks       # 강제 장치(Stop hook, pre-commi
 uv run python -m projinit.check_commits     # 커밋 메시지 이력 검사 (--message-file, --subject·--branch로 다른 검사)
 uv run python -m projinit.check_pr_order --pr <번호> --open-prs <파일>   # PR 순서 검사
 uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/) 검사
+uv run projinit context                     # 세션 시작 안내 출력 (검사 아님)
 ```
 
-`projinit` 명령의 하위 명령은 여섯이다. `init`은 [초기화 명령](Templates.md#9-초기화-명령)을, `upgrade`는 [갱신 명령](Templates.md#10-갱신-명령)을 부른다. 나머지 넷 중 `check`는 `projinit.run_checks`, `commits`는 `projinit.check_commits`, `pr-order`는 `projinit.check_pr_order`의 `main`에 나머지 인자를 넘기고, `commit-msg <파일>`은 `projinit.check_commits`의 `main`에 `--message-file <파일>`과 나머지 인자를 넘긴다. [src/projinit/cli.py](../../src/projinit/cli.py)의 [main](../../src/projinit/cli.py#main)이 진입점이다. 검사 하나만 돌릴 때는 모듈을 직접 실행한다. 다른 프로젝트에서는 `uv run projinit` 대신 설정에서 만든 명령(`uvx --from …`)을 쓴다([설정](#11-설정)).
+`projinit` 명령의 하위 명령은 일곱이다. `init`은 [초기화 명령](Templates.md#9-초기화-명령)을, `upgrade`는 [갱신 명령](Templates.md#10-갱신-명령)을, `context`는 [세션 시작 안내](#16-세션-시작-안내)를 부른다. 나머지 넷 중 `check`는 `projinit.run_checks`, `commits`는 `projinit.check_commits`, `pr-order`는 `projinit.check_pr_order`의 `main`에 나머지 인자를 넘기고, `commit-msg <파일>`은 `projinit.check_commits`의 `main`에 `--message-file <파일>`과 나머지 인자를 넘긴다. [src/projinit/cli.py](../../src/projinit/cli.py)의 [main](../../src/projinit/cli.py#main)이 진입점이다. 검사 하나만 돌릴 때는 모듈을 직접 실행한다. 다른 프로젝트에서는 `uv run projinit` 대신 설정에서 만든 명령(`uvx --from …`)을 쓴다([설정](#11-설정)).
 
 - 문제가 없으면 종료 코드 0으로 끝나고 통과 요약을 한 줄 출력한다.
 - 문제가 있으면 문제마다 `<저장소 기준 경로>:<줄>: <메시지>` 형식으로 한 줄씩 출력하고 종료 코드 1로 끝난다.
@@ -110,7 +111,7 @@ uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/)
 - [tests/test_check_pointers.py](../../tests/test_check_pointers.py): 정상 양방향 포인터, 없는 심볼, 줄 번호 포인터, 주석 포인터, 소속 없는 주석 포인터, 커버리지 누락, 역방향 포인터 누락과 계산한 `@doc:` 수정안, 받아 주는 문서 포인터가 없는 `@doc:`, 문서→코드 문제가 있으면 코드 쪽 검사를 하지 않음, 포인터 확인(코드 포인터가 먼저 있던 새 문서 포인터는 확인 줄이 있어야 통과, 이유 없는 확인 줄, 함께 생긴 포인터와 git 밖은 확인 불필요), 모듈 포인터만으로는 심볼 포인터의 역방향이 되지 않음, Python 밖의 언어로 된 저장소, 목업 표시(진행 중 작업이면 통과, 완료·시작 전·없는 작업이면 문제, 연결 작업의 상태를 따름).
 - [tests/test_code_index.py](../../tests/test_code_index.py): 주석 포인터의 소속(바로 아래 정의, 파일 머리, 빈 줄로 떨어진 경우, 코드와 같은 줄), 블록 주석 안의 여러 태그, 구문 오류.
 - [tests/test_cli.py](../../tests/test_cli.py): 하위 명령이 해당 모듈의 `main`에 인자를 넘기는지(`commit-msg`는 `--message-file`을 붙여서), 모르는 하위 명령.
-- [tests/test_check_hooks.py](../../tests/test_check_hooks.py): 설정에서 만든 hook 명령(직접 지정, `uvx` 조합, 만들 수 없는 경우), 정상 설치, settings 파일 누락·형식 오류·명령 불일치, pre-commit 누락·실행 권한 없음·명령 불일치, commit-msg 누락, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
+- [tests/test_check_hooks.py](../../tests/test_check_hooks.py): 설정에서 만든 hook 명령(직접 지정, `uvx` 조합, 만들 수 없는 경우), 정상 설치, settings 파일 누락·형식 오류·명령 불일치, SessionStart hook 누락, pre-commit 누락·실행 권한 없음·명령 불일치, commit-msg 누락, `core.hooksPath` 미설정, git 저장소가 아닌 경우.
 - [tests/test_check_commits.py](../../tests/test_check_commits.py): 정상 메시지(여러 ID, 진행 중, 트레일러, 주석 줄), git이 만드는 제목, 제목 형식·길이·마침표·빈 줄·중복 ID 오류, 없는 ID, 시작하지 않은 ID, PR 제목의 진행 중 표기, 브랜치 이름 형식과 없는 ID, 임시 git 저장소의 이력 검사와 기준 커밋·병합 커밋 제외, 명령의 세 가지 쓰임.
 - [tests/test_check_pr_order.py](../../tests/test_check_pr_order.py): 임시 git 저장소로 쌓인 브랜치(포함)와 `main`에서 따로 만든 브랜치(빠짐), 번호가 뒤인 PR은 무시함, 저장소에 없는 커밋.
 - [tests/test_config.py](../../tests/test_config.py): 기본 설정, 설정 파일 읽기, 설정 오류(TOML 형식, 모르는 키, 값의 형), `Project`의 경로.
@@ -215,19 +216,20 @@ uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/)
 
 hook이 실행할 명령은 고정하지 않고 [설정](#11-설정)에서 만든다([패키지 구성 설계](Package.md#5-hook-명령)).
 
-- [HookCommands](../../src/projinit/check_hooks.py#HookCommands): 세 hook의 명령. `stop`, `pre_commit`, `commit_msg`를 가진다.
+- [HookCommands](../../src/projinit/check_hooks.py#HookCommands): 네 hook의 명령. `stop`, `session_start`, `pre_commit`, `commit_msg`를 가진다.
 - [projinit_command](../../src/projinit/check_hooks.py#projinit_command): 설정의 `projinit.command`를 돌려준다. 비어 있으면 `uvx --from <source>@v<version> projinit`을 만든다. 이때 `source`나 `version`이 비어 있으면 `None`이다.
-- [hook_commands](../../src/projinit/check_hooks.py#hook_commands): `projinit_command`의 결과 `<command>`로 `HookCommands`를 만든다. `stop`은 `cd "$CLAUDE_PROJECT_DIR" && <command> check --hook stop`, `pre_commit`은 `<command> check --hook pre-commit`, `commit_msg`는 `<command> commit-msg "$1"`이다. `projinit_command`가 `None`이면 `None`이다.
+- [hook_commands](../../src/projinit/check_hooks.py#hook_commands): `projinit_command`의 결과 `<command>`로 `HookCommands`를 만든다. `stop`은 `cd "$CLAUDE_PROJECT_DIR" && <command> check --hook stop`, `session_start`는 `cd "$CLAUDE_PROJECT_DIR" && <command> context`, `pre_commit`은 `<command> check --hook pre-commit`, `commit_msg`는 `<command> commit-msg "$1"`이다. `projinit_command`가 `None`이면 `None`이다.
 
 **함수**
 
 세 검사는 `Project`와 기대하는 명령을 받는다. `main`은 `hook_commands`가 `None`이면 "설정에 `projinit.command`도, `source`와 `version`도 없어 hook 명령을 만들 수 없음"을 설정 파일의 문제로 보고하고, 나머지 장치 검사는 건너뛴다.
 
 - [check_stop_hook](../../src/projinit/check_hooks.py#check_stop_hook): `CLAUDE_SETTINGS`가 있고 JSON으로 읽히며, `hooks.Stop` 아래에 명령이 정확히 기대하는 Stop 명령인 command hook이 있는지 검사한다.
+- [check_session_start_hook](../../src/projinit/check_hooks.py#check_session_start_hook): `check_stop_hook`과 같은 검사를 `hooks.SessionStart`와 기대하는 SessionStart 명령으로 한다. 설정 파일이 없거나 JSON 형식 오류면 `check_stop_hook`이 이미 보고하므로 빈 목록이다.
 - [check_pre_commit](../../src/projinit/check_hooks.py#check_pre_commit): `PRE_COMMIT_HOOK`이 있고, 실행 권한이 있으며, 기대하는 pre-commit 명령을 담고 있는지 검사한다.
 - [check_commit_msg_hook](../../src/projinit/check_hooks.py#check_commit_msg_hook): `COMMIT_MSG_HOOK`에 대해 `check_pre_commit`과 같은 검사를 기대하는 commit-msg 명령으로 한다.
 - [check_hooks_path](../../src/projinit/check_hooks.py#check_hooks_path): 루트가 git 저장소이고, git 설정 `core.hooksPath`가 `HOOKS_PATH`인지 검사한다. 이 설정은 저장소에 포함되지 않으므로 클론할 때마다 한 번 해 줘야 하며, 이 검사가 빠뜨린 것을 알려 준다.
-- [main](../../src/projinit/check_hooks.py#main): 네 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
+- [main](../../src/projinit/check_hooks.py#main): 다섯 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
 
 ## 9. 일괄 실행과 자동 실행
 
@@ -243,7 +245,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 **설치**
 
-- `.claude/settings.json`에 `hooks.Stop` command hook으로 [hook_commands](../../src/projinit/check_hooks.py#hook_commands)의 Stop 명령을 둔다.
+- `.claude/settings.json`에 `hooks.Stop` command hook으로 [hook_commands](../../src/projinit/check_hooks.py#hook_commands)의 Stop 명령을, `hooks.SessionStart` command hook으로 SessionStart 명령을 둔다. SessionStart는 `matcher` 없이 두어 새 세션, 재개, 지우기, 맥락 압축 뒤 모두에서 실행한다.
 - `.githooks/pre-commit`에 pre-commit 명령을, `.githooks/commit-msg`에 commit-msg 명령을 실행하는 셸 스크립트를 두고 실행 권한을 준다.
 - 이 저장소는 설정의 `projinit.command`가 `uv run projinit`이므로 Stop 명령은 `cd "$CLAUDE_PROJECT_DIR" && uv run projinit check --hook stop`이다.
 - 클론한 뒤 한 번 `git config core.hooksPath .githooks`를 실행한다. 빠뜨리면 [강제 장치 검사기](#8-강제-장치-검사기)가 Stop hook에서 알려 준다.
@@ -321,11 +323,28 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 [src/projinit/check_materials.py](../../src/projinit/check_materials.py)는 [검증 도구의 자료 폴더 검사기](../VerificationTools.md#15-자료-폴더-검사기)를 구현한다. 결정의 이유는 [자료 폴더 설계](Materials.md)에 있다.
 
 - [REFERENCE_DOC](../../src/projinit/check_materials.py#REFERENCE_DOC), [LEGACY_DOC](../../src/projinit/check_materials.py#LEGACY_DOC): 목록 문서 이름 `Reference.md`, `Legacy.md`. 문서 디렉터리 안에 있다.
-- [check_listed](../../src/projinit/check_materials.py#check_listed): `Project`를 받아 두 자료 폴더마다, 폴더 아래 파일(`.git` 안은 빼고)이 있으면 목록 문서가 있는지 보고 없으면 폴더의 첫 파일에 `목록 문서 없음`을 보고한다. 목록 문서의 링크(외부 링크 제외) 대상 경로를 모아, 각 파일 자신이나 그 조상 폴더(자료 폴더 자신 포함)가 링크되지 않았으면 그 파일의 1줄에 `목록 문서에 없는 자료`를 보고한다.
+- [material_files](../../src/projinit/check_materials.py#material_files): 자료 폴더 아래 파일(`.git` 안은 빼고)을 정렬해 돌려준다. 폴더가 없으면 빈 목록이다.
+- [unlisted_files](../../src/projinit/check_materials.py#unlisted_files): 자료 폴더와 목록 문서 경로를 받아, 목록 문서의 링크(외부 링크 제외)가 덮지 않는 파일을 돌려준다. 파일 자신이나 그 조상 폴더(자료 폴더 자신 포함)가 링크되면 덮인 것이다. 목록 문서가 없으면 모든 파일이다. [세션 시작 안내](#16-세션-시작-안내)도 쓴다.
+- [check_listed](../../src/projinit/check_materials.py#check_listed): `Project`를 받아 `legacy/`에만, 파일이 있으면 `Legacy.md`가 있는지 보고 없으면 폴더의 첫 파일에 `목록 문서 없음`을 보고한다. 있으면 `unlisted_files`의 파일마다 1줄에 `목록 문서에 없는 자료`를 보고한다. `reference/`는 검사하지 않는다(I23).
 - [check_legacy_frozen](../../src/projinit/check_materials.py#check_legacy_frozen): `git ls-tree --name-only HEAD <legacy>/`로 커밋된 기존 프로젝트 폴더를 얻고, `git status --porcelain --untracked-files=all -- <legacy>/`의 변경 중 그 폴더들 안의 경로를 `커밋된 기존 프로젝트를 바꿈`으로 보고한다. 옮김은 옛 경로와 새 경로를 모두 본다. git 저장소가 아니거나 `HEAD`가 없으면 빈 목록이다.
 - [check_nested_git](../../src/projinit/check_materials.py#check_nested_git): `legacy/` 아래의 `.git`(파일이든 폴더든)을 `기존 프로젝트 안의 .git`으로 보고한다.
 - [main](../../src/projinit/check_materials.py#main): 세 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
 
 자료 폴더 안 코드 파일 링크는 [collect_code_pointers](../../src/projinit/check_pointers.py#collect_code_pointers)가 건너뛰고 [check_links](../../src/projinit/check_docs.py#check_links)가 대상 파일이 있는지 본다.
 
-테스트는 [tests/test_check_materials.py](../../tests/test_check_materials.py)다. 자료 폴더 없음, 목록 문서 없음, 목록에 없는 파일, 폴더 링크로 덮임, 커밋된 기존 프로젝트의 고침·지움·새 파일, 새 기존 프로젝트 폴더는 허용, git이 아닌 폴더, 중첩 `.git`을 검사한다. 자료 폴더 안 코드 파일 링크는 [tests/test_check_pointers.py](../../tests/test_check_pointers.py)와 [tests/test_check_docs.py](../../tests/test_check_docs.py)에서 검사한다.
+테스트는 [tests/test_check_materials.py](../../tests/test_check_materials.py)다. 자료 폴더 없음, 목록 없는 참고 자료는 통과, 기존 프로젝트의 목록 문서 없음, 목록에 없는 파일, 폴더 링크로 덮임, 커밋된 기존 프로젝트의 고침·지움·새 파일, 새 기존 프로젝트 폴더는 허용, git이 아닌 폴더, 중첩 `.git`을 검사한다. 자료 폴더 안 코드 파일 링크는 [tests/test_check_pointers.py](../../tests/test_check_pointers.py)와 [tests/test_check_docs.py](../../tests/test_check_docs.py)에서 검사한다.
+
+## 16. 세션 시작 안내
+
+[src/projinit/session_context.py](../../src/projinit/session_context.py)는 [검증 도구의 세션 시작 안내](../VerificationTools.md#16-세션-시작-안내)를 구현한다. 결정의 이유는 [자료 폴더 설계](Materials.md)에 있다.
+
+- [MAX_ITEMS](../../src/projinit/session_context.py#MAX_ITEMS): 목록 항목과 목록에 없는 자료를 각각 출력하는 최대 개수 `100`.
+- [reference_context](../../src/projinit/session_context.py#reference_context): `Project`를 받아 안내 문자열을 돌려준다. [material_files](../../src/projinit/check_materials.py#material_files)가 비면 빈 문자열이다. 아니면 다음 줄들이다.
+  1. `참고 자료: <reference>/에 자료 <N>개가 있다. 작업을 시작할 때 이 중 관련 자료를 찾아 읽고 진행 중 기록의 참고 자료 줄에 적는다(<docs>/MaterialRule.md의 3.4 쓰는 방법).`
+  2. 목록 문서가 있으면 `목록 문서 <docs>/Reference.md의 항목:`과, 그 문서에서 코드 블록 밖의 `- `로 시작하는 줄. 없으면 `목록 문서 <docs>/Reference.md 없음.`
+  3. [unlisted_files](../../src/projinit/check_materials.py#unlisted_files)가 있으면 `목록에 없는 자료:`와 `- <저장소 기준 경로>` 줄.
+  - 2와 3은 각각 `MAX_ITEMS`개까지 쓰고, 넘으면 `- … 외 <M>개`를 쓴다.
+- [main](../../src/projinit/session_context.py#main): `--root`를 받아 설정을 읽고 `reference_context`를 출력한다. 빈 문자열이면 아무것도 출력하지 않는다. 설정 오류나 읽기 오류가 나도 출력 없이 종료 코드 0이다. `projinit` 명령의 하위 명령 `context`가 이 `main`을 부른다.
+
+테스트는 [tests/test_session_context.py](../../tests/test_session_context.py)다. 자료가 없을 때 빈 출력, 목록 문서가 없을 때, 목록 항목과 목록에 없는 자료, 개수 제한, 설정 오류에도 종료 코드 0을 검사한다.
+

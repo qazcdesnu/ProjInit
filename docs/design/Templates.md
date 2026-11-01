@@ -136,7 +136,7 @@ projinit upgrade [--root <폴더>]
 - [set_version](../../src/projinit/upgrade.py#set_version): 설정 파일 내용과 버전을 받아 `[projinit]` 표의 `version` 값을 바꾼 내용을 돌려준다. 다른 줄과 주석은 그대로 둔다. `version` 줄이 없으면 `[projinit]` 제목 바로 아래에 넣는다.
 - [upgrade_project](../../src/projinit/upgrade.py#upgrade_project): 폴더를 받아 다음을 하고, (이전 버전, 새 버전, 다시 쓴 공통 파일 목록)을 돌려준다.
   1. 설정에 실행 명령(`projinit.command`)이 있으면 `UpgradeError`다. 그런 프로젝트는 버전을 고정하지 않으므로 `init --refresh-common`을 쓴다.
-  2. git 작업 트리에 커밋하지 않은 변경이 있으면 `UpgradeError`다. 갱신이 진행 중인 작업과 섞이지 않게 하기 위해서다.
+  2. git 작업 트리에 커밋하지 않은 변경이 있으면 `UpgradeError`다. 갱신이 진행 중인 작업과 섞이지 않게 하기 위해서다. 검사가 커밋을 막아 먼저 커밋할 수 없는 경우를 위해, 메시지에 `git stash -u`로 치워 두고 갱신한 뒤 `git stash pop`으로 되돌리는 방법도 적는다(I23).
   3. 설정의 `version`을 실행 중인 버전으로 바꾸고, [refresh_common](../../src/projinit/init.py#refresh_common)으로 공통 파일을 다시 만든다.
 - [NEXT_STEP](../../src/projinit/upgrade.py#NEXT_STEP): 갱신을 마친 뒤 출력하는 다음 할 일. 바뀐 파일을 Claude Code에서 작업으로 등록해 커밋하게 하라는 안내다.
 - [main](../../src/projinit/upgrade.py#main): 갱신하고 바뀐 파일과 `NEXT_STEP`을 출력한다. 오류는 `upgrade: <메시지>`로 출력하고 종료 코드 1로 끝난다. `projinit` 명령의 하위 명령 `upgrade`가 이 `main`을 부른다.

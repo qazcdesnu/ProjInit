@@ -1,5 +1,16 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && {{projinit}} context",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

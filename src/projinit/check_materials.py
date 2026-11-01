@@ -23,6 +23,24 @@ def _material_files(folder: Path) -> list[Path]:
     return sorted(path for path in folder.rglob("*") if path.is_file() and ".git" not in path.relative_to(folder).parts)
 
 
+def material_files(folder: Path) -> list[Path]:
+    """Return the files under a material folder, outside .git, sorted.
+
+    @doc: docs/design/Checkers.md#15-자료-폴더-검사기
+    @stub: I23
+    """
+    raise NotImplementedError
+
+
+def unlisted_files(folder: Path, list_doc: Path) -> list[Path]:
+    """Return the files of a material folder that the list document does not link.
+
+    @doc: docs/design/Checkers.md#15-자료-폴더-검사기
+    @stub: I23
+    """
+    raise NotImplementedError
+
+
 def check_listed(project: Project) -> list[Problem]:
     """Report material files that their folder's list document does not link.
 

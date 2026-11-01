@@ -88,6 +88,15 @@ def check_stop_hook(project: Project, expected: str) -> list[Problem]:
     return []
 
 
+def check_session_start_hook(project: Project, expected: str) -> list[Problem]:
+    """Report a missing Claude Code SessionStart hook that prints the session context.
+
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
+    @stub: I23
+    """
+    raise NotImplementedError
+
+
 def check_pre_commit(project: Project, expected: str) -> list[Problem]:
     """Report a missing, non-executable or unrelated git pre-commit hook.
 
