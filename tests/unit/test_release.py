@@ -8,7 +8,7 @@ import tomllib
 import unittest
 from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parents[1]
+_ROOT = Path(__file__).resolve().parents[2]
 _VERSION_RE = re.compile(r"\bv(\d+\.\d+\.\d+)\b")
 
 
