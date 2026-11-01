@@ -35,6 +35,9 @@ def check_links(project: Project) -> list[Problem]:
             if is_external(link.target):
                 continue
             path, anchor = resolve_link(link)
+            if project.in_private(path):
+                problems.append(Problem(doc, link.line, f"로컬 자료로 링크할 수 없음: {link.target}. 경로는 인라인 코드로 적는다"))
+                continue
             if path.suffix in CODE_SUFFIXES and not project.in_materials(path):
                 continue
             if not path.exists():

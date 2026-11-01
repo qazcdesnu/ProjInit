@@ -40,6 +40,21 @@ class CheckDocsTest(RepoTestCase):
         self.write("docs/Rule.md", "# Rule\n\n## 1. Intro\n\n[a](../legacy/old/app.py#run) [b](../legacy/old/gone.py) [c](../src/gone.py)\n")
         self.assertEqual([problem.message for problem in check_links(load_project(self.root))], ["링크 대상 없음: ../legacy/old/gone.py"])
 
+    def test_reports_links_into_the_private_folder(self) -> None:
+        self.write("private/contract.pdf", "x")
+        self.write(
+            "docs/Rule.md",
+            '# Rule\n\n## 1. Intro\n\n[a](../private/contract.pdf) [b](../private/gone.md "선택") [c](../private/) [d](../private/x.py#f) `private/contract.pdf`\n',
+        )
+        messages = [problem.message for problem in check_links(load_project(self.root))]
+        self.assertEqual(
+            messages,
+            [
+                f"로컬 자료로 링크할 수 없음: {target}. 경로는 인라인 코드로 적는다"
+                for target in ("../private/contract.pdf", "../private/gone.md", "../private/", "../private/x.py#f")
+            ],
+        )
+
     def test_optional_link_may_have_no_target(self) -> None:
         self.write("docs/Rule.md", '# Rule\n\n## 1. Intro\n\n[R](../README.md "선택") [S](Gone.md "설명")\n')
         self.assertEqual([problem.message for problem in check_links(load_project(self.root))], ["링크 대상 없음: Gone.md"])

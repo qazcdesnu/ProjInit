@@ -106,9 +106,8 @@ class Project:
         """Whether a path is the private folder or lies in it.
 
         @doc: docs/design/Checkers.md#11-설정
-        @stub: I24
         """
-        raise NotImplementedError
+        return path.resolve().is_relative_to(self.private_dir.resolve())
 
 
 class ConfigError(Exception):

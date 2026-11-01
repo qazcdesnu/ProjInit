@@ -54,9 +54,17 @@ def private_context(project: Project) -> str:
     """Return the context text about the private folder, or an empty string when it has no files.
 
     @doc: docs/design/Checkers.md#16-세션-시작-안내
-    @stub: I24
     """
-    raise NotImplementedError
+    files = material_files(project.private_dir)
+    if not files:
+        return ""
+    docs = project.config.docs.strip("/")
+    folder = project.config.private.strip("/")
+    lines = [
+        f"로컬 자료: {folder}/에 자료 {len(files)}개가 있다. 이 컴퓨터에만 있다. 커밋하지 않고 문서에서 링크하지 않으며, "
+        f"문서에는 공개해도 되는 결정만 옮긴다({docs}/MaterialRule.md의 5 로컬 자료 폴더)."
+    ]
+    return "\n".join(lines + _capped([f"- {display_path(path, project.root)}" for path in files]))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -68,7 +76,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", type=Path, default=Path("."))
     root = parser.parse_args(argv).root.resolve()
     try:
-        text = reference_context(load_project(root))
+        project = load_project(root)
+        text = "\n\n".join(part for part in (reference_context(project), private_context(project)) if part)
     except Exception:  # noqa: BLE001 - the session must start even when the context cannot be built
         return 0
     if text:

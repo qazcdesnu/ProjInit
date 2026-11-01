@@ -7,7 +7,7 @@ import subprocess
 import unittest
 
 from tests.support import RepoTestCase
-from projinit.check_materials import check_legacy_frozen, check_listed, check_nested_git, unlisted_files
+from projinit.check_materials import check_legacy_frozen, check_listed, check_nested_git, check_private, unlisted_files
 from projinit.config import load_project
 
 
@@ -105,6 +105,46 @@ class NestedGitTest(RepoTestCase):
         self.write("legacy/old-app/main.py", "x\n")
         self.write("docs/Legacy.md", "# L\n\n[앱](../legacy/old-app/main.py)\n")
         self.assertEqual(check_listed(load_project(self.root)), [])
+
+
+class PrivateTest(RepoTestCase):
+    """@doc: docs/design/Checkers.md#15-자료-폴더-검사기"""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.git("init", "-q")
+
+    def git(self, *args: str) -> None:
+        subprocess.run(["git", "-C", str(self.root), *args], check=True, capture_output=True)
+
+    def messages(self) -> list[str]:
+        return [problem.message for problem in check_private(load_project(self.root))]
+
+    def test_passes_without_private_files(self) -> None:
+        self.assertEqual(self.messages(), [])
+
+    def test_reports_files_git_does_not_ignore(self) -> None:
+        self.write("private/contract.pdf", "x")
+        self.assertEqual(self.messages(), ["로컬 자료가 git에서 빠지지 않음: .gitignore에 /private/를 더한다"])
+        self.write(".gitignore", "/private/\n")
+        self.assertEqual(self.messages(), [])
+
+    def test_reports_tracked_files(self) -> None:
+        self.write("private/contract.pdf", "x")
+        self.git("add", "private/contract.pdf")
+        self.write(".gitignore", "/private/\n")
+        self.assertEqual(self.messages(), ["로컬 자료가 git에 추적됨: git rm --cached로 빼고 커밋하지 않는다"])
+
+    def test_honours_configured_folder(self) -> None:
+        self.write("projinit.toml", '[paths]\nprivate = "secret-docs"\n')
+        self.write("secret-docs/a.txt", "x")
+        self.write("private/ignored.txt", "x")
+        self.assertEqual(self.messages(), ["로컬 자료가 git에서 빠지지 않음: .gitignore에 /secret-docs/를 더한다"])
+
+    def test_skips_outside_git(self) -> None:
+        (self.root / ".git").rename(self.root / "not-git")
+        self.write("private/contract.pdf", "x")
+        self.assertEqual(self.messages(), [])
 
 
 if __name__ == "__main__":
