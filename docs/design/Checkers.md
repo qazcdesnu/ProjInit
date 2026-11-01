@@ -93,7 +93,7 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 - [check_reciprocity](../../src/projinit/check_pointers.py#check_reciprocity): [상호 참조 규칙](../Traceability.md#5-상호-참조-규칙)을 두 방향 모두 검사한다. 문서가 모듈이 아닌 심볼을 가리킬 때는 모듈의 포인터를 역방향 포인터로 세지 않는다. 보고는 [어긋났을 때의 우선순위](../Traceability.md#9-어긋났을-때의-우선순위)를 따른다.
   - 역방향이 없는 문서 → 코드 포인터: 대상 심볼의 첫 정의 줄(모듈이면 1줄)에 `역방향 포인터 없음: <문서>:<줄>이 <심볼>을 가리킴. <심볼>에 @doc: <문서>#<앵커>를 단다`. 앵커는 `section_anchor`로 링크가 있는 절에서 구한다. 모듈이면 "파일 머리에"를 붙인다.
   - 받아 주는 문서 포인터가 없는 `@doc:`: 그 `@doc:`의 줄에 `받아 주는 문서 포인터 없음: <문서>가 <심볼> 또는 관련 심볼을 가리키지 않음. 문서가 이 심볼을 뜻하는지 문서에서 판단한다`.
-- [check_confirmations](../../src/projinit/check_pointers.py#check_confirmations): [포인터 확인](../Traceability.md#9-어긋났을-때의-우선순위)을 검사한다.
+- [check_confirmations](../../src/projinit/check_pointers.py#check_confirmations): [포인터 확인](../Traceability.md#9-어긋났을-때의-우선순위)을 검사한다. 대상 심볼이 모듈이 아니고 `HEAD`의 그 파일 분석 결과에 그 한정 이름이 없으면 새 심볼이므로 건너뛴다(I25).
   - `HEAD`에 있던 문서마다 `git show HEAD:<문서>`의 링크로 `HEAD`의 문서 → 코드 포인터 (문서, 파일, 한정 이름) 집합을 만든다. 지금 포인터 중 이 집합에 없는 것이 새 포인터다.
   - 새 포인터 D → S마다 `git show HEAD:<S의 파일>`을 `index_module`로 분석해, S와 관련 있는 심볼(S가 모듈이 아니면 모듈 제외)의 `@doc:`이 D를 가리켰는지 본다. 가리켰으면 확인이 필요하다. 파일이 `HEAD`에 없거나 분석에 실패하면 확인이 필요 없다.
   - 진행 중 문서에 [CONFIRM_PREFIX](../../src/projinit/check_pointers.py#CONFIRM_PREFIX)(`- 포인터 확인: `) 뒤에 `<문서> → <파일>[#<한정 이름>]: <이유>`인 줄이 있으면 확인된 것이다. 이유가 비어 있으면 확인으로 보지 않는다. 없으면 문서 포인터의 줄에 `포인터 확인 필요`와 남길 줄을 보고한다.
