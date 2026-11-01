@@ -189,6 +189,15 @@ def slugify(heading: str) -> str:
     return text.replace(" ", "-")
 
 
+def section_anchor(text: str, line: int) -> str:
+    """Return the anchor of the section a line belongs to, or an empty string before any heading.
+
+    @doc: docs/design/Checkers.md#2-공통-모듈
+    @stub: I20
+    """
+    raise NotImplementedError
+
+
 def heading_anchors(text: str) -> set[str]:
     """Return the anchors of every ATX heading outside code blocks.
 

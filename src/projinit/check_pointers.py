@@ -26,6 +26,8 @@ from projinit.check_tasks import ISSUE_DOC, ROADMAP_DOC, WorkItem, parse_issues,
 from projinit.languages import DEFINITION
 
 _LINE_ANCHOR_RE = re.compile(r"L\d+(-L?\d+)?")
+# @doc: docs/design/Checkers.md#4-포인터-검사기
+CONFIRM_PREFIX = "- 포인터 확인: "
 
 
 @dataclass(frozen=True)
@@ -171,6 +173,17 @@ def check_reciprocity(
                 )
             )
     return problems
+
+
+def check_confirmations(
+    project: Project, code_pointers: list[CodePointer], modules: dict[Path, ModuleIndex]
+) -> list[Problem]:
+    """Report new document pointers that followed an older code pointer without a recorded confirmation.
+
+    @doc: docs/design/Checkers.md#4-포인터-검사기
+    @stub: I20
+    """
+    raise NotImplementedError
 
 
 def check_stubs(project: Project, modules: dict[Path, ModuleIndex]) -> list[Problem]:
