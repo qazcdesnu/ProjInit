@@ -3,6 +3,79 @@
 이 문서는 끝난 작업의 상세 기록이다. 최신 기록이 맨 위에 온다. 기록 형식은 [작업 관리 규칙](TaskRule.md#5-기록-형식)을 따르며, 할 일 목록은 [로드맵](Roadmap.md)과 [이슈](Issue.md)에 있다. 닫힌 마일스톤의 기록은 [작업 관리 규칙](TaskRule.md#47-완료-기록-보관)에 따라 보관 문서로 옮긴다. 보관 문서: [M0 규칙 체계 정비](Done-M0.md), [M1 검사기 패키지](Done-M1.md), [M2 초기화](Done-M2.md), [M3 갱신](Done-M3.md), [M4 첫 적용](Done-M4.md), [M5 갱신](Done-M5.md), [M6 자료 폴더](Done-M6.md). 전체 문서 목록은 [문서 인덱스](index.md)에서 확인한다.
 
 
+## I24 로컬 자료 폴더 `private/`
+
+- 시작일: 2026-11-01
+- 완료일: 2026-11-01
+- 근거 문서: [자료 폴더 규칙](MaterialRule.md), [검증 도구](VerificationTools.md)
+- 참고 자료: 없음
+
+### 계획
+- 자료 폴더 규칙에 로컬 자료 폴더 `private/`를 더한다. git에서 빼고(`.gitignore`), 목록 문서를 두지 않고, 어떤 문서도 링크하지 않는다(선택 링크 포함). 근거로 적을 때는 경로를 인라인 코드로 쓰고, 문서에는 공개해도 되는 결정만 옮긴다. 모델에는 내용이 전송되므로 Claude도 보면 안 되는 비밀은 넣지 않는다.
+- 문서 링크 검사기: 로컬 자료 폴더로 가는 링크를 문제로 보고한다.
+- 자료 폴더 검사기: 로컬 자료가 git에서 빠지지 않았거나 추적·스테이징되었으면 문제로 보고한다.
+- 세션 시작 안내에 로컬 자료의 경로를 더한다.
+- 설정 `paths.private`, README, 설계 문서. 버전 `0.1.10`.
+
+### 진행 기록
+- 2026-11-01: 사용자가 보안 때문에 로컬에서 작업할 때만 볼 파일을 넣는 공간이 필요하다고 했다. `private/` 설계를 제안했고, 사용자가 진행하되 GitHub에 올라가지 않을 뿐 아니라 링크에서도 제외되어야 한다고 했다.
+- 2026-11-01: 목업을 만들자 포인터 확인이 새 심볼(`Project.in_private` 등)에 대해 오탐을 냈다. 작업을 stash로 치워 두고 I25로 먼저 고쳤다. 이슈 번호가 차례대로여야 해서 I24의 이슈 줄과 이 기록은 I25의 진행 중 커밋에 함께 넣었다.
+- 2026-11-01: 문서 링크 검사기, 자료 폴더 검사기, 세션 시작 안내를 구현하고 테스트를 더했다. 첫 작업 절차와 작업 시작 기록에 로컬 자료를 다루는 방법을 더했다.
+- 2026-11-01: 임시 폴더에서 시험했다. `.gitignore` 없이 `private/`에 파일을 넣으면 자료 폴더 검사기가 보고하고, 더하면 통과했다. 문서에서 `private/` 파일을 링크하면 문서 링크 검사기가 보고했다. `context`가 로컬 자료를 알렸다. `git add .`는 로컬 자료를 스테이징하지 않았고, `git add -f`로 강제로 넣은 커밋은 pre-commit이 거부했다.
+
+### 결정 사항
+- `private/`는 일반 링크도 선택 링크도 금지한다. 사용자가 정했다([자료 폴더 설계](design/Materials.md#2-결정)).
+- `.gitignore`는 만들지 않고 검사만 한다. 초기화는 이미 있는 파일을 만들 수 없다.
+- 로컬 자료를 읽으면 내용이 모델로 전송된다는 점을 규칙과 README에 적고, 에이전트도 보면 안 되는 비밀은 넣지 않게 했다.
+
+### 변경 파일
+- `docs/Issue.md`, `docs/Ongoing.md`, `docs/Done.md`
+- 템플릿: `src/projinit/templates/CLAUDE.md`, `docs/MaterialRule.md`, `docs/DocumentationRule.md`, `docs/TaskRule.md`, `docs/VerificationTools.md`, `docs/index.md`, 그리고 다시 만든 이 저장소의 같은 문서
+- `src/projinit/config.py`, `src/projinit/check_docs.py`, `src/projinit/check_materials.py`, `src/projinit/session_context.py`
+- `tests/test_check_docs.py`, `tests/test_check_materials.py`, `tests/test_session_context.py`
+- `docs/index.md`, `docs/design/Checkers.md`, `docs/design/Materials.md`, `docs/design/Package.md`
+- `README.md`, `pyproject.toml`, `uv.lock`
+
+### 결과
+- 로컬 자료 폴더 `private/`: git에서 빼고, 어떤 문서도 링크하지 않으며, 목록 문서를 두지 않는다. 세션 시작 안내가 로컬에서만 그 경로를 알린다.
+- 무시되지 않거나 추적된 로컬 자료는 커밋할 때 막힌다. `private/` 안으로 가는 링크는 문서 링크 검사기가 막는다.
+- 설정 `paths.private`로 위치를 바꿀 수 있다.
+- 버전 `0.1.10`. 병합 뒤 `v0.1.10` 태그를 붙인다.
+
+### 검증
+- `uv run projinit check`: 모두 통과
+- 임시 폴더 시험: 위 진행 기록대로 동작
+
+## I25 새 심볼은 포인터 확인에서 뺀다
+
+- 시작일: 2026-11-01
+- 완료일: 2026-11-01
+- 근거 문서: [포인터 규약](Traceability.md#9-어긋났을-때의-우선순위)
+- 참고 자료: 없음
+
+### 계획
+- 포인터 규약 9절: 문서 포인터의 대상 심볼이 `HEAD`에 없던 새 심볼이면 확인이 필요 없다. 그 심볼을 가리키는 코드 포인터가 먼저 있었을 수 없다.
+- 포인터 검사기의 `check_confirmations`가 `HEAD`의 그 파일에 대상 심볼이 없으면 건너뛰게 하고, 테스트를 더한다.
+
+### 진행 기록
+- 2026-11-01: I24에서 `Project`에 새 메서드를 더하고 설계 문서에서 링크하자, `Project` 클래스의 `@doc`이 `HEAD`에 있었다는 이유로 포인터 확인이 요구되었다. 새 심볼이라 오탐이다. I24 작업을 stash로 치워 두고 먼저 고친다.
+- 2026-11-01: `check_confirmations`가 대상 심볼이 `HEAD`에 없으면 건너뛰게 했다. 새 테스트는 고치기 전 코드에서 실패하고 고친 뒤 통과한다.
+
+### 결정 사항
+- 새 심볼 판정은 `HEAD`의 그 파일 분석 결과에 한정 이름이 있는지로 한다. 파일 자체가 `HEAD`에 없으면 이미 건너뛴다.
+
+### 변경 파일
+- `docs/Issue.md`, `docs/Ongoing.md`, `docs/Done.md`
+- 템플릿: `src/projinit/templates/docs/Traceability.md`, 그리고 다시 만든 이 저장소의 같은 문서
+- `src/projinit/check_pointers.py`, `tests/test_check_pointers.py`, `docs/design/Checkers.md`
+
+### 결과
+- `HEAD`에 없던 새 심볼로 거는 문서 포인터는 부모 심볼에 `@doc`이 있어도 포인터 확인을 요구하지 않는다.
+- 버전은 I24와 함께 `0.1.10`으로 올린다.
+
+### 검증
+- `uv run projinit check`: 모두 통과
+
 ## I23 참고 자료 목록 강제를 빼고 세션 시작 때 자료를 알림
 
 - 시작일: 2026-11-01

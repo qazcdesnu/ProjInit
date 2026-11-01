@@ -245,7 +245,9 @@ def check_confirmations(
             head = None if text is None else index_module(symbol.file, root, text.encode("utf-8"))
             head_modules[symbol.file] = head if head is not None and not head.problems else None
         head = head_modules[symbol.file]
-        if head is None or not any(
+        if head is None or (symbol.qualname and symbol.qualname not in head.symbols):
+            continue
+        if not any(
             old.doc == pointer.doc
             and old.symbol.is_related(symbol)
             and (old.symbol.qualname or not symbol.qualname)

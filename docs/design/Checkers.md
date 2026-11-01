@@ -14,7 +14,7 @@ uv run python -m projinit.check_tasks       # 작업 ID 기준 작업 관리 문
 uv run python -m projinit.check_hooks       # 강제 장치(Stop hook, pre-commit, commit-msg) 설치 검사
 uv run python -m projinit.check_commits     # 커밋 메시지 이력 검사 (--message-file, --subject·--branch로 다른 검사)
 uv run python -m projinit.check_pr_order --pr <번호> --open-prs <파일>   # PR 순서 검사
-uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/) 검사
+uv run python -m projinit.check_materials   # 자료 폴더(reference/, legacy/, private/) 검사
 uv run projinit context                     # 세션 시작 안내 출력 (검사 아님)
 ```
 
@@ -61,7 +61,7 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 
 [src/projinit/check_docs.py](../../src/projinit/check_docs.py)는 [문서 작업 규칙](../DocumentationRule.md)의 링크 규칙과 고아 문서 금지 규칙을 검증한다.
 
-- [check_links](../../src/projinit/check_docs.py#check_links): 모든 문서의 링크를 검사한다. 선택 링크는 대상이 없으면 건너뛴다. 자료 폴더 안의 코드 파일 링크는 포인터가 아니므로 여기서 파일이 있는지만 본다.
+- [check_links](../../src/projinit/check_docs.py#check_links): 모든 문서의 링크를 검사한다. 대상이 로컬 자료 폴더 안이면([Project.in_private](../../src/projinit/config.py#Project.in_private)) 선택 링크든 대상이 없든 `로컬 자료로 링크할 수 없음: <대상>. 경로는 인라인 코드로 적는다`를 보고하고 그 링크는 더 보지 않는다. 선택 링크는 대상이 없으면 건너뛴다. 자료 폴더 안의 코드 파일 링크는 포인터가 아니므로 여기서 파일이 있는지만 본다.
   - 외부 링크와 코드 파일 링크는 건너뛴다. 코드 파일 링크는 [포인터 검사기](#4-포인터-검사기)가 검사한다.
   - 대상 파일이나 디렉터리가 없으면 문제다.
   - 대상이 `.md` 문서이고 앵커가 있으면, 대상 문서에 그 앵커가 있어야 한다.
@@ -93,7 +93,7 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 - [check_reciprocity](../../src/projinit/check_pointers.py#check_reciprocity): [상호 참조 규칙](../Traceability.md#5-상호-참조-규칙)을 두 방향 모두 검사한다. 문서가 모듈이 아닌 심볼을 가리킬 때는 모듈의 포인터를 역방향 포인터로 세지 않는다. 보고는 [어긋났을 때의 우선순위](../Traceability.md#9-어긋났을-때의-우선순위)를 따른다.
   - 역방향이 없는 문서 → 코드 포인터: 대상 심볼의 첫 정의 줄(모듈이면 1줄)에 `역방향 포인터 없음: <문서>:<줄>이 <심볼>을 가리킴. <심볼>에 @doc: <문서>#<앵커>를 단다`. 앵커는 `section_anchor`로 링크가 있는 절에서 구한다. 모듈이면 "파일 머리에"를 붙인다.
   - 받아 주는 문서 포인터가 없는 `@doc:`: 그 `@doc:`의 줄에 `받아 주는 문서 포인터 없음: <문서>가 <심볼> 또는 관련 심볼을 가리키지 않음. 문서가 이 심볼을 뜻하는지 문서에서 판단한다`.
-- [check_confirmations](../../src/projinit/check_pointers.py#check_confirmations): [포인터 확인](../Traceability.md#9-어긋났을-때의-우선순위)을 검사한다.
+- [check_confirmations](../../src/projinit/check_pointers.py#check_confirmations): [포인터 확인](../Traceability.md#9-어긋났을-때의-우선순위)을 검사한다. 대상 심볼이 모듈이 아니고 `HEAD`의 그 파일 분석 결과에 그 한정 이름이 없으면 새 심볼이므로 건너뛴다(I25).
   - `HEAD`에 있던 문서마다 `git show HEAD:<문서>`의 링크로 `HEAD`의 문서 → 코드 포인터 (문서, 파일, 한정 이름) 집합을 만든다. 지금 포인터 중 이 집합에 없는 것이 새 포인터다.
   - 새 포인터 D → S마다 `git show HEAD:<S의 파일>`을 `index_module`로 분석해, S와 관련 있는 심볼(S가 모듈이 아니면 모듈 제외)의 `@doc:`이 D를 가리켰는지 본다. 가리켰으면 확인이 필요하다. 파일이 `HEAD`에 없거나 분석에 실패하면 확인이 필요 없다.
   - 진행 중 문서에 [CONFIRM_PREFIX](../../src/projinit/check_pointers.py#CONFIRM_PREFIX)(`- 포인터 확인: `) 뒤에 `<문서> → <파일>[#<한정 이름>]: <이유>`인 줄이 있으면 확인된 것이다. 이유가 비어 있으면 확인으로 보지 않는다. 없으면 문서 포인터의 줄에 `포인터 확인 필요`와 남길 줄을 보고한다.
@@ -290,8 +290,8 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 - [CONFIG_FILE](../../src/projinit/config.py#CONFIG_FILE): `projinit.toml`.
 - [INDEX_NAME](../../src/projinit/config.py#INDEX_NAME): `index.md`. 문서 디렉터리 안의 인덱스 이름이다.
-- [Config](../../src/projinit/config.py#Config): 설정 값. `version`, `source`, `command`, `docs`(기본 `docs`), `entry`(기본 `CLAUDE.md`), `code_roots`(기본 `src`, `tests`), `reference`(기본 `reference`), `legacy`(기본 `legacy`), `check_commands`(기본 없음), `commit_baseline`(기본 빈 문자열), `template`(`[template]` 표의 (키, 값) 목록, 기본 없음)을 가진다. [Config.template_values](../../src/projinit/config.py#Config.template_values)는 그것을 사전으로 돌려준다.
-- [Project](../../src/projinit/config.py#Project): 검사할 프로젝트. 루트 절대 경로와 `Config`를 가지며, [Project.docs_dir](../../src/projinit/config.py#Project.docs_dir), [Project.entry_doc](../../src/projinit/config.py#Project.entry_doc), [Project.index_doc](../../src/projinit/config.py#Project.index_doc), [Project.code_roots](../../src/projinit/config.py#Project.code_roots), [Project.reference_dir](../../src/projinit/config.py#Project.reference_dir), [Project.legacy_dir](../../src/projinit/config.py#Project.legacy_dir)로 경로를 돌려준다. [Project.in_materials](../../src/projinit/config.py#Project.in_materials)는 경로가 두 자료 폴더 중 하나의 안에 있는지 돌려준다.
+- [Config](../../src/projinit/config.py#Config): 설정 값. `version`, `source`, `command`, `docs`(기본 `docs`), `entry`(기본 `CLAUDE.md`), `code_roots`(기본 `src`, `tests`), `reference`(기본 `reference`), `legacy`(기본 `legacy`), `private`(기본 `private`), `check_commands`(기본 없음), `commit_baseline`(기본 빈 문자열), `template`(`[template]` 표의 (키, 값) 목록, 기본 없음)을 가진다. [Config.template_values](../../src/projinit/config.py#Config.template_values)는 그것을 사전으로 돌려준다.
+- [Project](../../src/projinit/config.py#Project): 검사할 프로젝트. 루트 절대 경로와 `Config`를 가지며, [Project.docs_dir](../../src/projinit/config.py#Project.docs_dir), [Project.entry_doc](../../src/projinit/config.py#Project.entry_doc), [Project.index_doc](../../src/projinit/config.py#Project.index_doc), [Project.code_roots](../../src/projinit/config.py#Project.code_roots), [Project.reference_dir](../../src/projinit/config.py#Project.reference_dir), [Project.legacy_dir](../../src/projinit/config.py#Project.legacy_dir), [Project.private_dir](../../src/projinit/config.py#Project.private_dir)로 경로를 돌려준다. [Project.in_materials](../../src/projinit/config.py#Project.in_materials)는 경로가 세 자료 폴더 중 하나의 안에 있는지, [Project.in_private](../../src/projinit/config.py#Project.in_private)는 로컬 자료 폴더 자신이거나 그 안에 있는지 돌려준다.
 - [ConfigError](../../src/projinit/config.py#ConfigError): 설정 오류. 메시지와 줄 번호(모르면 1)를 가진다.
 - [load_config](../../src/projinit/config.py#load_config): 루트의 설정 파일을 읽어 `Config`를 돌려준다. 파일이 없으면 기본값이다. TOML 형식 오류, 모르는 표나 키, 형이 틀린 값(문자열이어야 하는 곳에 다른 값, 문자열 목록이어야 하는 곳에 다른 값)은 `ConfigError`다.
 - [load_project](../../src/projinit/config.py#load_project): 루트를 받아 `Project`를 돌려준다. 루트는 절대 경로로 바꾼다.
@@ -327,12 +327,13 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 - [unlisted_files](../../src/projinit/check_materials.py#unlisted_files): 자료 폴더와 목록 문서 경로를 받아, 목록 문서의 링크(외부 링크 제외)가 덮지 않는 파일을 돌려준다. 파일 자신이나 그 조상 폴더(자료 폴더 자신 포함)가 링크되면 덮인 것이다. 목록 문서가 없으면 모든 파일이다. [세션 시작 안내](#16-세션-시작-안내)도 쓴다.
 - [check_listed](../../src/projinit/check_materials.py#check_listed): `Project`를 받아 `legacy/`에만, 파일이 있으면 `Legacy.md`가 있는지 보고 없으면 폴더의 첫 파일에 `목록 문서 없음`을 보고한다. 있으면 `unlisted_files`의 파일마다 1줄에 `목록 문서에 없는 자료`를 보고한다. `reference/`는 검사하지 않는다(I23).
 - [check_legacy_frozen](../../src/projinit/check_materials.py#check_legacy_frozen): `git ls-tree --name-only HEAD <legacy>/`로 커밋된 기존 프로젝트 폴더를 얻고, `git status --porcelain --untracked-files=all -- <legacy>/`의 변경 중 그 폴더들 안의 경로를 `커밋된 기존 프로젝트를 바꿈`으로 보고한다. 옮김은 옛 경로와 새 경로를 모두 본다. git 저장소가 아니거나 `HEAD`가 없으면 빈 목록이다.
+- [check_private](../../src/projinit/check_materials.py#check_private): `private/`에 파일이 없거나 git 저장소가 아니면 빈 목록이다. `git ls-files -- <private>/`의 파일마다 `로컬 자료가 git에 추적됨: git rm --cached로 빼고 커밋하지 않는다`를 보고한다. `git check-ignore --no-index --stdin`에 모든 파일을 넘겨 무시되지 않는 파일이 하나라도 있으면, 폴더에 한 번 `로컬 자료가 git에서 빠지지 않음: .gitignore에 /<private>/를 더한다`를 보고한다.
 - [check_nested_git](../../src/projinit/check_materials.py#check_nested_git): `legacy/` 아래의 `.git`(파일이든 폴더든)을 `기존 프로젝트 안의 .git`으로 보고한다.
-- [main](../../src/projinit/check_materials.py#main): 세 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
+- [main](../../src/projinit/check_materials.py#main): 네 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
 
 자료 폴더 안 코드 파일 링크는 [collect_code_pointers](../../src/projinit/check_pointers.py#collect_code_pointers)가 건너뛰고 [check_links](../../src/projinit/check_docs.py#check_links)가 대상 파일이 있는지 본다.
 
-테스트는 [tests/test_check_materials.py](../../tests/test_check_materials.py)다. 자료 폴더 없음, 목록 없는 참고 자료는 통과, 기존 프로젝트의 목록 문서 없음, 목록에 없는 파일, 폴더 링크로 덮임, 커밋된 기존 프로젝트의 고침·지움·새 파일, 새 기존 프로젝트 폴더는 허용, git이 아닌 폴더, 중첩 `.git`을 검사한다. 자료 폴더 안 코드 파일 링크는 [tests/test_check_pointers.py](../../tests/test_check_pointers.py)와 [tests/test_check_docs.py](../../tests/test_check_docs.py)에서 검사한다.
+테스트는 [tests/test_check_materials.py](../../tests/test_check_materials.py)다. 자료 폴더 없음, 목록 없는 참고 자료는 통과, 기존 프로젝트의 목록 문서 없음, 목록에 없는 파일, 폴더 링크로 덮임, 커밋된 기존 프로젝트의 고침·지움·새 파일, 새 기존 프로젝트 폴더는 허용, git이 아닌 폴더, 중첩 `.git`, 로컬 자료의 무시 안 됨·추적됨·정상을 검사한다. 자료 폴더 안 코드 파일 링크는 [tests/test_check_pointers.py](../../tests/test_check_pointers.py)와 [tests/test_check_docs.py](../../tests/test_check_docs.py)에서 검사한다.
 
 ## 16. 세션 시작 안내
 
@@ -344,7 +345,8 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
   2. 목록 문서가 있으면 `목록 문서 <docs>/Reference.md의 항목:`과, 그 문서에서 코드 블록 밖의 `- `로 시작하는 줄. 없으면 `목록 문서 <docs>/Reference.md 없음.`
   3. [unlisted_files](../../src/projinit/check_materials.py#unlisted_files)가 있으면 `목록에 없는 자료:`와 `- <저장소 기준 경로>` 줄.
   - 2와 3은 각각 `MAX_ITEMS`개까지 쓰고, 넘으면 `- … 외 <M>개`를 쓴다.
-- [main](../../src/projinit/session_context.py#main): `--root`를 받아 설정을 읽고 `reference_context`를 출력한다. 빈 문자열이면 아무것도 출력하지 않는다. 설정 오류나 읽기 오류가 나도 출력 없이 종료 코드 0이다. `projinit` 명령의 하위 명령 `context`가 이 `main`을 부른다.
+- [private_context](../../src/projinit/session_context.py#private_context): `Project`를 받아 로컬 자료 안내를 돌려준다. `private/`에 파일이 없으면 빈 문자열이다. 아니면 `로컬 자료: <private>/에 자료 <N>개가 있다. 이 컴퓨터에만 있다. 커밋하지 않고 문서에서 링크하지 않으며, 문서에는 공개해도 되는 결정만 옮긴다(<docs>/MaterialRule.md의 5 로컬 자료 폴더).`와, `MAX_ITEMS`개까지의 `- <저장소 기준 경로>` 줄이다.
+- [main](../../src/projinit/session_context.py#main): `--root`를 받아 설정을 읽고 `reference_context`와 `private_context` 중 비지 않은 것을 빈 줄 하나로 이어 출력한다. 둘 다 비면 아무것도 출력하지 않는다. 설정 오류나 읽기 오류가 나도 출력 없이 종료 코드 0이다. `projinit` 명령의 하위 명령 `context`가 이 `main`을 부른다.
 
-테스트는 [tests/test_session_context.py](../../tests/test_session_context.py)다. 자료가 없을 때 빈 출력, 목록 문서가 없을 때, 목록 항목과 목록에 없는 자료, 개수 제한, 설정 오류에도 종료 코드 0을 검사한다.
+테스트는 [tests/test_session_context.py](../../tests/test_session_context.py)다. 자료가 없을 때 빈 출력, 목록 문서가 없을 때, 목록 항목과 목록에 없는 자료, 개수 제한, 로컬 자료 안내, 설정 오류에도 종료 코드 0을 검사한다.
 

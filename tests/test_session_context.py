@@ -11,7 +11,7 @@ from unittest import mock
 from tests.support import RepoTestCase
 from projinit import session_context
 from projinit.config import load_project
-from projinit.session_context import reference_context
+from projinit.session_context import private_context, reference_context
 
 
 class ReferenceContextTest(RepoTestCase):
@@ -57,6 +57,17 @@ class ReferenceContextTest(RepoTestCase):
         with mock.patch.object(session_context, "MAX_ITEMS", 2):
             lines = reference_context(load_project(self.root)).splitlines()
         self.assertEqual(lines[-3:], ["- reference/0.txt", "- reference/1.txt", "- … 외 1개"])
+
+    def test_private_files(self) -> None:
+        self.write("private/contract.pdf", "x")
+        lines = reference_context(load_project(self.root)), private_context(load_project(self.root)).splitlines()
+        self.assertEqual(lines[0], "")
+        self.assertTrue(lines[1][0].startswith("로컬 자료: private/에 자료 1개가 있다. 이 컴퓨터에만 있다."))
+        self.assertEqual(lines[1][1:], ["- private/contract.pdf"])
+        self.write("reference/notes.md", "x")
+        code, output = self.run_main()
+        self.assertEqual(code, 0)
+        self.assertIn("목록에 없는 자료:\n- reference/notes.md\n\n로컬 자료:", output)
 
     def test_config_error_still_exits_zero(self) -> None:
         self.write("projinit.toml", "not toml [")

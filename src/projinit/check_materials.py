@@ -1,4 +1,4 @@
-"""Verify the material folders: every legacy file listed and left as it was.
+"""Verify the material folders: legacy files listed and left as they were, private files kept out of git.
 
 @doc: docs/design/Checkers.md#15-자료-폴더-검사기
 """
@@ -91,6 +91,32 @@ def check_legacy_frozen(project: Project) -> list[Problem]:
     return problems
 
 
+def check_private(project: Project) -> list[Problem]:
+    """Report private files that git does not ignore or already tracks.
+
+    @doc: docs/design/Checkers.md#15-자료-폴더-검사기
+    """
+    root = project.root
+    files = material_files(project.private_dir)
+    if not files or _git(root, "rev-parse", "--is-inside-work-tree").returncode != 0:
+        return []
+    private = project.config.private.strip("/")
+    tracked = _git(root, "-c", "core.quotePath=false", "ls-files", "--", f"{private}/").stdout.splitlines()
+    problems = [Problem(root / path, 1, "로컬 자료가 git에 추적됨: git rm --cached로 빼고 커밋하지 않는다") for path in tracked if path]
+    relative = [path.relative_to(root).as_posix() for path in files]
+    ignored = subprocess.run(
+        ["git", "-C", str(root), "-c", "core.quotePath=false", "check-ignore", "--no-index", "--stdin"],
+        input="\n".join(relative) + "\n",
+        capture_output=True,
+        encoding="utf-8",
+    ).stdout.splitlines()
+    if set(relative) - set(ignored):
+        problems.append(
+            Problem(project.private_dir, 1, f"로컬 자료가 git에서 빠지지 않음: .gitignore에 /{private}/를 더한다")
+        )
+    return problems
+
+
 def check_nested_git(project: Project) -> list[Problem]:
     """Report .git entries under the legacy folder.
 
@@ -113,7 +139,7 @@ def main(argv: list[str] | None = None) -> int:
         project = load_project(root)
     except ConfigError as error:
         return report_config_error(error)
-    problems = check_listed(project) + check_legacy_frozen(project) + check_nested_git(project)
+    problems = check_listed(project) + check_legacy_frozen(project) + check_private(project) + check_nested_git(project)
     for problem in problems:
         print(problem.format(root))
     if problems:

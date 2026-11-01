@@ -23,6 +23,7 @@ _KEYS = {
     ("paths", "code_roots"): ("code_roots", True),
     ("paths", "reference"): ("reference", False),
     ("paths", "legacy"): ("legacy", False),
+    ("paths", "private"): ("private", False),
     ("check", "commands"): ("check_commands", True),
     ("check", "commit_baseline"): ("commit_baseline", False),
 }
@@ -44,6 +45,7 @@ class Config:
     code_roots: tuple[str, ...] = ("src", "tests")
     reference: str = "reference"
     legacy: str = "legacy"
+    private: str = "private"
     check_commands: tuple[str, ...] = ()
     commit_baseline: str = ""
     template: tuple[tuple[str, str], ...] = ()
@@ -87,13 +89,25 @@ class Project:
     def legacy_dir(self) -> Path:
         return self.root / self.config.legacy
 
+    @property
+    def private_dir(self) -> Path:
+        return self.root / self.config.private
+
     def in_materials(self, path: Path) -> bool:
-        """Whether a path lies in the reference or legacy folder.
+        """Whether a path lies in the reference, legacy or private folder.
 
         @doc: docs/design/Checkers.md#11-설정
         """
         path = path.resolve()
-        return any(path.is_relative_to(folder.resolve()) for folder in (self.reference_dir, self.legacy_dir))
+        folders = (self.reference_dir, self.legacy_dir, self.private_dir)
+        return any(path.is_relative_to(folder.resolve()) for folder in folders)
+
+    def in_private(self, path: Path) -> bool:
+        """Whether a path is the private folder or lies in it.
+
+        @doc: docs/design/Checkers.md#11-설정
+        """
+        return path.resolve().is_relative_to(self.private_dir.resolve())
 
 
 class ConfigError(Exception):
