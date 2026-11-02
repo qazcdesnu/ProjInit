@@ -22,6 +22,7 @@ _KEYS = {
     ("projinit", "version"): ("version", False),
     ("projinit", "source"): ("source", False),
     ("projinit", "command"): ("command", False),
+    ("projinit", "agents"): ("agents", True),
     ("paths", "docs"): ("docs", False),
     ("paths", "entry"): ("entry", False),
     ("paths", "code_roots"): ("code_roots", True),
@@ -44,6 +45,7 @@ class Config:
     version: str = ""
     source: str = ""
     command: str = ""
+    agents: tuple[str, ...] = ("claude",)
     docs: str = "docs"
     entry: str = "CLAUDE.md"
     code_roots: tuple[str, ...] = ("src", "tests")
@@ -98,9 +100,11 @@ class Project:
         """The entry documents: the configured one, and AGENTS.md when Codex is on.
 
         @doc: docs/design/Checkers.md#11-설정
-        @stub: M8-T1
         """
-        raise NotImplementedError
+        codex = self.root / CODEX_ENTRY
+        if "codex" in self.config.agents and codex != self.entry_doc:
+            return (self.entry_doc, codex)
+        return (self.entry_doc,)
 
     @property
     def private_dir(self) -> Path:
@@ -159,6 +163,9 @@ def load_config(root: Path) -> Config:
                 raise ConfigError(f"모르는 키: {table}.{key}")
             name, is_list = _KEYS[(table, key)]
             values[name] = _checked(f"{table}.{key}", value, is_list)
+    unknown = [agent for agent in values.get("agents", ()) if agent not in AGENTS]
+    if unknown:
+        raise ConfigError(f"모르는 에이전트: {', '.join(unknown)} ({', '.join(AGENTS)} 중에서 고른다)")
     return Config(**values)
 
 

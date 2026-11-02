@@ -117,7 +117,7 @@ uvx --from git+https://github.com/qazcdesnu/ProjInit@v<새 버전> projinit upgr
 
 | 명령 | 하는 일 |
 | --- | --- |
-| `projinit init [--root <폴더>] [--repository <주소>]` | 폴더를 초기화한다. 만들 파일이 하나라도 이미 있으면 아무것도 쓰지 않는다. |
+| `projinit init [--root <폴더>] [--repository <주소>] [--agent claude\|codex]…` | 폴더를 초기화한다. `--agent`로 쓸 코딩 에이전트를 고른다(기본 `claude`). 만들 파일이 하나라도 이미 있으면 아무것도 쓰지 않는다. |
 | `projinit upgrade` | 이미 초기화한 프로젝트를 실행한 ProjInit 버전으로 갱신한다. |
 | `projinit init --refresh-common` | 공통 규칙 문서와 자동 검사 장치를 지금 설정 값으로 다시 만든다. |
 | `projinit check` | 모든 검사와 프로젝트 테스트를 한 번에 실행한다. 작업을 마치기 전에 직접 실행해도 된다. |

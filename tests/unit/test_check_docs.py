@@ -67,6 +67,16 @@ class CheckDocsTest(RepoTestCase):
         else:
             self.assertEqual(messages, ["링크 대상 없음: INDEX.md"])
 
+    def test_codex_entry_is_checked_like_the_claude_entry(self) -> None:
+        self.write("projinit.toml", '[projinit]\nagents = ["claude", "codex"]\n')
+        project = load_project(self.root)
+        self.assertEqual([problem.message for problem in check_entry(project)], ["진입 문서 없음"])
+        self.write("AGENTS.md", "# AGENTS.md\n\n목적.\n\n- `x`\n")
+        project = load_project(self.root)
+        self.assertEqual([problem.message for problem in check_entry(project)], ["진입 문서에 docs/index.md 링크 없음"])
+        self.assertEqual([problem.message for problem in check_entry_format(project)], ["진입 문서에 인라인 코드를 쓸 수 없음"])
+        self.assertEqual(find_orphans(project), [])
+
     def test_optional_link_may_have_no_target(self) -> None:
         self.write("docs/Rule.md", '# Rule\n\n## 1. Intro\n\n[R](../README.md "선택") [S](Gone.md "설명")\n')
         self.assertEqual([problem.message for problem in check_links(load_project(self.root))], ["링크 대상 없음: Gone.md"])

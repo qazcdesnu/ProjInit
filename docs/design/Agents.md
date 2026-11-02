@@ -51,9 +51,9 @@
 
 ## 6. 시작 skill
 
-- `SKILL.md`는 frontmatter의 `name: start`와 `description`, 본문으로 이뤄진다. 본문은 `/start` 명령과 같은 지시다.
+- `SKILL.md`는 frontmatter의 `name: start`와 `description`, 본문으로 이뤄진다. 본문은 `/start` 명령과 같은 지시이되, 읽는 진입 문서 이름만 Codex가 읽는 `AGENTS.md`로 쓴다.
 - `agents/openai.yaml`의 `policy.allow_implicit_invocation: false`로 명시 호출(`$start`)만 허용한다.
-- 템플릿 테스트가 skill 본문과 `/start` 명령 본문이 같은지 확인한다.
+- 템플릿 테스트가 skill 본문과 `/start` 명령 본문이 진입 문서 이름만 빼고 같은지 확인한다.
 
 ## 7. 작업 범위
 

@@ -101,7 +101,7 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 
 - 모든 템플릿 파일이 값과 함께 채워지고, 값이 빠지면 오류가 난다.
 - 채운 공통 문서의 링크가 공통 파일과 처음 만드는 파일로만 간다(2절).
-- `AGENTS.md` 템플릿은 첫 줄만 빼고 `CLAUDE.md` 템플릿과 같고, 시작 skill 본문은 `/start` 명령 본문과 같다(M8-T1).
+- `AGENTS.md` 템플릿은 첫 줄만 빼고 `CLAUDE.md` 템플릿과 같고, 시작 skill 본문은 진입 문서 이름(`AGENTS.md`)만 빼고 `/start` 명령 본문과 같다(M8-T1).
 - 공통 파일과 처음 만드는 파일을 임시 폴더에 채워 쓰면 문서 링크 검사와 작업 관리 검사를 통과한다. 강제 장치까지 포함한 검증 전체 통과는 [초기화 명령](#9-초기화-명령)의 테스트가 시험한다.
 
 ## 9. 초기화 명령
@@ -124,6 +124,7 @@ projinit init --refresh-common [--root <폴더>]
 - [ensure_ignored](../../src/projinit/init.py#ensure_ignored): `Project`를 받아 루트의 `GITIGNORE`에 로컬 자료 폴더를 빼는 줄 `/<private>/`가 있게 하고, 고쳤으면 참을 돌려준다(I26). 앞뒤 공백을 지운 줄 중 `/<private>/`, `<private>/`, `/<private>`, `<private>`가 있으면 이미 있는 것으로 본다. 없으면 파일 끝에 그 줄을 더하고(파일이 줄바꿈으로 끝나지 않으면 줄바꿈을 먼저 넣는다), 파일이 없으면 그 한 줄로 만든다. 다른 줄은 그대로 둔다. `.gitignore`는 공통 파일이 아니다. 파일 전체가 아니라 이 줄 하나만 보장하므로, 이미 있는 저장소에서도 초기화를 막지 않는다.
 - [InitError](../../src/projinit/init.py#InitError): 초기화할 수 없을 때의 오류.
 - [START_HINT](../../src/projinit/init.py#START_HINT): 초기화를 마친 뒤 출력하는 사용법. Claude Code를 열고 `/start`를 입력하라는 안내다.
+- [CODEX_START_HINT](../../src/projinit/init.py#CODEX_START_HINT): Codex를 켰을 때의 사용법. Codex에서 `$start`를 입력하라는 안내다. 초기화는 Claude를 켰으면 `START_HINT`를, Codex를 켰으면 이 안내를(둘 다 켰으면 둘 다) 마지막에 출력한다.
 - [main](../../src/projinit/init.py#main): 위 두 동작을 실행한다. 초기화는 `--agent <이름>`을 여러 번 받는다(`claude`, `codex`, 없으면 `claude`). 그리고 만들거나 바꾼 파일을 한 줄씩 출력한다. 초기화한 경우 마지막에 `START_HINT`를 출력한다. 오류는 `init: <메시지>`로 출력하고 종료 코드 1로 끝난다.
 - `projinit` 명령의 하위 명령 `init`이 이 `main`을 부른다.
 

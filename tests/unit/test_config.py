@@ -63,3 +63,24 @@ class ConfigTest(RepoTestCase):
             code = check_docs_main(["--root", str(self.root)])
         self.assertEqual(code, 1)
         self.assertEqual(output.getvalue(), "projinit.toml:1: 설정 오류: 모르는 키: paths.nope\n")
+
+
+class AgentsTest(RepoTestCase):
+    """@doc: docs/design/Checkers.md#11-설정"""
+
+    def test_agents_default_to_claude(self) -> None:
+        project = load_project(self.root)
+        self.assertEqual(project.config.agents, ("claude",))
+        self.assertEqual(project.entry_docs, (self.root / "CLAUDE.md",))
+
+    def test_codex_adds_its_entry_document(self) -> None:
+        self.write("projinit.toml", '[projinit]\nagents = ["claude", "codex"]\n')
+        self.assertEqual(load_project(self.root).entry_docs, (self.root / "CLAUDE.md", self.root / "AGENTS.md"))
+        self.write("projinit.toml", '[projinit]\nagents = ["codex"]\n[paths]\nentry = "AGENTS.md"\n')
+        self.assertEqual(load_project(self.root).entry_docs, (self.root / "AGENTS.md",))
+
+    def test_unknown_agent_is_a_config_error(self) -> None:
+        self.write("projinit.toml", '[projinit]\nagents = ["claude", "cursor"]\n')
+        with self.assertRaises(ConfigError) as raised:
+            load_config(self.root)
+        self.assertIn("모르는 에이전트: cursor", str(raised.exception))

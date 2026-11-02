@@ -3,6 +3,8 @@
 [projinit]
 version = "{{version}}"
 source = "{{source}}"
+# 쓰는 코딩 에이전트: claude(Claude Code), codex(Codex). 바꾸면 init --refresh-common을 실행한다.
+agents = {{agents}}
 
 [paths]
 docs = "docs"

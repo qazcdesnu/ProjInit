@@ -56,6 +56,6 @@
 
 ## M8 Codex 지원
 
-- [~] M8-T1 에이전트 설정, Codex 진입 문서 `AGENTS.md`와 시작 skill
+- [x] M8-T1 에이전트 설정, Codex 진입 문서 `AGENTS.md`와 시작 skill
 - [ ] M8-T2 Codex hook(Stop, SessionStart)과 강제 장치 검사
 - [ ] M8-T3 실제 Codex로 확인하고 0.3.0 릴리스

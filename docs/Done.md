@@ -4,6 +4,47 @@
 
 
 
+## M8-T1 에이전트 설정, Codex 진입 문서와 시작 skill
+
+- 시작일: 2026-11-02
+- 완료일: 2026-11-02
+- 근거 문서: [에이전트 지원 설계](design/Agents.md)
+- 참고 자료: 없음
+
+### 계획
+- 에이전트 지원 설계 문서를 쓴다. Claude Code의 동작은 바꾸지 않고, Codex용 파일을 옆에 더하는 방식이다.
+- 설정 `projinit.agents`(기본 `["claude"]`)와 `init --agent codex`. 에이전트별 공통 파일을 나눈다.
+- Codex 진입 문서 `AGENTS.md`(`CLAUDE.md`와 본문이 같음)와 시작 skill `.agents/skills/start/`(`$start`, 명시 호출만).
+- 문서 링크 검사기가 `AGENTS.md`도 진입 문서로 다룬다.
+
+### 진행 기록
+- 2026-11-02: 사용자가 다른 코딩 에이전트가 세션 시작 때 읽는 문서를 조사하라고 했다. Codex는 `AGENTS.md`, Antigravity는 `AGENTS.md`나 `GEMINI.md`를 읽지만, 강제 장치(hook, 시작 명령)는 도구마다 다르다고 답했다. 사용자가 Codex 호환까지 먼저 진행하되, 호환성을 위해 일반화하다가 Claude와 Codex 모두에서 성능이 떨어지면 안 된다고 했다.
+- 2026-11-02: 공식 문서로 Codex의 진입 파일(`AGENTS.md`), hook(`.codex/hooks.json`, `stop_hook_active`, 종료 코드 2, hook 신뢰), skill(`.agents/skills`, `$start`, 명시 호출 정책)을 확인하고 에이전트 지원 설계를 썼다. 이 컴퓨터에는 Codex가 설치되어 있지 않아 실제 확인은 M8-T3에서 한다.
+- 2026-11-02: 설정 `projinit.agents`, `init --agent`, 에이전트별 공통 파일(`AGENT_FILES`, `common_files`), `AGENTS.md`와 시작 skill 템플릿, 여러 진입 문서 검사를 구현했다. 규칙 문서의 Claude 표현 중 에이전트와 무관한 곳만 "에이전트"로 바꾸고, Claude 고유 설명은 그대로 두었다.
+- 2026-11-02: 설계 문서끼리 서로의 함수를 코드 포인터로 걸었더니 그 함수에 두 번째 근거 문서를 요구했다. 다른 설계 문서의 함수는 절 링크와 인라인 코드로 적었다.
+
+### 결정 사항
+- Claude용 파일과 hook 출력은 바꾸지 않는다. Codex를 켜도 Claude 쪽은 같다([에이전트 지원 설계](design/Agents.md#1-원칙)).
+- 기본 에이전트는 Claude 하나다. 이미 초기화한 프로젝트는 설정에 키가 없어도 지금처럼 동작한다.
+- 시작 skill 본문은 Codex가 실제로 읽는 `AGENTS.md`를 가리킨다. 에이전트마다 자기 방식대로 만든다는 원칙에 따른다.
+- 끈 에이전트의 파일은 지우지 않고 검사하지 않는다.
+
+### 변경 파일
+- `docs/Roadmap.md`, `docs/Ongoing.md`, `docs/Done.md`, `docs/design/Agents.md`(새 문서)
+- 템플릿: `src/projinit/templates/AGENTS.md`, `.agents/skills/start/SKILL.md`, `.agents/skills/start/agents/openai.yaml`(새 파일), `projinit.toml`, `docs/DocumentationRule.md`, `CodeRule.md`, `TaskRule.md`, `PullRequestRule.md`, `MaterialRule.md`, `VerificationTools.md`, 그리고 다시 만든 이 저장소의 같은 문서
+- `src/projinit/config.py`, `template.py`, `init.py`, `doclib.py`, `check_docs.py`, `check_template.py`
+- `tests/unit/test_config.py`, `test_template.py`, `test_init.py`, `test_check_docs.py`
+- `docs/design/Templates.md`, `docs/design/Checkers.md`, `docs/design/Package.md`, `README.md`
+
+### 결과
+- `projinit init --agent codex`로 Codex용 진입 문서와 `$start` skill을 만든다. 설정의 `agents`를 바꾸고 `init --refresh-common`으로 나중에 켤 수도 있다.
+- `AGENTS.md`도 진입 문서로 검사한다. 템플릿 테스트가 `AGENTS.md`와 `CLAUDE.md`, skill과 `/start`의 본문이 어긋나지 않게 지킨다.
+- Codex의 hook은 아직 없다(M8-T2).
+
+### 검증
+- `uv run projinit check`: 모두 통과
+
+
 ## I26 초기화와 갱신이 `.gitignore`에 로컬 자료 폴더를 넣음
 
 - 시작일: 2026-11-01
