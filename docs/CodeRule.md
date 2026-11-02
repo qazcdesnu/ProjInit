@@ -24,9 +24,11 @@
 | 경로 | 용도 |
 | --- | --- |
 | `CLAUDE.md` | 진입 문서([문서 작업 규칙](DocumentationRule.md#7-진입-문서)). |
+| `AGENTS.md` | Codex를 쓸 때의 진입 문서. 제목만 빼고 `CLAUDE.md`와 같다. |
 | `docs/` | 모든 문서. 코드 작업의 규칙이다. |
 | `projinit.toml` | 검사기 설정([검증 도구의 설정](VerificationTools.md#11-설정)). |
-| `.claude/` | Claude Code 프로젝트 설정. 검사기를 자동 실행하는 Stop hook([검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행))과 첫 작업을 시작하는 `/start` 명령([첫 작업](TaskRule.md#48-첫-작업))을 둔다. |
+| `.claude/` | Claude Code 프로젝트 설정. 검사기를 자동 실행하는 Stop hook([검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행))과 첫 작업을 시작하는 `/start` 명령([첫 작업](TaskRule.md#48-첫-작업))을 둔다. Claude Code를 쓸 때만 있다. |
+| `.codex/`, `.agents/` | Codex를 쓸 때만 있다. `.codex/`에는 검사기를 자동 실행하는 hook을, `.agents/skills/start/`에는 첫 작업을 시작하는 `$start` skill을 둔다. |
 | `.githooks/` | 저장소에 포함하는 git hook. `pre-commit`과 `commit-msg`를 둔다([커밋 규칙](CommitRule.md#5-강제)). |
 | `.github/` | PR 템플릿과 CI([PR 규칙](PullRequestRule.md)). |
 
@@ -78,7 +80,7 @@
 ### 5.3 실행
 
 - 모든 종류를 일괄 검사의 프로젝트 명령에 넣어, 작업을 마칠 때마다 함께 돈다.
-- 일괄 검사는 Claude가 턴을 끝낼 때마다 돈다([검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)). 그래서 테스트는 빨라야 한다. 느린 종류가 생기면 먼저 빠르게 만들 방법(공유 준비, 병렬 실행)을 찾는다. 그래도 매번 돌리기 어려우면, 그 종류를 CI에서만 돌리기로 정하고 그 결정을 시스템 구조 문서에 적는다.
+- 일괄 검사는 에이전트가 턴을 끝낼 때마다 돈다([검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)). 그래서 테스트는 빨라야 한다. 느린 종류가 생기면 먼저 빠르게 만들 방법(공유 준비, 병렬 실행)을 찾는다. 그래도 매번 돌리기 어려우면, 그 종류를 CI에서만 돌리기로 정하고 그 결정을 시스템 구조 문서에 적는다.
 
 ## 6. 검증과 완료 조건
 

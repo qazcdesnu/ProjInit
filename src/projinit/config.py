@@ -12,6 +12,10 @@ from pathlib import Path
 CONFIG_FILE = "projinit.toml"
 # @doc: docs/design/Checkers.md#11-설정
 INDEX_NAME = "index.md"
+# @doc: docs/design/Checkers.md#11-설정
+AGENTS = ("claude", "codex")
+# @doc: docs/design/Checkers.md#11-설정
+CODEX_ENTRY = "AGENTS.md"
 
 # (table, key) in the settings file -> Config field and whether it holds a list of strings.
 _KEYS = {
@@ -88,6 +92,15 @@ class Project:
     @property
     def legacy_dir(self) -> Path:
         return self.root / self.config.legacy
+
+    @property
+    def entry_docs(self) -> tuple[Path, ...]:
+        """The entry documents: the configured one, and AGENTS.md when Codex is on.
+
+        @doc: docs/design/Checkers.md#11-설정
+        @stub: M8-T1
+        """
+        raise NotImplementedError
 
     @property
     def private_dir(self) -> Path:

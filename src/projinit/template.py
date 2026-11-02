@@ -30,6 +30,22 @@ COMMON_FILES = (
     ".claude/commands/start.md",
 )
 # @doc: docs/design/Templates.md#8-구현
+AGENT_FILES = {
+    "claude": (".claude/settings.json", ".claude/commands/start.md"),
+    "codex": ("AGENTS.md", ".agents/skills/start/SKILL.md", ".agents/skills/start/agents/openai.yaml"),
+}
+
+
+def common_files(config: Config) -> tuple[str, ...]:
+    """Return the common files of a project: the shared ones, then those of each configured agent.
+
+    @doc: docs/design/Templates.md#8-구현
+    @stub: M8-T1
+    """
+    raise NotImplementedError
+
+
+# @doc: docs/design/Templates.md#8-구현
 INITIAL_FILES = (
     "docs/index.md",
     "docs/Roadmap.md",
