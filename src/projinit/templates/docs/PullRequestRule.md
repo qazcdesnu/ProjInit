@@ -47,7 +47,7 @@
 
 - **merge commit**("Create a merge commit")으로 합친다. squash merge나 rebase merge는 커밋을 새로 만들어, 그 커밋을 이미 포함한 뒤 PR과 내용이 겹쳐 충돌할 수 있으므로 쓰지 않는다. `main`의 병합 커밋(`Merge pull request #…`)은 커밋 이력 검사에서 제외되고, 작업 커밋들은 커밋 규칙을 따른다.
 - **PR 번호 순서대로** 병합한다. 앞 PR을 건너뛰고 뒤 PR을 병합하지 않는다.
-- 병합은 사용자가 한다. Claude는 사용자가 요청할 때만 병합한다.
+- 병합은 사용자가 한다. 에이전트는 사용자가 요청할 때만 병합한다.
 - CI가 통과하지 않은 PR은 병합하지 않는다.
 - 병합한 뒤 작업 브랜치는 지우고, 로컬 `main`을 원격과 맞춘다(`git switch main && git pull`).
 

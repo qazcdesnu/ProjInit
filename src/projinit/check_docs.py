@@ -63,14 +63,16 @@ def check_entry(project: Project) -> list[Problem]:
 
     @doc: docs/design/Checkers.md#3-문서-링크-검사기
     """
-    entry = project.entry_doc
-    if not entry.is_file():
-        return [Problem(entry, 1, "진입 문서 없음")]
     index = project.index_doc.resolve()
-    for link in extract_links(entry, entry.read_text(encoding="utf-8")):
-        if not is_external(link.target) and resolve_link(link)[0] == index:
-            return []
-    return [Problem(entry, 1, f"진입 문서에 {display_path(index, project.root)} 링크 없음")]
+    problems = []
+    for entry in project.entry_docs:
+        if not entry.is_file():
+            problems.append(Problem(entry, 1, "진입 문서 없음"))
+            continue
+        links = extract_links(entry, entry.read_text(encoding="utf-8"))
+        if not any(not is_external(link.target) and resolve_link(link)[0] == index for link in links):
+            problems.append(Problem(entry, 1, f"진입 문서에 {display_path(index, project.root)} 링크 없음"))
+    return problems
 
 
 def check_entry_format(project: Project) -> list[Problem]:
@@ -78,9 +80,14 @@ def check_entry_format(project: Project) -> list[Problem]:
 
     @doc: docs/design/Checkers.md#3-문서-링크-검사기
     """
-    entry = project.entry_doc
-    if not entry.is_file():
-        return []
+    problems = []
+    for entry in project.entry_docs:
+        if entry.is_file():
+            problems.extend(_entry_format_problems(project, entry))
+    return problems
+
+
+def _entry_format_problems(project: Project, entry: Path) -> list[Problem]:
     text = entry.read_text(encoding="utf-8")
     lines = text.splitlines()
     prose = {number for number, _ in iter_prose_lines(text)}
@@ -142,11 +149,11 @@ def find_orphans(project: Project) -> list[Problem]:
             if path.suffix == ".md" and path.is_file() and path not in reachable:
                 reachable.add(path)
                 queue.append(path)
-    entry = project.entry_doc.resolve()
+    entries = {entry.resolve() for entry in project.entry_docs}
     return [
         Problem(doc, 1, f"고아 문서: {display_path(index, project.root)}에서 도달할 수 없음")
         for doc in find_doc_files(project)
-        if doc.resolve() != entry and doc.resolve() not in reachable
+        if doc.resolve() not in entries and doc.resolve() not in reachable
     ]
 
 

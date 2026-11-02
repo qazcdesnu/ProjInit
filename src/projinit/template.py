@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 from projinit.check_hooks import projinit_command
-from projinit.config import Config
+from projinit.config import AGENTS, Config
 
 # @doc: docs/design/Templates.md#8-구현
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
@@ -22,13 +22,27 @@ COMMON_FILES = (
     "docs/PullRequestRule.md",
     "docs/VerificationTools.md",
     "docs/MaterialRule.md",
-    ".claude/settings.json",
     ".githooks/pre-commit",
     ".githooks/commit-msg",
     ".github/workflows/verify.yml",
     ".github/pull_request_template.md",
-    ".claude/commands/start.md",
 )
+# @doc: docs/design/Templates.md#8-구현
+AGENT_FILES = {
+    "claude": (".claude/settings.json", ".claude/commands/start.md"),
+    "codex": ("AGENTS.md", ".agents/skills/start/SKILL.md", ".agents/skills/start/agents/openai.yaml"),
+}
+
+
+def common_files(config: Config) -> tuple[str, ...]:
+    """Return the common files of a project: the shared ones, then those of each configured agent.
+
+    @doc: docs/design/Templates.md#8-구현
+    """
+    agents = [agent for agent in AGENTS if agent in config.agents]
+    return COMMON_FILES + tuple(relative for agent in agents for relative in AGENT_FILES[agent])
+
+
 # @doc: docs/design/Templates.md#8-구현
 INITIAL_FILES = (
     "docs/index.md",

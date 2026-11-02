@@ -11,8 +11,9 @@ from contextlib import redirect_stdout
 from tests.support import RepoTestCase
 from projinit.run_checks import run_all
 from projinit.config import load_config, load_project
-from projinit.init import NO_REPOSITORY, START_HINT, ensure_ignored, init_project, main, package_version, refresh_common, repository_url
-from projinit.template import COMMON_FILES, EXECUTABLE_FILES, INITIAL_FILES
+from projinit.init import CODEX_START_HINT, NO_REPOSITORY, START_HINT, ensure_ignored, init_project, main, package_version, refresh_common, repository_url
+from projinit.config import Config
+from projinit.template import COMMON_FILES, EXECUTABLE_FILES, INITIAL_FILES, common_files
 
 
 class InitTest(RepoTestCase):
@@ -27,7 +28,8 @@ class InitTest(RepoTestCase):
     def test_initializes_an_empty_folder(self) -> None:
         target = self.root / "new"
         created = init_project(target, "git@github.com:me/demo.git")
-        self.assertEqual(created, list(COMMON_FILES + INITIAL_FILES) + [".gitignore"])
+        self.assertEqual(created, list(common_files(Config()) + INITIAL_FILES) + [".gitignore"])
+        self.assertEqual(load_config(target).agents, ("claude",))
         self.assertEqual((target / ".gitignore").read_text(), "/private/\n")
         self.assertTrue((target / ".git").is_dir())
         config = load_config(target)
@@ -38,6 +40,29 @@ class InitTest(RepoTestCase):
             self.assertTrue(os.access(target / relative, os.X_OK), relative)
         results = run_all(load_project(target))
         self.assertEqual([(r.name, r.returncode) for r in results if r.returncode], [], [r.output for r in results])
+
+    def test_initializes_for_codex(self) -> None:
+        code, output = self.run_main("--agent", "codex", "--agent", "claude")
+        self.assertEqual(code, 0, output)
+        self.assertEqual(load_config(self.root).agents, ("claude", "codex"))
+        for relative in ("AGENTS.md", ".agents/skills/start/SKILL.md", ".claude/settings.json"):
+            self.assertTrue((self.root / relative).is_file(), relative)
+        self.assertEqual(output.splitlines()[-2:], [START_HINT, CODEX_START_HINT])
+        results = run_all(load_project(self.root))
+        self.assertEqual([(r.name, r.returncode) for r in results if r.returncode], [], [r.output for r in results])
+
+    def test_codex_only_project_has_no_claude_files(self) -> None:
+        code, output = self.run_main("--agent", "codex")
+        self.assertEqual(code, 0, output)
+        self.assertFalse((self.root / ".claude").exists())
+        self.assertTrue((self.root / "CLAUDE.md").is_file())
+        self.assertEqual(output.splitlines()[-1], CODEX_START_HINT)
+
+    def test_refresh_common_adds_the_files_of_a_newly_enabled_agent(self) -> None:
+        self.run_main()
+        self.write("projinit.toml", self.root.joinpath("projinit.toml").read_text().replace('agents = ["claude"]', 'agents = ["claude", "codex"]'))
+        changed = refresh_common(load_project(self.root))
+        self.assertEqual(changed, ["AGENTS.md", ".agents/skills/start/SKILL.md", ".agents/skills/start/agents/openai.yaml"])
 
     def test_initializing_keeps_an_existing_gitignore(self) -> None:
         self.write(".gitignore", "node_modules/\n.env")

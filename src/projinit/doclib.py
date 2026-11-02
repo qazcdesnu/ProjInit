@@ -117,13 +117,11 @@ class Link:
 
 
 def find_doc_files(project: Project) -> list[Path]:
-    """Return the entry document, the README if any, and every markdown file under the docs directory.
+    """Return the entry documents, the README if any, and every markdown file under the docs directory.
 
     @doc: docs/design/Checkers.md#2-공통-모듈
     """
-    docs = []
-    if project.entry_doc.is_file():
-        docs.append(project.entry_doc)
+    docs = [entry for entry in project.entry_docs if entry.is_file()]
     readme = project.root / README_DOC
     if readme.is_file():
         docs.append(readme)

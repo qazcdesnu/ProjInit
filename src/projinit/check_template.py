@@ -10,7 +10,7 @@ from pathlib import Path
 from projinit.config import CONFIG_FILE, ConfigError, Project, load_project, report_config_error
 from projinit.doclib import Problem
 from projinit.init import package_version
-from projinit.template import COMMON_FILES, TemplateError, render, render_values
+from projinit.template import TemplateError, common_files, render, render_values
 
 
 def check_common_files(project: Project) -> list[Problem]:
@@ -20,7 +20,7 @@ def check_common_files(project: Project) -> list[Problem]:
     """
     values = render_values(project.config)
     problems = []
-    for relative in COMMON_FILES:
+    for relative in common_files(project.config):
         path = project.root / relative
         try:
             expected = render(relative, values)
@@ -64,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
     if problems:
         print(f"check_template: 문제 {len(problems)}건")
         return 1
-    print(f"check_template: 통과 (공통 파일 {len(COMMON_FILES)}개, 버전 {project.config.version or running})")
+    print(f"check_template: 통과 (공통 파일 {len(common_files(project.config))}개, 버전 {project.config.version or running})")
     return 0
 
 

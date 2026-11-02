@@ -4,13 +4,14 @@
 """
 
 import argparse
+import json
 import subprocess
 import sys
 from importlib.metadata import version
 from pathlib import Path
 
-from projinit.config import Config, ConfigError, Project, load_project, report_config_error
-from projinit.template import COMMON_FILES, EXECUTABLE_FILES, INITIAL_FILES, TemplateError, render, render_values
+from projinit.config import AGENTS, Config, ConfigError, Project, load_project, report_config_error
+from projinit.template import EXECUTABLE_FILES, INITIAL_FILES, TemplateError, common_files, render, render_values
 
 # @doc: docs/design/Templates.md#9-초기화-명령
 DEFAULT_SOURCE = "git+https://github.com/qazcdesnu/ProjInit"
@@ -18,6 +19,8 @@ DEFAULT_SOURCE = "git+https://github.com/qazcdesnu/ProjInit"
 NO_REPOSITORY = "아직 없음"
 # @doc: docs/design/Templates.md#9-초기화-명령
 START_HINT = "이 폴더에서 Claude Code를 열고 /start를 입력하면 첫 작업을 시작합니다."
+# @doc: docs/design/Templates.md#9-초기화-명령
+CODEX_START_HINT = "Codex에서는 이 폴더를 열고 $start를 입력하면 첫 작업을 시작합니다."
 
 
 class InitError(Exception):
@@ -53,21 +56,25 @@ def repository_url(root: Path, given: str | None) -> str:
     return NO_REPOSITORY
 
 
-def init_project(root: Path, repository: str | None) -> list[str]:
+def init_project(root: Path, repository: str | None, agents: tuple[str, ...] = ("claude",)) -> list[str]:
     """Write the common and initial files into a folder and return their relative paths.
 
     @doc: docs/design/Templates.md#9-초기화-명령
     """
     root = root.resolve()
-    targets = COMMON_FILES + INITIAL_FILES
+    agents = tuple(agent for agent in AGENTS if agent in agents)
+    settings = {"version": package_version(), "source": DEFAULT_SOURCE, "repository": repository_url(root, repository)}
+    config = Config(
+        version=settings["version"],
+        source=settings["source"],
+        agents=agents,
+        template=(("repository", settings["repository"]),),
+    )
+    targets = common_files(config) + INITIAL_FILES
     existing = [relative for relative in targets if (root / relative).exists()]
     if existing:
         raise InitError(f"이미 있는 파일이 있어 초기화하지 않음: {', '.join(existing)}")
-    settings = {"version": package_version(), "source": DEFAULT_SOURCE, "repository": repository_url(root, repository)}
-    config = Config(
-        version=settings["version"], source=settings["source"], template=(("repository", settings["repository"]),)
-    )
-    values = {**render_values(config), **settings}
+    values = {**render_values(config), **settings, "agents": json.dumps(list(agents))}
     # Render everything first so that a template error leaves the folder untouched.
     rendered = {relative: render(relative, values) for relative in targets}
     for relative, text in rendered.items():
@@ -112,7 +119,7 @@ def refresh_common(project: Project) -> list[str]:
     @doc: docs/design/Templates.md#9-초기화-명령
     """
     values = render_values(project.config)
-    rendered = {relative: render(relative, values) for relative in COMMON_FILES}
+    rendered = {relative: render(relative, values) for relative in common_files(project.config)}
     changed = []
     for relative, text in rendered.items():
         path = project.root / relative
@@ -136,6 +143,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="projinit init", description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--repository")
+    parser.add_argument("--agent", action="append", choices=AGENTS, dest="agents")
     parser.add_argument("--refresh-common", action="store_true")
     args = parser.parse_args(argv)
     try:
@@ -145,11 +153,14 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"다시 씀: {relative}")
             print(f"init: 공통 문서 {len(changed)}개를 다시 씀")
         else:
-            created = init_project(args.root, args.repository)
+            agents = tuple(args.agents or ("claude",))
+            created = init_project(args.root, args.repository, agents)
             for relative in created:
                 print(f"만듦: {relative}")
             print(f"init: 파일 {len(created)}개를 만듦")
-            print(START_HINT)
+            print(START_HINT if "claude" in agents else CODEX_START_HINT)
+            if "claude" in agents and "codex" in agents:
+                print(CODEX_START_HINT)
     except ConfigError as error:
         return report_config_error(error)
     except (InitError, TemplateError) as error:

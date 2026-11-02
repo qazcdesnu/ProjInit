@@ -45,7 +45,7 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 
 **함수**
 
-- [find_doc_files](../../src/projinit/doclib.py#find_doc_files): `Project`를 받아 검사 대상 문서 목록을 돌려준다. 진입 문서, 루트의 [README_DOC](../../src/projinit/doclib.py#README_DOC)(`README.md`, 있으면), 문서 디렉터리 아래의 모든 `.md` 파일이다. 고아 문서 판정은 이 목록에서 진입 문서만 뺀다.
+- [find_doc_files](../../src/projinit/doclib.py#find_doc_files): `Project`를 받아 검사 대상 문서 목록을 돌려준다. 있는 진입 문서([Project.entry_docs](../../src/projinit/config.py#Project.entry_docs)), 루트의 [README_DOC](../../src/projinit/doclib.py#README_DOC)(`README.md`, 있으면), 문서 디렉터리 아래의 모든 `.md` 파일이다. 고아 문서 판정은 이 목록에서 진입 문서들만 뺀다.
 - [find_code_files](../../src/projinit/doclib.py#find_code_files): `Project`를 받아 코드 루트 아래의 모든 코드 파일 목록을 돌려준다. 없는 디렉터리는 건너뛴다.
 - [extract_links](../../src/projinit/doclib.py#extract_links): 문서 본문에서 링크를 찾는다. 이미지 링크(`![...](...)`), 펜스 코드 블록(```` ``` ````, `~~~`) 안, 인라인 코드 안의 링크는 제외한다.
 - [is_external](../../src/projinit/doclib.py#is_external): `http://`, `https://`, `mailto:`로 시작하는 외부 링크인지 판정한다. 외부 링크는 검사하지 않는다.
@@ -66,12 +66,12 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
   - 외부 링크와 코드 파일 링크는 건너뛴다. 코드 파일 링크는 [포인터 검사기](#4-포인터-검사기)가 검사한다.
   - 대상 파일이나 디렉터리가 없으면 문제다.
   - 대상이 `.md` 문서이고 앵커가 있으면, 대상 문서에 그 앵커가 있어야 한다.
-- [check_entry](../../src/projinit/check_docs.py#check_entry): 진입 문서가 존재하고 인덱스로 가는 링크를 가지는지 검사한다.
-- [check_entry_format](../../src/projinit/check_docs.py#check_entry_format): 진입 문서가 [진입 문서 형식](../DocumentationRule.md#7-진입-문서)을 지키는지 검사한다. 위반한 줄마다 문제를 보고한다.
+- [check_entry](../../src/projinit/check_docs.py#check_entry): `Project.entry_docs`의 진입 문서마다 존재하고 인덱스로 가는 링크를 가지는지 검사한다.
+- [check_entry_format](../../src/projinit/check_docs.py#check_entry_format): 진입 문서마다 [진입 문서 형식](../DocumentationRule.md#7-진입-문서)을 지키는지 검사한다. 위반한 줄마다 문제를 보고한다.
   - 첫 줄이 `# ` 제목이어야 한다. 그 뒤 빈 줄 다음의 연속된 줄들이 목적 문단이다.
   - 목적 문단 뒤의 빈 줄이 아닌 줄은 `## ` 제목이거나, `- `로 시작하고 문서 디렉터리 아래 `.md` 문서로 가는 링크를 가진 줄이어야 한다.
   - 펜스 코드 블록은 줄 위치와 상관없이 문제이며, 인라인 코드가 있는 줄도 문제다.
-- [find_orphans](../../src/projinit/check_docs.py#find_orphans): 인덱스에서 문서 간 링크를 따라 너비 우선 탐색을 하고, 도달하지 못한 검사 대상 문서(진입 문서 제외, README 포함)를 고아 문서로 보고한다. 인덱스가 없으면 그 자체를 문제로 보고한다.
+- [find_orphans](../../src/projinit/check_docs.py#find_orphans): 인덱스에서 문서 간 링크를 따라 너비 우선 탐색을 하고, 도달하지 못한 검사 대상 문서(진입 문서들 제외, README 포함)를 고아 문서로 보고한다. 인덱스가 없으면 그 자체를 문제로 보고한다.
 - [main](../../src/projinit/check_docs.py#main): 네 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
 
 ## 4. 포인터 검사기
@@ -320,10 +320,12 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 - [CONFIG_FILE](../../src/projinit/config.py#CONFIG_FILE): `projinit.toml`.
 - [INDEX_NAME](../../src/projinit/config.py#INDEX_NAME): `index.md`. 문서 디렉터리 안의 인덱스 이름이다.
-- [Config](../../src/projinit/config.py#Config): 설정 값. `version`, `source`, `command`, `docs`(기본 `docs`), `entry`(기본 `CLAUDE.md`), `code_roots`(기본 `src`, `tests`), `reference`(기본 `reference`), `legacy`(기본 `legacy`), `private`(기본 `private`), `check_commands`(기본 없음), `commit_baseline`(기본 빈 문자열), `template`(`[template]` 표의 (키, 값) 목록, 기본 없음)을 가진다. [Config.template_values](../../src/projinit/config.py#Config.template_values)는 그것을 사전으로 돌려준다.
-- [Project](../../src/projinit/config.py#Project): 검사할 프로젝트. 루트 절대 경로와 `Config`를 가지며, [Project.docs_dir](../../src/projinit/config.py#Project.docs_dir), [Project.entry_doc](../../src/projinit/config.py#Project.entry_doc), [Project.index_doc](../../src/projinit/config.py#Project.index_doc), [Project.code_roots](../../src/projinit/config.py#Project.code_roots), [Project.reference_dir](../../src/projinit/config.py#Project.reference_dir), [Project.legacy_dir](../../src/projinit/config.py#Project.legacy_dir), [Project.private_dir](../../src/projinit/config.py#Project.private_dir)로 경로를 돌려준다. [Project.in_materials](../../src/projinit/config.py#Project.in_materials)는 경로가 세 자료 폴더 중 하나의 안에 있는지, [Project.in_private](../../src/projinit/config.py#Project.in_private)는 로컬 자료 폴더 자신이거나 그 안에 있는지 돌려준다.
+- [AGENTS](../../src/projinit/config.py#AGENTS): 지원하는 에이전트 이름 `claude`, `codex`. 이 순서가 공통 파일의 순서다.
+- [CODEX_ENTRY](../../src/projinit/config.py#CODEX_ENTRY): Codex 진입 문서 `AGENTS.md`. 저장소 루트에 있다.
+- [Config](../../src/projinit/config.py#Config): 설정 값. `version`, `source`, `command`, `agents`(기본 `claude` 하나), `docs`(기본 `docs`), `entry`(기본 `CLAUDE.md`), `code_roots`(기본 `src`, `tests`), `reference`(기본 `reference`), `legacy`(기본 `legacy`), `private`(기본 `private`), `check_commands`(기본 없음), `commit_baseline`(기본 빈 문자열), `template`(`[template]` 표의 (키, 값) 목록, 기본 없음)을 가진다. [Config.template_values](../../src/projinit/config.py#Config.template_values)는 그것을 사전으로 돌려준다.
+- [Project](../../src/projinit/config.py#Project): 검사할 프로젝트. 루트 절대 경로와 `Config`를 가지며, [Project.docs_dir](../../src/projinit/config.py#Project.docs_dir), [Project.entry_doc](../../src/projinit/config.py#Project.entry_doc), [Project.index_doc](../../src/projinit/config.py#Project.index_doc), [Project.code_roots](../../src/projinit/config.py#Project.code_roots), [Project.reference_dir](../../src/projinit/config.py#Project.reference_dir), [Project.legacy_dir](../../src/projinit/config.py#Project.legacy_dir), [Project.private_dir](../../src/projinit/config.py#Project.private_dir)로 경로를 돌려준다. `Project.entry_docs`는 진입 문서 경로 목록이다. `paths.entry`의 문서와, `codex`를 켰으면 `CODEX_ENTRY`다(둘이 같은 파일이면 하나). [Project.in_materials](../../src/projinit/config.py#Project.in_materials)는 경로가 세 자료 폴더 중 하나의 안에 있는지, [Project.in_private](../../src/projinit/config.py#Project.in_private)는 로컬 자료 폴더 자신이거나 그 안에 있는지 돌려준다.
 - [ConfigError](../../src/projinit/config.py#ConfigError): 설정 오류. 메시지와 줄 번호(모르면 1)를 가진다.
-- [load_config](../../src/projinit/config.py#load_config): 루트의 설정 파일을 읽어 `Config`를 돌려준다. 파일이 없으면 기본값이다. TOML 형식 오류, 모르는 표나 키, 형이 틀린 값(문자열이어야 하는 곳에 다른 값, 문자열 목록이어야 하는 곳에 다른 값)은 `ConfigError`다.
+- [load_config](../../src/projinit/config.py#load_config): 루트의 설정 파일을 읽어 `Config`를 돌려준다. 파일이 없으면 기본값이다. TOML 형식 오류, 모르는 표나 키, 형이 틀린 값(문자열이어야 하는 곳에 다른 값, 문자열 목록이어야 하는 곳에 다른 값), `AGENTS`에 없는 에이전트 이름은 `ConfigError`다.
 - [load_project](../../src/projinit/config.py#load_project): 루트를 받아 `Project`를 돌려준다. 루트는 절대 경로로 바꾼다.
 - [report_config_error](../../src/projinit/config.py#report_config_error): 각 검사기의 `main`이 쓴다. `ConfigError`를 `<설정 파일>:<줄>: 설정 오류: <메시지>`로 출력하고 종료 코드 1을 돌려준다.
 
@@ -342,7 +344,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 [src/projinit/check_template.py](../../src/projinit/check_template.py)는 [검증 도구의 템플릿 일치 검사기](../VerificationTools.md#14-템플릿-일치-검사기)를 구현한다. 템플릿과 빈 자리 값은 [템플릿 구성의 구현](Templates.md#8-구현)을 쓴다.
 
-- [check_common_files](../../src/projinit/check_template.py#check_common_files): `Project`를 받아 `COMMON_FILES`마다 `render_values`로 채운 템플릿과 파일 내용을 비교한다. 파일이 없으면 `공통 파일 없음`, 다르면 `템플릿과 다름`을 그 파일의 1줄에 보고한다. 빈 자리 값이 없으면 `TemplateError`의 메시지를 설정 파일의 문제로 보고한다.
+- [check_common_files](../../src/projinit/check_template.py#check_common_files): `Project`를 받아 `COMMON_FILES`마다 `render_values`로 채운 템플릿과 파일 내용을 비교한다. 파일이 없으면 `공통 파일 없음`, 다르면 `템플릿과 다름`을 그 파일의 1줄에 보고한다. 빈 자리 값이 없으면 `TemplateError`의 메시지를 설정 파일의 문제로 보고한다. 대상은 [템플릿 구현](Templates.md#8-구현)의 `common_files`가 돌려주는 파일이다. 끈 에이전트의 파일은 있어도 검사하지 않는다.
 - [check_version](../../src/projinit/check_template.py#check_version): `Project`와 실행 중인 버전을 받아, 설정의 `projinit.command`가 비어 있고 `version`이 실행 중인 버전과 다르면 설정 파일의 문제로 보고한다.
 - [main](../../src/projinit/check_template.py#main): 두 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다. 실행 중인 버전은 [초기화 명령](Templates.md#9-초기화-명령)의 `package_version`으로 얻는다.
 

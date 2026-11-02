@@ -8,13 +8,13 @@
 
 | 구분 | 파일 | 내용 |
 | --- | --- | --- |
-| 진입 문서 | `CLAUDE.md` | 공통. 문서를 읽는 순서만 정한다. |
+| 진입 문서 | `CLAUDE.md`, `AGENTS.md`(Codex를 켰을 때) | 공통. 문서를 읽는 순서만 정한다. `AGENTS.md`는 제목 줄만 빼고 `CLAUDE.md`와 같다([에이전트 지원 설계](Agents.md#5-진입-문서-agentsmd)). |
 | 공통 규칙 문서 | `docs/DocumentationRule.md`, `docs/CodeRule.md`, `docs/Traceability.md`, `docs/TaskRule.md`, `docs/CommitRule.md`, `docs/PullRequestRule.md`, `docs/VerificationTools.md`, `docs/MaterialRule.md` | 공통. 템플릿 그대로(빈 자리만 채움). |
 | 인덱스 | `docs/index.md` | 공통 문서 목록과, 프로젝트 고유 문서가 들어갈 자리 |
 | 작업 관리 문서 | `docs/Roadmap.md`, `docs/Ongoing.md`, `docs/Done.md`, `docs/Issue.md` | 처음에만 만든다. 로드맵에는 첫 세션이 할 태스크 하나(`M0-T1 제품 비전과 첫 로드맵 작성`)만 있다. |
-| 설정 | `projinit.toml` | ProjInit 버전과 출처, 빈 프로젝트 명령, 템플릿 값 |
-| 강제 장치 | `.claude/settings.json`, `.githooks/pre-commit`, `.githooks/commit-msg`, `.github/workflows/verify.yml`, `.github/pull_request_template.md` | 공통. 설정에서 만든 명령을 빈 자리에 넣는다. 버전이 바뀌면 명령도 바뀌므로 공통 문서와 함께 다시 만든다. |
-| 첫 세션 안내 | `.claude/commands/start.md` | 공통. `/start` 명령으로, 작업 관리 규칙의 [첫 작업](../TaskRule.md#48-첫-작업) 절차를 따르라고만 적는다. 절차 자체는 규칙 문서에 둔다. |
+| 설정 | `projinit.toml` | ProjInit 버전과 출처, 쓸 에이전트, 빈 프로젝트 명령, 템플릿 값 |
+| 강제 장치 | `.claude/settings.json`(Claude를 켰을 때), `.githooks/pre-commit`, `.githooks/commit-msg`, `.github/workflows/verify.yml`, `.github/pull_request_template.md` | 공통. 설정에서 만든 명령을 빈 자리에 넣는다. 버전이 바뀌면 명령도 바뀌므로 공통 문서와 함께 다시 만든다. |
+| 첫 세션 안내 | `.claude/commands/start.md`(Claude), `.agents/skills/start/SKILL.md`와 `.agents/skills/start/agents/openai.yaml`(Codex) | 공통. Claude의 `/start` 명령, Codex의 `$start` skill로, 작업 관리 규칙의 [첫 작업](../TaskRule.md#48-첫-작업) 절차를 따르라고만 적는다. 절차 자체는 규칙 문서에 둔다. |
 
 - 프로젝트 고유 문서(제품 비전, 시스템 구조, 상세 설계)는 만들지 않는다. 인덱스에 자리만 두고, 첫 세션이 사용자와 대화해 만든다(M2-T4).
 - 폴더가 git 저장소가 아니면 `git init`을 하고, `core.hooksPath`를 `.githooks`로 설정하고, `ensure_ignored`를 부른다. 돌려주는 목록에는 `.gitignore`를 고쳤으면 그것도 넣는다. 커밋은 하지 않는다. 첫 커밋은 첫 세션이 커밋 규칙대로 한다.
@@ -88,7 +88,9 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 [src/projinit/template.py](../../src/projinit/template.py)가 템플릿을 읽고 빈 자리를 채운다. 템플릿 파일은 `src/projinit/templates/` 아래에 초기화한 프로젝트와 같은 상대 경로로 둔다.
 
 - [TEMPLATE_DIR](../../src/projinit/template.py#TEMPLATE_DIR): 템플릿 디렉터리.
-- [COMMON_FILES](../../src/projinit/template.py#COMMON_FILES): 공통 파일의 상대 경로. `CLAUDE.md`, 1절의 공통 규칙 문서 여덟 개, 강제 장치 파일 다섯 개, 첫 세션 안내 명령 파일이다. 이 저장소의 같은 파일은 템플릿을 채운 결과와 같아야 한다.
+- [COMMON_FILES](../../src/projinit/template.py#COMMON_FILES): 에이전트와 무관한 공통 파일의 상대 경로. `CLAUDE.md`, 1절의 공통 규칙 문서 여덟 개, git hook 두 개, CI와 PR 템플릿이다.
+- [AGENT_FILES](../../src/projinit/template.py#AGENT_FILES): 에이전트 이름 → 그 에이전트를 켰을 때만 만드는 공통 파일([에이전트 지원 설계](Agents.md#4-에이전트별-공통-파일)). `claude`는 `.claude/settings.json`, `.claude/commands/start.md`, `codex`는 `AGENTS.md`, `.agents/skills/start/SKILL.md`, `.agents/skills/start/agents/openai.yaml`이다.
+- [common_files](../../src/projinit/template.py#common_files): `Config`를 받아 그 프로젝트의 공통 파일 목록을 돌려준다. `COMMON_FILES` 뒤에, 설정의 `AGENTS`([검사기 설계의 설정](Checkers.md#11-설정)) 순서로 설정의 `agents`에 있는 에이전트의 파일을 붙인다. 이 저장소의 같은 파일은 템플릿을 채운 결과와 같아야 한다.
 - [INITIAL_FILES](../../src/projinit/template.py#INITIAL_FILES): 처음에만 만드는 파일의 상대 경로. 인덱스, 작업 관리 문서 네 개, 설정 파일이다.
 - [TemplateError](../../src/projinit/template.py#TemplateError): 값이 없는 빈 자리가 있을 때의 오류.
 - [EXECUTABLE_FILES](../../src/projinit/template.py#EXECUTABLE_FILES): 실행 권한을 줄 파일. `.githooks/pre-commit`, `.githooks/commit-msg`.
@@ -99,6 +101,7 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 
 - 모든 템플릿 파일이 값과 함께 채워지고, 값이 빠지면 오류가 난다.
 - 채운 공통 문서의 링크가 공통 파일과 처음 만드는 파일로만 간다(2절).
+- `AGENTS.md` 템플릿은 첫 줄만 빼고 `CLAUDE.md` 템플릿과 같고, 시작 skill 본문은 진입 문서 이름(`AGENTS.md`)만 빼고 `/start` 명령 본문과 같다(M8-T1).
 - 공통 파일과 처음 만드는 파일을 임시 폴더에 채워 쓰면 문서 링크 검사와 작업 관리 검사를 통과한다. 강제 장치까지 포함한 검증 전체 통과는 [초기화 명령](#9-초기화-명령)의 테스트가 시험한다.
 
 ## 9. 초기화 명령
@@ -106,22 +109,23 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 [src/projinit/init.py](../../src/projinit/init.py)가 `projinit init`을 구현한다.
 
 ```sh
-projinit init [--root <폴더>] [--repository <원격 저장소 주소>]
+projinit init [--root <폴더>] [--repository <원격 저장소 주소>] [--agent <claude|codex>]…
 projinit init --refresh-common [--root <폴더>]
 ```
 
-- 설정 파일도 템플릿(`src/projinit/templates/projinit.toml`)이며 처음 만드는 파일에 들어간다. 빈 자리는 `version`(실행 중인 ProjInit 버전), `source`(설치 출처), `repository`(원격 저장소 주소)다. 설정 파일을 먼저 채운 뒤, 그 설정으로 `render_values`를 만들어 나머지 파일을 채운다.
+- 설정 파일도 템플릿(`src/projinit/templates/projinit.toml`)이며 처음 만드는 파일에 들어간다. 빈 자리는 `version`(실행 중인 ProjInit 버전), `source`(설치 출처), `agents`(쓸 에이전트의 TOML 목록), `repository`(원격 저장소 주소)다. 설정 파일을 먼저 채운 뒤, 그 설정으로 `render_values`를 만들어 나머지 파일을 채운다.
 - [DEFAULT_SOURCE](../../src/projinit/init.py#DEFAULT_SOURCE): 설치 출처의 기본값 `git+https://github.com/qazcdesnu/ProjInit`.
 - [NO_REPOSITORY](../../src/projinit/init.py#NO_REPOSITORY): 원격 저장소가 아직 없을 때 쓰는 값 `아직 없음`. 원격 저장소를 만들면 설정의 `template.repository`를 고치고 `--refresh-common`으로 공통 문서를 다시 만든다.
 - [package_version](../../src/projinit/init.py#package_version): 실행 중인 `projinit` 패키지의 버전.
 - [repository_url](../../src/projinit/init.py#repository_url): 원격 저장소 주소를 정한다. 인자로 받은 값, git `origin` 주소, `NO_REPOSITORY` 순서다.
-- [init_project](../../src/projinit/init.py#init_project): 폴더와 원격 주소를 받아 공통 파일, 처음 만드는 파일(설정 파일 포함)을 채워 쓰고, 만든 파일의 상대 경로 목록을 돌려준다. 하나라도 이미 있으면 아무것도 쓰지 않고 그 목록을 담아 `InitError`를 낸다. 폴더가 git 저장소가 아니면 `git init`을 하고, `core.hooksPath`를 `.githooks`로 설정한다. `EXECUTABLE_FILES`에는 실행 권한을 준다. 폴더가 없으면 만든다.
-- [refresh_common](../../src/projinit/init.py#refresh_common): `Project`를 받아 공통 파일을 `render_values`의 값으로 다시 채워 쓰고(실행 권한 포함), `ensure_ignored`를 부른 뒤, 내용이 바뀐 파일의 상대 경로 목록을 돌려준다(`.gitignore`를 고쳤으면 포함). 다른 파일은 건드리지 않는다.
+- [init_project](../../src/projinit/init.py#init_project): 폴더, 원격 주소, 쓸 에이전트(기본 `("claude",)`)를 받아 `common_files`의 공통 파일과 처음 만드는 파일(설정 파일 포함)을 채워 쓰고, 만든 파일의 상대 경로 목록을 돌려준다. 하나라도 이미 있으면 아무것도 쓰지 않고 그 목록을 담아 `InitError`를 낸다. 폴더가 git 저장소가 아니면 `git init`을 하고, `core.hooksPath`를 `.githooks`로 설정한다. `EXECUTABLE_FILES`에는 실행 권한을 준다. 폴더가 없으면 만든다.
+- [refresh_common](../../src/projinit/init.py#refresh_common): `Project`를 받아 `common_files`의 공통 파일을 `render_values`의 값으로 다시 채워 쓰고(실행 권한 포함), `ensure_ignored`를 부른 뒤, 내용이 바뀐 파일의 상대 경로 목록을 돌려준다(`.gitignore`를 고쳤으면 포함). 다른 파일은 건드리지 않는다.
 - [GITIGNORE](../../src/projinit/init.py#GITIGNORE): `.gitignore`.
 - [ensure_ignored](../../src/projinit/init.py#ensure_ignored): `Project`를 받아 루트의 `GITIGNORE`에 로컬 자료 폴더를 빼는 줄 `/<private>/`가 있게 하고, 고쳤으면 참을 돌려준다(I26). 앞뒤 공백을 지운 줄 중 `/<private>/`, `<private>/`, `/<private>`, `<private>`가 있으면 이미 있는 것으로 본다. 없으면 파일 끝에 그 줄을 더하고(파일이 줄바꿈으로 끝나지 않으면 줄바꿈을 먼저 넣는다), 파일이 없으면 그 한 줄로 만든다. 다른 줄은 그대로 둔다. `.gitignore`는 공통 파일이 아니다. 파일 전체가 아니라 이 줄 하나만 보장하므로, 이미 있는 저장소에서도 초기화를 막지 않는다.
 - [InitError](../../src/projinit/init.py#InitError): 초기화할 수 없을 때의 오류.
 - [START_HINT](../../src/projinit/init.py#START_HINT): 초기화를 마친 뒤 출력하는 사용법. Claude Code를 열고 `/start`를 입력하라는 안내다.
-- [main](../../src/projinit/init.py#main): 위 두 동작을 실행하고, 만들거나 바꾼 파일을 한 줄씩 출력한다. 초기화한 경우 마지막에 `START_HINT`를 출력한다. 오류는 `init: <메시지>`로 출력하고 종료 코드 1로 끝난다.
+- [CODEX_START_HINT](../../src/projinit/init.py#CODEX_START_HINT): Codex를 켰을 때의 사용법. Codex에서 `$start`를 입력하라는 안내다. 초기화는 Claude를 켰으면 `START_HINT`를, Codex를 켰으면 이 안내를(둘 다 켰으면 둘 다) 마지막에 출력한다.
+- [main](../../src/projinit/init.py#main): 위 두 동작을 실행한다. 초기화는 `--agent <이름>`을 여러 번 받는다(`claude`, `codex`, 없으면 `claude`). 그리고 만들거나 바꾼 파일을 한 줄씩 출력한다. 초기화한 경우 마지막에 `START_HINT`를 출력한다. 오류는 `init: <메시지>`로 출력하고 종료 코드 1로 끝난다.
 - `projinit` 명령의 하위 명령 `init`이 이 `main`을 부른다.
 
 테스트는 [tests/unit/test_init.py](../../tests/unit/test_init.py)다. 빈 폴더 초기화 결과의 파일 목록과 검증 전체(`check`의 모든 검사기) 통과, hook 실행 권한과 `core.hooksPath`, git 저장소 생성, 원격 주소 결정 순서, 이미 있는 파일 때문에 실패하면 아무것도 쓰지 않음, `--refresh-common`이 고친 공통 문서를 되돌리고 다른 파일은 그대로 둠, `.gitignore`가 없을 때·다른 줄만 있을 때·이미 줄이 있을 때·폴더 위치를 바꿨을 때를 검사한다.

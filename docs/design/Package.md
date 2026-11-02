@@ -60,6 +60,7 @@ src/projinit/
 version = "0.1.0"                   # 이 프로젝트가 쓰는 ProjInit 버전 (git 태그 v0.1.0)
 source = "git+https://github.com/qazcdesnu/ProjInit"   # 설치 출처
 command = ""                        # 비우면 version과 source로 만든다
+agents = ["claude"]                 # 쓸 에이전트: claude, codex (docs/design/Agents.md)
 
 [paths]
 docs = "docs"
