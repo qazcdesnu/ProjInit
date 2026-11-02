@@ -25,7 +25,16 @@ class RunChecksTest(unittest.TestCase):
         )
 
     def test_passing_checks_let_claude_stop(self) -> None:
-        self.assertEqual(stop_hook_response([_PASS], stop_hook_active=False).exit_code, 0)
+        response = stop_hook_response([_PASS], stop_hook_active=False)
+        self.assertEqual((response.exit_code, response.stdout, response.stderr), (0, "", ""))
+
+    def test_codex_gets_json_when_it_may_stop(self) -> None:
+        response = stop_hook_response([_PASS], stop_hook_active=False, agent="codex")
+        self.assertEqual((response.exit_code, json.loads(response.stdout)), (0, {}))
+        blocked = stop_hook_response([_FAIL], stop_hook_active=False, agent="codex")
+        self.assertEqual(blocked, stop_hook_response([_FAIL], stop_hook_active=False))
+        allowed = stop_hook_response([_FAIL], stop_hook_active=True, agent="codex")
+        self.assertEqual(allowed, stop_hook_response([_FAIL], stop_hook_active=True))
 
     def test_first_failure_blocks_with_summary(self) -> None:
         response = stop_hook_response([_PASS, _FAIL], stop_hook_active=False)

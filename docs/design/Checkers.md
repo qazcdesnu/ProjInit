@@ -145,6 +145,7 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 - [tests/scenario/test_task_rules.py](../../tests/scenario/test_task_rules.py): 진행 중 기록 없는 `[~]`, 이슈 번호 건너뜀과 중복, 모르는 ID의 기록, 완료 기록 고침과 지움, 완료 기록 없는 `[x]`, 필수 절 없음, 경량 이슈의 빈 결과와 완료일 없음, 날짜 형식, `없음` 규칙, 로드맵 형식, 마일스톤 번호, 진행 기록 줄 지움, 완료 순서, 없는 마일스톤의 보관 문서, 본문의 모르는 ID, 완료한 이슈에 남은 진행 중 기록, 계획 절 없음.
 - [tests/scenario/test_material_rules.py](../../tests/scenario/test_material_rules.py): 목록에 없는 기존 프로젝트, 목록 문서 없음, 커밋된 기존 프로젝트의 고침·지움·새 파일·스테이징, 중첩 `.git`, 로컬 자료의 `.gitignore` 줄 지움과 강제 스테이징, 세션 시작 안내. 통과: 목록 없는 참고 자료, 새 기존 프로젝트 폴더.
 - [tests/scenario/test_device_rules.py](../../tests/scenario/test_device_rules.py): Stop·SessionStart hook 제거, pre-commit 실행 권한과 내용, commit-msg 없음, `core.hooksPath`, 설정 JSON 오류, 공통 문서와 강제 장치 손수정, 공통 문서 지움, 실패하는 프로젝트 명령, 실제 커밋을 막는 pre-commit과 commit-msg, Stop hook의 막기와 두 번째 허용. 통과: 정상 커밋, 깨끗한 상태의 Stop.
+- [tests/scenario/test_agent_rules.py](../../tests/scenario/test_agent_rules.py): 기준 프로젝트에 Codex를 켠 사본. 통과: 깨끗한 Codex 프로젝트, Codex를 켜도 Claude 파일이 Claude만 쓰는 프로젝트와 같음. Codex Stop hook과 hook 파일 제거, `AGENTS.md` 손수정과 인라인 코드. `.codex/hooks.json`의 명령을 Codex처럼 하위 폴더에서 실행해, Stop이 통과할 때 `{}`, 실패하면 막고(종료 코드 2) 이미 이어 간 뒤에는 허용하는지, SessionStart가 자료를 알리는지 본다.
 - [tests/scenario/test_commit_rules.py](../../tests/scenario/test_commit_rules.py): 커밋 메시지(ID 없음, 없는 ID, 마침표, 길이, 중복 ID, 빈 줄 없음, 빈 메시지, 콜론 뒤 공백, 범위 표기, 시작 안 한 작업), hook을 우회한 커밋의 이력 검사, PR 제목·브랜치, PR 순서. 통과: 진행 중 커밋, 완료한 작업, 병합 제목, 정상 PR, 쌓은 PR.
 
 새 규칙이나 검사를 더하면 그 규칙을 깨뜨리는 시나리오도 더한다.

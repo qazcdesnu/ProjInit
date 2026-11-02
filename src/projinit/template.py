@@ -30,7 +30,12 @@ COMMON_FILES = (
 # @doc: docs/design/Templates.md#8-구현
 AGENT_FILES = {
     "claude": (".claude/settings.json", ".claude/commands/start.md"),
-    "codex": ("AGENTS.md", ".agents/skills/start/SKILL.md", ".agents/skills/start/agents/openai.yaml"),
+    "codex": (
+        "AGENTS.md",
+        ".codex/hooks.json",
+        ".agents/skills/start/SKILL.md",
+        ".agents/skills/start/agents/openai.yaml",
+    ),
 }
 
 
