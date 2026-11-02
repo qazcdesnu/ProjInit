@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && {{projinit}} context",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && {{projinit}} check --hook stop --agent codex",
+            "timeout": 180,
+            "statusMessage": "검증 검사 실행 중"
+          }
+        ]
+      }
+    ]
+  }
+}

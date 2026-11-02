@@ -10,7 +10,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from projinit.config import ConfigError, Project, load_project, report_config_error
+from projinit.config import AGENTS, ConfigError, Project, load_project, report_config_error
 
 # @doc: docs/design/Checkers.md#9-일괄-실행과-자동-실행
 CHECKS = (
@@ -81,14 +81,15 @@ def summarize(results: list[CheckResult]) -> str:
     return "\n\n".join(sections)
 
 
-def stop_hook_response(results: list[CheckResult], stop_hook_active: bool) -> HookResponse:
+def stop_hook_response(results: list[CheckResult], stop_hook_active: bool, agent: str = "claude") -> HookResponse:
     """Block the first attempt to stop on failure; let a repeated attempt through with a warning.
 
     @doc: docs/design/Checkers.md#9-일괄-실행과-자동-실행
     """
     failed = [result.name for result in results if result.returncode != 0]
     if not failed:
-        return HookResponse(0)
+        # Codex reads stdout as JSON when a Stop hook exits with 0.
+        return HookResponse(0, stdout="{}" if agent == "codex" else "")
     if stop_hook_active:
         message = f"검사 실패가 남은 채 턴이 끝났습니다: {', '.join(failed)}"
         return HookResponse(0, stdout=json.dumps({"systemMessage": message}, ensure_ascii=False))
@@ -115,6 +116,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--root", type=Path, default=Path("."))
     parser.add_argument("--hook", choices=("stop", "pre-commit"))
+    parser.add_argument("--agent", choices=AGENTS, default="claude")
     args = parser.parse_args(argv)
     root = args.root.resolve()
     try:
@@ -123,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
         return report_config_error(error)
     if args.hook == "stop":
         stop_hook_active = _read_stop_hook_active()
-        response = stop_hook_response(run_all(project), stop_hook_active)
+        response = stop_hook_response(run_all(project), stop_hook_active, args.agent)
         if response.stdout:
             print(response.stdout)
         if response.stderr:

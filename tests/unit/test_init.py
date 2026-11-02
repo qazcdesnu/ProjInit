@@ -62,7 +62,10 @@ class InitTest(RepoTestCase):
         self.run_main()
         self.write("projinit.toml", self.root.joinpath("projinit.toml").read_text().replace('agents = ["claude"]', 'agents = ["claude", "codex"]'))
         changed = refresh_common(load_project(self.root))
-        self.assertEqual(changed, ["AGENTS.md", ".agents/skills/start/SKILL.md", ".agents/skills/start/agents/openai.yaml"])
+        self.assertEqual(
+            changed,
+            ["AGENTS.md", ".codex/hooks.json", ".agents/skills/start/SKILL.md", ".agents/skills/start/agents/openai.yaml"],
+        )
 
     def test_initializing_keeps_an_existing_gitignore(self) -> None:
         self.write(".gitignore", "node_modules/\n.env")

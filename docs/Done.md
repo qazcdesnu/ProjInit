@@ -4,6 +4,44 @@
 
 
 
+## M8-T2 Codex hook과 강제 장치 검사
+
+- 시작일: 2026-11-02
+- 완료일: 2026-11-02
+- 근거 문서: [에이전트 지원 설계](design/Agents.md#2-무엇이-다른가), [검증 도구](VerificationTools.md#9-일괄-실행과-자동-실행)
+- 참고 자료: 없음
+
+### 계획
+- `.codex/hooks.json` 템플릿: Stop은 `check --hook stop --agent codex`, SessionStart는 `context`. 저장소 루트는 `git rev-parse --show-toplevel`로 찾는다.
+- `check --hook stop --agent codex`: 통과하면 `{}`를 출력한다(Codex는 종료 코드 0일 때 JSON을 요구한다). 막기와 두 번째 허용은 Claude와 같다. Claude의 출력은 바꾸지 않는다.
+- 강제 장치 검사기는 켠 에이전트의 hook만 검사한다. Codex hook 검사를 더한다.
+- 초기화 안내에 Codex의 프로젝트·hook 신뢰 단계를 넣는다. 시나리오 테스트에 Codex 프로젝트를 더한다.
+
+### 진행 기록
+- 2026-11-02: M8-T1에 이어 시작했다.
+- 2026-11-02: `.codex/hooks.json` 템플릿, `check --hook stop --agent codex`, `check_codex_hooks`를 구현했다. 강제 장치 검사기는 켠 에이전트의 hook만 본다. 초기화 안내에 Codex의 프로젝트·hook 신뢰 단계를 넣었다.
+- 2026-11-02: 시나리오 `test_agent_rules.py`(9개)를 더했다. `.codex/hooks.json`의 명령을 하위 폴더에서 실제로 실행해 Stop의 통과(`{}`), 막기(종료 코드 2), 두 번째 허용, SessionStart 안내를 확인했다. Codex를 켜도 Claude 파일이 Claude만 쓰는 기준 프로젝트와 같다.
+
+### 결정 사항
+- Codex hook 명령은 `git rev-parse --show-toplevel`로 루트를 찾는다. Codex는 세션의 작업 폴더에서 hook을 실행하고 루트 변수를 주지 않는다.
+- Codex용 출력 차이는 통과할 때의 `{}` 하나다. 막기와 허용은 Claude와 같은 응답을 쓴다. Claude의 응답은 바뀌지 않았다(단위 테스트로 확인).
+- Codex 설정 형식이 Claude Code와 같아 hook 해석 함수를 함께 쓴다. 형식이 다른 에이전트를 더할 때는 따로 만든다.
+
+### 변경 파일
+- `docs/Roadmap.md`, `docs/Ongoing.md`, `docs/Done.md`
+- 템플릿: `src/projinit/templates/.codex/hooks.json`(새 파일), `docs/VerificationTools.md`, 그리고 다시 만든 이 저장소의 같은 문서
+- `src/projinit/check_hooks.py`, `run_checks.py`, `template.py`, `init.py`
+- `tests/unit/test_check_hooks.py`, `test_run_checks.py`, `test_init.py`, `tests/scenario/test_agent_rules.py`(새 파일)
+- `docs/design/Agents.md`, `docs/design/Checkers.md`, `docs/design/Templates.md`
+
+### 결과
+- Codex를 켜면 `.codex/hooks.json`이 Stop에서 검사하고 SessionStart에서 자료를 알린다. 강제 장치 검사기가 이 hook을 검사한다.
+- 실제 Codex에서의 확인은 M8-T3에서 한다.
+
+### 검증
+- `uv run projinit check`: 모두 통과
+
+
 ## M8-T1 에이전트 설정, Codex 진입 문서와 시작 skill
 
 - 시작일: 2026-11-02

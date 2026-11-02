@@ -145,6 +145,7 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 - [tests/scenario/test_task_rules.py](../../tests/scenario/test_task_rules.py): 진행 중 기록 없는 `[~]`, 이슈 번호 건너뜀과 중복, 모르는 ID의 기록, 완료 기록 고침과 지움, 완료 기록 없는 `[x]`, 필수 절 없음, 경량 이슈의 빈 결과와 완료일 없음, 날짜 형식, `없음` 규칙, 로드맵 형식, 마일스톤 번호, 진행 기록 줄 지움, 완료 순서, 없는 마일스톤의 보관 문서, 본문의 모르는 ID, 완료한 이슈에 남은 진행 중 기록, 계획 절 없음.
 - [tests/scenario/test_material_rules.py](../../tests/scenario/test_material_rules.py): 목록에 없는 기존 프로젝트, 목록 문서 없음, 커밋된 기존 프로젝트의 고침·지움·새 파일·스테이징, 중첩 `.git`, 로컬 자료의 `.gitignore` 줄 지움과 강제 스테이징, 세션 시작 안내. 통과: 목록 없는 참고 자료, 새 기존 프로젝트 폴더.
 - [tests/scenario/test_device_rules.py](../../tests/scenario/test_device_rules.py): Stop·SessionStart hook 제거, pre-commit 실행 권한과 내용, commit-msg 없음, `core.hooksPath`, 설정 JSON 오류, 공통 문서와 강제 장치 손수정, 공통 문서 지움, 실패하는 프로젝트 명령, 실제 커밋을 막는 pre-commit과 commit-msg, Stop hook의 막기와 두 번째 허용. 통과: 정상 커밋, 깨끗한 상태의 Stop.
+- [tests/scenario/test_agent_rules.py](../../tests/scenario/test_agent_rules.py): 기준 프로젝트에 Codex를 켠 사본. 통과: 깨끗한 Codex 프로젝트, Codex를 켜도 Claude 파일이 Claude만 쓰는 프로젝트와 같음. Codex Stop hook과 hook 파일 제거, `AGENTS.md` 손수정과 인라인 코드. `.codex/hooks.json`의 명령을 Codex처럼 하위 폴더에서 실행해, Stop이 통과할 때 `{}`, 실패하면 막고(종료 코드 2) 이미 이어 간 뒤에는 허용하는지, SessionStart가 자료를 알리는지 본다.
 - [tests/scenario/test_commit_rules.py](../../tests/scenario/test_commit_rules.py): 커밋 메시지(ID 없음, 없는 ID, 마침표, 길이, 중복 ID, 빈 줄 없음, 빈 메시지, 콜론 뒤 공백, 범위 표기, 시작 안 한 작업), hook을 우회한 커밋의 이력 검사, PR 제목·브랜치, PR 순서. 통과: 진행 중 커밋, 완료한 작업, 병합 제목, 정상 PR, 쌓은 PR.
 
 새 규칙이나 검사를 더하면 그 규칙을 깨뜨리는 시나리오도 더한다.
@@ -241,14 +242,15 @@ uv run projinit context                     # 세션 시작 안내 출력 (검�
 | [PRE_COMMIT_HOOK](../../src/projinit/check_hooks.py#PRE_COMMIT_HOOK) | `.githooks/pre-commit` |
 | [COMMIT_MSG_HOOK](../../src/projinit/check_hooks.py#COMMIT_MSG_HOOK) | `.githooks/commit-msg` |
 | [HOOKS_PATH](../../src/projinit/check_hooks.py#HOOKS_PATH) | `.githooks` |
+| [CODEX_HOOKS](../../src/projinit/check_hooks.py#CODEX_HOOKS) | `.codex/hooks.json` |
 
 **hook 명령**
 
 hook이 실행할 명령은 고정하지 않고 [설정](#11-설정)에서 만든다([패키지 구성 설계](Package.md#5-hook-명령)).
 
-- [HookCommands](../../src/projinit/check_hooks.py#HookCommands): 네 hook의 명령. `stop`, `session_start`, `pre_commit`, `commit_msg`를 가진다.
+- [HookCommands](../../src/projinit/check_hooks.py#HookCommands): hook의 명령. `stop`, `session_start`, `pre_commit`, `commit_msg`, `codex_stop`, `codex_session_start`를 가진다.
 - [projinit_command](../../src/projinit/check_hooks.py#projinit_command): 설정의 `projinit.command`를 돌려준다. 비어 있으면 `uvx --from <source>@v<version> projinit`을 만든다. 이때 `source`나 `version`이 비어 있으면 `None`이다.
-- [hook_commands](../../src/projinit/check_hooks.py#hook_commands): `projinit_command`의 결과 `<command>`로 `HookCommands`를 만든다. `stop`은 `cd "$CLAUDE_PROJECT_DIR" && <command> check --hook stop`, `session_start`는 `cd "$CLAUDE_PROJECT_DIR" && <command> context`, `pre_commit`은 `<command> check --hook pre-commit`, `commit_msg`는 `<command> commit-msg "$1"`이다. `projinit_command`가 `None`이면 `None`이다.
+- [hook_commands](../../src/projinit/check_hooks.py#hook_commands): `projinit_command`의 결과 `<command>`로 `HookCommands`를 만든다. `stop`은 `cd "$CLAUDE_PROJECT_DIR" && <command> check --hook stop`, `session_start`는 `cd "$CLAUDE_PROJECT_DIR" && <command> context`, `codex_stop`은 `cd "$(git rev-parse --show-toplevel)" && <command> check --hook stop --agent codex`, `codex_session_start`는 `cd "$(git rev-parse --show-toplevel)" && <command> context`, `pre_commit`은 `<command> check --hook pre-commit`, `commit_msg`는 `<command> commit-msg "$1"`이다. `projinit_command`가 `None`이면 `None`이다.
 
 **함수**
 
@@ -256,10 +258,11 @@ hook이 실행할 명령은 고정하지 않고 [설정](#11-설정)에서 만�
 
 - [check_stop_hook](../../src/projinit/check_hooks.py#check_stop_hook): `CLAUDE_SETTINGS`가 있고 JSON으로 읽히며, `hooks.Stop` 아래에 명령이 정확히 기대하는 Stop 명령인 command hook이 있는지 검사한다.
 - [check_session_start_hook](../../src/projinit/check_hooks.py#check_session_start_hook): `check_stop_hook`과 같은 검사를 `hooks.SessionStart`와 기대하는 SessionStart 명령으로 한다. 설정 파일이 없거나 JSON 형식 오류면 `check_stop_hook`이 이미 보고하므로 빈 목록이다.
+- [check_codex_hooks](../../src/projinit/check_hooks.py#check_codex_hooks): `CODEX_HOOKS`가 있고 JSON으로 읽히며, `hooks.Stop`과 `hooks.SessionStart` 아래에 각각 기대하는 Codex 명령인 command hook이 있는지 검사한다. 설정 형식이 Claude Code와 같아 같은 해석 함수를 쓴다.
 - [check_pre_commit](../../src/projinit/check_hooks.py#check_pre_commit): `PRE_COMMIT_HOOK`이 있고, 실행 권한이 있으며, 기대하는 pre-commit 명령을 담고 있는지 검사한다.
 - [check_commit_msg_hook](../../src/projinit/check_hooks.py#check_commit_msg_hook): `COMMIT_MSG_HOOK`에 대해 `check_pre_commit`과 같은 검사를 기대하는 commit-msg 명령으로 한다.
 - [check_hooks_path](../../src/projinit/check_hooks.py#check_hooks_path): 루트가 git 저장소이고, git 설정 `core.hooksPath`가 `HOOKS_PATH`인지 검사한다. 이 설정은 저장소에 포함되지 않으므로 클론할 때마다 한 번 해 줘야 하며, 이 검사가 빠뜨린 것을 알려 준다.
-- [main](../../src/projinit/check_hooks.py#main): 다섯 검사를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
+- [main](../../src/projinit/check_hooks.py#main): 설정의 `agents`에 `claude`가 있으면 `check_stop_hook`과 `check_session_start_hook`을, `codex`가 있으면 `check_codex_hooks`를, 그리고 언제나 git hook 검사 세 가지를 실행하고 결과를 [1. 실행 방법](#1-실행-방법)의 형식으로 출력한다.
 
 ## 9. 일괄 실행과 자동 실행
 
@@ -293,7 +296,7 @@ Stop hook이 두 번째 종료를 허용하는 이유는 [코드 작업 규칙](
 
 - [run_all](../../src/projinit/run_checks.py#run_all): `Project`를 받아 `CHECKS`를 차례로 현재 Python 인터프리터의 하위 프로세스로, 이어서 `check.commands`를 셸로 실행해 `CheckResult` 목록을 돌려준다. 하나가 실패해도 나머지를 실행한다.
 - [summarize](../../src/projinit/run_checks.py#summarize): 실패한 검사마다 이름과 출력의 마지막 40줄을 모은 요약 문자열을 만든다.
-- [stop_hook_response](../../src/projinit/run_checks.py#stop_hook_response): Stop hook 응답을 만든다.
+- [stop_hook_response](../../src/projinit/run_checks.py#stop_hook_response): Stop hook 응답을 만든다. 에이전트(`claude` 또는 `codex`)를 받는다. 통과하면 Claude는 출력 없이, Codex는 `{}`를 출력하고 종료 코드 0이다. 실패를 막는 응답(종료 코드 2와 표준 오류)과 이미 막힌 뒤 허용하는 응답(종료 코드 0과 `systemMessage` JSON)은 두 에이전트가 같다. `main`은 `--agent`(기본 `claude`)를 받는다.
   - 모두 통과: 종료 코드 0, 출력 없음.
   - 실패, `stop_hook_active`가 거짓: 종료 코드 2, 표준 오류에 요약과 "고치거나, 진행 중인 작업이라 남기는 실패면 그 이유를 사용자에게 보고하라"는 안내.
   - 실패, `stop_hook_active`가 참: 종료 코드 0, 표준 출력에 `systemMessage`로 실패한 검사 이름을 담은 JSON.

@@ -20,7 +20,10 @@ NO_REPOSITORY = "아직 없음"
 # @doc: docs/design/Templates.md#9-초기화-명령
 START_HINT = "이 폴더에서 Claude Code를 열고 /start를 입력하면 첫 작업을 시작합니다."
 # @doc: docs/design/Templates.md#9-초기화-명령
-CODEX_START_HINT = "Codex에서는 이 폴더를 열고 $start를 입력하면 첫 작업을 시작합니다."
+CODEX_START_HINT = (
+    "Codex에서는 이 폴더를 열어 프로젝트를 신뢰하고, /hooks에서 이 프로젝트의 hook을 신뢰한 뒤 "
+    "$start를 입력하면 첫 작업을 시작합니다."
+)
 
 
 class InitError(Exception):

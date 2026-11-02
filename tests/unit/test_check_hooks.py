@@ -3,19 +3,24 @@
 @doc: docs/design/Checkers.md#5-테스트
 """
 
+import io
 import json
 import subprocess
 import unittest
+from contextlib import redirect_stdout
 
 from tests.support import RepoTestCase
 from projinit.check_hooks import (
     HOOKS_PATH,
+    CODEX_HOOKS,
+    check_codex_hooks,
     check_commit_msg_hook,
     check_hooks_path,
     check_pre_commit,
     check_session_start_hook,
     check_stop_hook,
     hook_commands,
+    main,
     projinit_command,
 )
 from projinit.config import Config, load_project
@@ -29,6 +34,8 @@ class HookCommandsTest(unittest.TestCase):
     def test_commands_come_from_the_settings(self) -> None:
         self.assertEqual(_COMMANDS.stop, 'cd "$CLAUDE_PROJECT_DIR" && uv run projinit check --hook stop')
         self.assertEqual(_COMMANDS.session_start, 'cd "$CLAUDE_PROJECT_DIR" && uv run projinit context')
+        self.assertEqual(_COMMANDS.codex_stop, 'cd "$(git rev-parse --show-toplevel)" && uv run projinit check --hook stop --agent codex')
+        self.assertEqual(_COMMANDS.codex_session_start, 'cd "$(git rev-parse --show-toplevel)" && uv run projinit context')
         self.assertEqual(_COMMANDS.pre_commit, "uv run projinit check --hook pre-commit")
         self.assertEqual(_COMMANDS.commit_msg, 'uv run projinit commit-msg "$1"')
 
@@ -104,6 +111,31 @@ class CheckHooksTest(RepoTestCase):
         self.assertIn(f"pre-commit hook에 검사 명령 없음: {_COMMANDS.pre_commit}", messages)
         hook.unlink()
         self.assertIn("pre-commit hook 없음: .githooks/pre-commit", self.messages())
+
+    def write_codex_hooks(self, stop: str, session_start: str) -> None:
+        self.write(CODEX_HOOKS, json.dumps(self.settings(stop, session_start)))
+
+    def test_codex_hooks(self) -> None:
+        project = load_project(self.root)
+        self.assertEqual([p.message for p in check_codex_hooks(project, _COMMANDS)], [f"Codex hook 설정 없음: {CODEX_HOOKS}"])
+        self.write(CODEX_HOOKS, "{oops")
+        self.assertTrue(check_codex_hooks(project, _COMMANDS)[0].message.startswith("JSON 형식 오류"))
+        self.write_codex_hooks(_COMMANDS.stop, _COMMANDS.codex_session_start)
+        self.assertEqual([p.message for p in check_codex_hooks(project, _COMMANDS)], [f"Codex Stop hook에 명령 없음: {_COMMANDS.codex_stop}"])
+        self.write_codex_hooks(_COMMANDS.codex_stop, _COMMANDS.codex_session_start)
+        self.assertEqual(check_codex_hooks(project, _COMMANDS), [])
+
+    def test_main_checks_only_the_enabled_agents(self) -> None:
+        self.write("projinit.toml", '[projinit]\ncommand = "uv run projinit"\nagents = ["codex"]\n')
+        (self.root / ".claude/settings.json").unlink()
+        self.write_codex_hooks(_COMMANDS.codex_stop, _COMMANDS.codex_session_start)
+        output = io.StringIO()
+        with redirect_stdout(output):
+            code = main(["--root", str(self.root)])
+        self.assertEqual(code, 0, output.getvalue())
+        self.write("projinit.toml", '[projinit]\ncommand = "uv run projinit"\nagents = ["claude", "codex"]\n')
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(main(["--root", str(self.root)]), 1)
 
     def test_reports_missing_commit_msg_hook(self) -> None:
         (self.root / ".githooks/commit-msg").unlink()

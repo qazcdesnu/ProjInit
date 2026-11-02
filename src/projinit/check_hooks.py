@@ -22,6 +22,8 @@ PRE_COMMIT_HOOK = ".githooks/pre-commit"
 COMMIT_MSG_HOOK = ".githooks/commit-msg"
 # @doc: docs/design/Checkers.md#8-강제-장치-검사기
 HOOKS_PATH = ".githooks"
+# @doc: docs/design/Checkers.md#8-강제-장치-검사기
+CODEX_HOOKS = ".codex/hooks.json"
 
 
 @dataclass(frozen=True)
@@ -35,6 +37,8 @@ class HookCommands:
     session_start: str
     pre_commit: str
     commit_msg: str
+    codex_stop: str
+    codex_session_start: str
 
 
 def projinit_command(config: Config) -> str | None:
@@ -62,6 +66,8 @@ def hook_commands(config: Config) -> HookCommands | None:
         session_start=f'cd "$CLAUDE_PROJECT_DIR" && {command} context',
         pre_commit=f"{command} check --hook pre-commit",
         commit_msg=f'{command} commit-msg "$1"',
+        codex_stop=f'cd "$(git rev-parse --show-toplevel)" && {command} check --hook stop --agent codex',
+        codex_session_start=f'cd "$(git rev-parse --show-toplevel)" && {command} context',
     )
 
 
@@ -106,6 +112,25 @@ def _hook_commands(settings: object, event: str) -> list[object]:
         for hook in group.get("hooks", [])
         if isinstance(hook, dict) and hook.get("type") == "command"
     ]
+
+
+def check_codex_hooks(project: Project, commands: HookCommands) -> list[Problem]:
+    """Report a missing or malformed Codex hooks file, or a missing Stop or SessionStart hook.
+
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
+    """
+    path = project.root / CODEX_HOOKS
+    if not path.is_file():
+        return [Problem(path, 1, f"Codex hook 설정 없음: {CODEX_HOOKS}")]
+    try:
+        settings = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        return [Problem(path, error.lineno, f"JSON 형식 오류: {error.msg}")]
+    problems = []
+    for event, expected in (("Stop", commands.codex_stop), ("SessionStart", commands.codex_session_start)):
+        if expected not in _hook_commands(settings, event):
+            problems.append(Problem(path, 1, f"Codex {event} hook에 명령 없음: {expected}"))
+    return problems
 
 
 def check_pre_commit(project: Project, expected: str) -> list[Problem]:
@@ -179,19 +204,20 @@ def main(argv: list[str] | None = None) -> int:
             )
         ]
     else:
-        problems = (
-            check_stop_hook(project, commands.stop)
-            + check_session_start_hook(project, commands.session_start)
-            + check_pre_commit(project, commands.pre_commit)
-            + check_commit_msg_hook(project, commands.commit_msg)
-        )
+        problems = []
+        if "claude" in project.config.agents:
+            problems += check_stop_hook(project, commands.stop) + check_session_start_hook(project, commands.session_start)
+        if "codex" in project.config.agents:
+            problems += check_codex_hooks(project, commands)
+        problems += check_pre_commit(project, commands.pre_commit) + check_commit_msg_hook(project, commands.commit_msg)
     problems += check_hooks_path(root)
     for problem in problems:
         print(problem.format(root))
     if problems:
         print(f"check_hooks: 문제 {len(problems)}건")
         return 1
-    print("check_hooks: 통과 (Stop hook, SessionStart hook, pre-commit, commit-msg, core.hooksPath)")
+    agents = ", ".join(project.config.agents) or "없음"
+    print(f"check_hooks: 통과 (에이전트 hook: {agents}, pre-commit, commit-msg, core.hooksPath)")
     return 0
 
 

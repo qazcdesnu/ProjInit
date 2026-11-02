@@ -9,7 +9,8 @@
 ```sh
 <projinit> check                         # 모든 검사와 설정의 프로젝트 명령(테스트 등)을 한 번에 실행
 <projinit> check --hook stop             # Claude Code Stop hook이 실행
-<projinit> context                       # Claude Code SessionStart hook이 실행
+<projinit> check --hook stop --agent codex   # Codex Stop hook이 실행
+<projinit> context                       # Claude Code와 Codex의 SessionStart hook이 실행
 <projinit> check --hook pre-commit       # git pre-commit hook이 실행
 <projinit> commit-msg <메시지 파일>       # git commit-msg hook이 실행
 <projinit> commits --subject <PR 제목> --branch <브랜치>   # CI가 PR에서 실행
@@ -85,7 +86,9 @@
 
 [9. 일괄 실행과 자동 실행](#9-일괄-실행과-자동-실행)의 장치가 설치되어 있는지 검사한다. 장치가 빠지면 검사기가 자동으로 돌지 않는데, 그 사실을 아무도 모르게 되는 것을 막는다.
 
-- `.claude/settings.json`에 Stop 명령과 SessionStart 명령을 실행하는 command hook이 있어야 한다.
+- 설정의 `agents`로 켠 에이전트의 hook만 검사한다.
+- Claude Code: `.claude/settings.json`에 Stop 명령과 SessionStart 명령을 실행하는 command hook이 있어야 한다.
+- Codex: `.codex/hooks.json`에 Codex Stop 명령과 Codex SessionStart 명령을 실행하는 command hook이 있어야 한다.
 - `.githooks/pre-commit`, `.githooks/commit-msg`가 있고, 실행 권한이 있으며, 각 명령을 담고 있어야 한다.
 - git 설정 `core.hooksPath`가 `.githooks`여야 한다. 이 설정은 저장소에 포함되지 않아 클론할 때마다 한 번 해 줘야 하므로, 빠뜨리면 이 검사가 알려 준다.
 
@@ -95,6 +98,8 @@
 | --- | --- |
 | Stop hook | `cd "$CLAUDE_PROJECT_DIR" && <projinit> check --hook stop` |
 | SessionStart hook | `cd "$CLAUDE_PROJECT_DIR" && <projinit> context` |
+| Codex Stop hook | `cd "$(git rev-parse --show-toplevel)" && <projinit> check --hook stop --agent codex` |
+| Codex SessionStart hook | `cd "$(git rev-parse --show-toplevel)" && <projinit> context` |
 | pre-commit | `<projinit> check --hook pre-commit` |
 | commit-msg | `<projinit> commit-msg "$1"` |
 
@@ -102,7 +107,7 @@
 
 ## 9. 일괄 실행과 자동 실행
 
-검사기를 작업자의 기억에 맡기지 않고 자동으로 실행한다. 장치는 다섯 가지이며 서로 다른 구멍을 막는다.
+검사기를 작업자의 기억에 맡기지 않고 자동으로 실행한다. 장치는 다섯 가지(Codex를 쓰면 Codex의 Stop과 SessionStart hook이 더해진다)이며 서로 다른 구멍을 막는다.
 
 | 장치 | 실행 시점 | 실패하면 |
 | --- | --- | --- |
@@ -113,6 +118,8 @@
 | [CI](#12-ci) | PR을 열거나 갱신할 때, `main`에 push될 때 | 검사가 실패한 PR은 병합하지 않는다([PR 규칙](PullRequestRule.md#4-병합)). |
 
 - Stop hook이 두 번째 종료를 허용하는 이유: [코드 작업 규칙](CodeRule.md#1-문서-우선-작업-절차)상 작업 중에 사용자에게 질문하며 턴을 끝내야 할 때가 있기 때문이다. 이때 Claude는 실패를 고치거나, 남긴 이유를 사용자에게 보고해야 한다.
+- Codex의 Stop hook도 같다. 막으면 실패 요약이 Codex에게 이어서 할 일로 돌아가고, 이미 한 번 이어 간 뒤(`stop_hook_active`)에는 경고와 함께 허용한다. Codex는 종료 코드 0일 때 표준 출력이 JSON이어야 하므로, `--agent codex`면 통과할 때 `{}`를 출력한다.
+- Codex는 프로젝트의 `.codex/` hook을 사용자가 신뢰해야 실행한다. 처음 열 때 프로젝트를 신뢰하고 `/hooks`에서 hook을 신뢰한다. 갱신으로 hook 명령(버전)이 바뀌면 다시 신뢰해야 한다. 신뢰하지 않으면 Codex의 Stop hook은 돌지 않지만, git hook과 CI는 그대로 검사한다.
 - 실패 요약에는 실패한 검사마다 이름과 출력의 마지막 40줄을 담는다.
 - pre-commit은 스테이징한 내용이 아니라 작업 트리를 검사한다.
 

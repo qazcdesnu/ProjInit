@@ -13,7 +13,7 @@
 | 인덱스 | `docs/index.md` | 공통 문서 목록과, 프로젝트 고유 문서가 들어갈 자리 |
 | 작업 관리 문서 | `docs/Roadmap.md`, `docs/Ongoing.md`, `docs/Done.md`, `docs/Issue.md` | 처음에만 만든다. 로드맵에는 첫 세션이 할 태스크 하나(`M0-T1 제품 비전과 첫 로드맵 작성`)만 있다. |
 | 설정 | `projinit.toml` | ProjInit 버전과 출처, 쓸 에이전트, 빈 프로젝트 명령, 템플릿 값 |
-| 강제 장치 | `.claude/settings.json`(Claude를 켰을 때), `.githooks/pre-commit`, `.githooks/commit-msg`, `.github/workflows/verify.yml`, `.github/pull_request_template.md` | 공통. 설정에서 만든 명령을 빈 자리에 넣는다. 버전이 바뀌면 명령도 바뀌므로 공통 문서와 함께 다시 만든다. |
+| 강제 장치 | `.claude/settings.json`(Claude를 켰을 때), `.codex/hooks.json`(Codex를 켰을 때), `.githooks/pre-commit`, `.githooks/commit-msg`, `.github/workflows/verify.yml`, `.github/pull_request_template.md` | 공통. 설정에서 만든 명령을 빈 자리에 넣는다. 버전이 바뀌면 명령도 바뀌므로 공통 문서와 함께 다시 만든다. |
 | 첫 세션 안내 | `.claude/commands/start.md`(Claude), `.agents/skills/start/SKILL.md`와 `.agents/skills/start/agents/openai.yaml`(Codex) | 공통. Claude의 `/start` 명령, Codex의 `$start` skill로, 작업 관리 규칙의 [첫 작업](../TaskRule.md#48-첫-작업) 절차를 따르라고만 적는다. 절차 자체는 규칙 문서에 둔다. |
 
 - 프로젝트 고유 문서(제품 비전, 시스템 구조, 상세 설계)는 만들지 않는다. 인덱스에 자리만 두고, 첫 세션이 사용자와 대화해 만든다(M2-T4).
@@ -89,7 +89,7 @@ ProjInit 자신도 같은 경계를 따른다. 이 저장소의 `docs/Architectu
 
 - [TEMPLATE_DIR](../../src/projinit/template.py#TEMPLATE_DIR): 템플릿 디렉터리.
 - [COMMON_FILES](../../src/projinit/template.py#COMMON_FILES): 에이전트와 무관한 공통 파일의 상대 경로. `CLAUDE.md`, 1절의 공통 규칙 문서 여덟 개, git hook 두 개, CI와 PR 템플릿이다.
-- [AGENT_FILES](../../src/projinit/template.py#AGENT_FILES): 에이전트 이름 → 그 에이전트를 켰을 때만 만드는 공통 파일([에이전트 지원 설계](Agents.md#4-에이전트별-공통-파일)). `claude`는 `.claude/settings.json`, `.claude/commands/start.md`, `codex`는 `AGENTS.md`, `.agents/skills/start/SKILL.md`, `.agents/skills/start/agents/openai.yaml`이다.
+- [AGENT_FILES](../../src/projinit/template.py#AGENT_FILES): 에이전트 이름 → 그 에이전트를 켰을 때만 만드는 공통 파일([에이전트 지원 설계](Agents.md#4-에이전트별-공통-파일)). `claude`는 `.claude/settings.json`, `.claude/commands/start.md`, `codex`는 `AGENTS.md`, `.codex/hooks.json`, `.agents/skills/start/SKILL.md`, `.agents/skills/start/agents/openai.yaml`이다.
 - [common_files](../../src/projinit/template.py#common_files): `Config`를 받아 그 프로젝트의 공통 파일 목록을 돌려준다. `COMMON_FILES` 뒤에, 설정의 `AGENTS`([검사기 설계의 설정](Checkers.md#11-설정)) 순서로 설정의 `agents`에 있는 에이전트의 파일을 붙인다. 이 저장소의 같은 파일은 템플릿을 채운 결과와 같아야 한다.
 - [INITIAL_FILES](../../src/projinit/template.py#INITIAL_FILES): 처음에만 만드는 파일의 상대 경로. 인덱스, 작업 관리 문서 네 개, 설정 파일이다.
 - [TemplateError](../../src/projinit/template.py#TemplateError): 값이 없는 빈 자리가 있을 때의 오류.
@@ -124,7 +124,7 @@ projinit init --refresh-common [--root <폴더>]
 - [ensure_ignored](../../src/projinit/init.py#ensure_ignored): `Project`를 받아 루트의 `GITIGNORE`에 로컬 자료 폴더를 빼는 줄 `/<private>/`가 있게 하고, 고쳤으면 참을 돌려준다(I26). 앞뒤 공백을 지운 줄 중 `/<private>/`, `<private>/`, `/<private>`, `<private>`가 있으면 이미 있는 것으로 본다. 없으면 파일 끝에 그 줄을 더하고(파일이 줄바꿈으로 끝나지 않으면 줄바꿈을 먼저 넣는다), 파일이 없으면 그 한 줄로 만든다. 다른 줄은 그대로 둔다. `.gitignore`는 공통 파일이 아니다. 파일 전체가 아니라 이 줄 하나만 보장하므로, 이미 있는 저장소에서도 초기화를 막지 않는다.
 - [InitError](../../src/projinit/init.py#InitError): 초기화할 수 없을 때의 오류.
 - [START_HINT](../../src/projinit/init.py#START_HINT): 초기화를 마친 뒤 출력하는 사용법. Claude Code를 열고 `/start`를 입력하라는 안내다.
-- [CODEX_START_HINT](../../src/projinit/init.py#CODEX_START_HINT): Codex를 켰을 때의 사용법. Codex에서 `$start`를 입력하라는 안내다. 초기화는 Claude를 켰으면 `START_HINT`를, Codex를 켰으면 이 안내를(둘 다 켰으면 둘 다) 마지막에 출력한다.
+- [CODEX_START_HINT](../../src/projinit/init.py#CODEX_START_HINT): Codex를 켰을 때의 사용법. 프로젝트와 `/hooks`의 hook을 신뢰한 뒤 Codex에서 `$start`를 입력하라는 안내다. 초기화는 Claude를 켰으면 `START_HINT`를, Codex를 켰으면 이 안내를(둘 다 켰으면 둘 다) 마지막에 출력한다.
 - [main](../../src/projinit/init.py#main): 위 두 동작을 실행한다. 초기화는 `--agent <이름>`을 여러 번 받는다(`claude`, `codex`, 없으면 `claude`). 그리고 만들거나 바꾼 파일을 한 줄씩 출력한다. 초기화한 경우 마지막에 `START_HINT`를 출력한다. 오류는 `init: <메시지>`로 출력하고 종료 코드 1로 끝난다.
 - `projinit` 명령의 하위 명령 `init`이 이 `main`을 부른다.
 
