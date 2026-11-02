@@ -40,7 +40,7 @@
 | --- | --- | --- |
 | claude | `.claude/settings.json`, `.claude/commands/start.md` | Stop·SessionStart hook, `/start` |
 | codex | `AGENTS.md` | Codex 진입 문서. 첫 줄 제목만 빼고 `CLAUDE.md`와 같다. |
-| codex | `.codex/hooks.json` | Stop·SessionStart hook(M8-T2) |
+| codex | `.codex/hooks.json` | Stop·SessionStart hook. 명령은 `git rev-parse --show-toplevel`로 루트에 간 뒤 실행한다. Stop은 `check --hook stop --agent codex`다. |
 | codex | `.agents/skills/start/SKILL.md`, `.agents/skills/start/agents/openai.yaml` | `$start` skill. 명시적으로 부를 때만 쓴다(`allow_implicit_invocation: false`). 사용자가 다른 말을 할 때 첫 작업 절차가 끼어들지 않게 하기 위해서다. |
 
 ## 5. 진입 문서 `AGENTS.md`

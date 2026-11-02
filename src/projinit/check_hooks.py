@@ -22,6 +22,8 @@ PRE_COMMIT_HOOK = ".githooks/pre-commit"
 COMMIT_MSG_HOOK = ".githooks/commit-msg"
 # @doc: docs/design/Checkers.md#8-강제-장치-검사기
 HOOKS_PATH = ".githooks"
+# @doc: docs/design/Checkers.md#8-강제-장치-검사기
+CODEX_HOOKS = ".codex/hooks.json"
 
 
 @dataclass(frozen=True)
@@ -106,6 +108,15 @@ def _hook_commands(settings: object, event: str) -> list[object]:
         for hook in group.get("hooks", [])
         if isinstance(hook, dict) and hook.get("type") == "command"
     ]
+
+
+def check_codex_hooks(project: Project, commands: HookCommands) -> list[Problem]:
+    """Report a missing or malformed Codex hooks file, or a missing Stop or SessionStart hook.
+
+    @doc: docs/design/Checkers.md#8-강제-장치-검사기
+    @stub: M8-T2
+    """
+    raise NotImplementedError
 
 
 def check_pre_commit(project: Project, expected: str) -> list[Problem]:
